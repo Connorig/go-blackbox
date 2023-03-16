@@ -1,16 +1,15 @@
 package awesomeProject1
 
 import (
+	"awesomeProject1/server/cache"
 	"awesomeProject1/server/datasource"
 	"awesomeProject1/server/loadConf"
 	"context"
-	"github.com/go-redis/redis/v8"
 	"github.com/kataras/iris/v12"
 	irisContext "github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 )
@@ -20,9 +19,9 @@ func TestLoader(t *testing.T) {
 	app := New()
 
 	go func() {
-		app.Start(func(ctx context.Context, builder *applicationStart) error {
+		app.Start(func(ctx context.Context, builder *applicationBuilder) error {
 
-			builder.loadConfig(&loadConf.Config, func(loader loadConf.Loader) {
+			builder.LoadConfig(&loadConf.Config, func(loader loadConf.Loader) {
 				loader.SetConfigFileSearcher("config", ".")
 			})
 
@@ -39,26 +38,25 @@ func TestLoader(t *testing.T) {
 				MaxOpenConns: loadConf.Config.Db.MaxOpenConns,
 			}
 
-			redConfig := redis.UniversalOptions{
-				Addrs:    strings.Split(loadConf.Config.Redis.Addrs, ","),
+			cacheOptins := cache.RedisOptions{
+				Addr:     loadConf.Config.Redis.Addrs,
 				Password: loadConf.Config.Redis.Password,
 				PoolSize: loadConf.Config.Redis.PoolSize,
 				DB:       loadConf.Config.Redis.Db,
 			}
 
 			builder.
-				enableDb(&postConfig).
-				enableCache(redConfig).
-				enableWeb(loadConf.Config.Web.Listen, loadConf.Config.Web.DebugLevel, Router)
+				EnableDb(&postConfig).
+				EnableCache(ctx, cacheOptins)
+			//EnableWeb(loadConf.Config.Web.Listen, loadConf.Config.Web.DebugLevel, Router)
 			return nil
-		}, func(s string) {
-
 		})
 	}()
+
 	// 等待初始化完成。
-	time.Sleep(time.Second * 3)
-	t.Log(app.builder.redisDb)
-	t.Log(app.builder.gormDb)
+	time.Sleep(time.Second * 2)
+	t.Log(app.getCache())
+	t.Log(app.getDb())
 
 	t.Run("test", func(t *testing.T) {
 		resp, err := http.Get("http://localhost:9527/v1/one")

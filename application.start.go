@@ -1,24 +1,49 @@
 package awesomeProject1
 
-import "context"
+import (
+	"awesomeProject1/server/cache"
+	"context"
+	"fmt"
+	"gorm.io/gorm"
+)
+
+var ctx context.Context
+
+type Application interface {
+	Start(builder func(ctx context.Context, builder *applicationBuilder) error) error
+}
 
 type application struct {
-	builder *applicationStart
+	builder *applicationBuilder
 }
 
 func New() (app *application) {
-	builder := &applicationStart{}
-
+	builder := &applicationBuilder{}
+	ctx = context.Background()
 	app = &application{
 		builder,
 	}
 	return
 }
 
-func (application *application) Start(builder func(ctx context.Context, builder *applicationStart) error, onTerminate ...func(string)) (err error) {
+func (app *application) Start(builder func(ctx context.Context, builder *applicationBuilder) error) (err error) {
 
-	err = builder(nil, application.builder)
+	if builder == nil {
+		err = fmt.Errorf("application builder is nil")
+		return
+	}
+	// 属性构建初始化
+	err = builder(ctx, app.builder)
 	if err != nil {
+		err = fmt.Errorf("application builder fail checkout what have happened")
 	}
 	return
+}
+
+func (app *application) getCache() cache.Rediser {
+	return app.builder.redisDb
+}
+
+func (app *application) getDb() *gorm.DB {
+	return app.builder.gormDb
 }
