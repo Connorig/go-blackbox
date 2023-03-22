@@ -10,15 +10,15 @@ import (
 var ctx context.Context
 
 type Application interface {
-	Start(builder func(ctx context.Context, builder *applicationBuilder) error) error
+	Start(builder func(ctx context.Context, builder *ApplicationBuild) error) error
 }
 
 type application struct {
-	builder *applicationBuilder
+	builder *ApplicationBuild
 }
 
 func New() (app *application) {
-	builder := &applicationBuilder{}
+	builder := &ApplicationBuild{}
 	ctx = context.Background()
 	app = &application{
 		builder,
@@ -26,7 +26,7 @@ func New() (app *application) {
 	return
 }
 
-func (app *application) Start(builder func(ctx context.Context, builder *applicationBuilder) error) (err error) {
+func (app *application) Start(builder func(ctx context.Context, builder *ApplicationBuild) error) (err error) {
 
 	if builder == nil {
 		err = fmt.Errorf("application builder is nil")
