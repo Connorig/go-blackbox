@@ -76,16 +76,16 @@ func gormPgSql(pgConfig *PostgresConfig) (err error) {
 
 	// 打开数据库会话
 	if _db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: newLogger}); err != nil {
-		fmt.Printf("open datasource is failed %s \n", err)
+		fmt.Printf("open datasource is failed %v \n", err)
 	}
-	//if tables != nil && len(tables) > 0 {
-	//	err = _db.AutoMigrate(tables...) // 初始化model 数据表
-	//	if err != nil {
-	//		fmt.Println("AutoMigrate tables failed ", err)
-	//	}
-	//}
 
-	sqlDB, _ := _db.DB()                         //设置数据库连接池参数
+	err = _db.AutoMigrate(tables...) // 初始化model 数据表
+	if err != nil {
+		fmt.Println("AutoMigrate tables failed ", err)
+	}
+
+	sqlDB, _ := _db.DB() //设置数据库连接池参数
+
 	sqlDB.SetMaxOpenConns(pgConfig.MaxOpenConns) // 设置数据库连接池最大连接数
 	sqlDB.SetMaxIdleConns(pgConfig.MaxIdleConns) // 连接池最大允许的空闲连接数，如果没有sql任务需要执行的连接数大于20，超过的连接会被连接池关闭
 	sqlDB.SetConnMaxLifetime(time.Hour)          // SetConnMaxLifetime 设置了连接可复用的最大时间。
