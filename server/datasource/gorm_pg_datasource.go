@@ -50,6 +50,7 @@ func GormInit(pg *PostgresConfig, models ...interface{}) {
 func GetDbInstance() *gorm.DB {
 	// 只执行一次，用于初始化_db
 	once.Do(func() {
+		fmt.Println("starting initializing...")
 		err := gormPgSql(pgConfig)
 		if err != nil {
 			fmt.Printf("starting initialize failed %s \n", err)
@@ -60,7 +61,6 @@ func GetDbInstance() *gorm.DB {
 
 // 获取数据库连接
 func gormPgSql(pgConfig *PostgresConfig) (err error) {
-	// 设置日志
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config{
@@ -70,25 +70,24 @@ func gormPgSql(pgConfig *PostgresConfig) (err error) {
 			Colorful:                  false,       //Disable color
 		},
 	)
-
 	// DSN连接
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=Asia/Shanghai",
 		pgConfig.Host, pgConfig.UserName, pgConfig.Password, pgConfig.DbName, pgConfig.Port, pgConfig.SSL)
 
 	// 打开数据库会话
 	if _db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: newLogger}); err != nil {
-		err = fmt.Errorf("open datasource is failed %s", err)
+		fmt.Printf("open datasource is failed %v \n", err)
 	}
 
-	// 初始化model 数据表
-	err = _db.AutoMigrate(tables...)
+	err = _db.AutoMigrate(tables...) // 初始化model 数据表
 	if err != nil {
 		fmt.Println("AutoMigrate tables failed ", err)
 	}
 
-	sqlDB, _ := _db.DB()                         // 设置数据库连接池参数
+	sqlDB, _ := _db.DB() //设置数据库连接池参数
+
 	sqlDB.SetMaxOpenConns(pgConfig.MaxOpenConns) // 设置数据库连接池最大连接数
 	sqlDB.SetMaxIdleConns(pgConfig.MaxIdleConns) // 连接池最大允许的空闲连接数，如果没有sql任务需要执行的连接数大于20，超过的连接会被连接池关闭
-	sqlDB.SetConnMaxLifetime(time.Minute * 30)   // SetConnMaxLifetime 设置了连接可复用的最大时间。
+	sqlDB.SetConnMaxLifetime(time.Hour)          // SetConnMaxLifetime 设置了连接可复用的最大时间。
 	return
 }

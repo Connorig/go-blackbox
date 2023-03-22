@@ -1,4 +1,4 @@
-package loadConf
+package loadconf
 
 var Config Configuration
 

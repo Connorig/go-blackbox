@@ -1,17 +1,17 @@
-module awesomeProject1
+module github.com/Domingor/go-blackbox
 
 go 1.18
 
 require (
 	github.com/fatih/structs v1.1.0
-	github.com/go-redis/redis/v8 v8.11.5
+	github.com/go-redis/cache/v9 v9.0.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/kataras/iris/v12 v12.2.0-beta3
 	github.com/redis/go-redis/v9 v9.0.2
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.15.0
-	gorm.io/driver/postgres v1.5.0
-	gorm.io/gorm v1.24.7-0.20230306060331-85eaf9eeda11
+	gorm.io/driver/postgres v1.4.8
+	gorm.io/gorm v1.24.5
 )
 
 require (
@@ -26,7 +26,6 @@ require (
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385 // indirect
 	github.com/flosch/pongo2/v4 v4.0.2 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/go-redis/cache/v9 v9.0.0 // indirect
 	github.com/goccy/go-json v0.9.8-0.20220506185958-23bd66f4c0d5 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect

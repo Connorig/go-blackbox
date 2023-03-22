@@ -1,9 +1,9 @@
-package awesomeProject1
+package goblackbox
 
 import (
-	"awesomeProject1/server/cache"
 	"context"
 	"fmt"
+	"github.com/Domingor/go-blackbox/server/cache"
 	"gorm.io/gorm"
 )
 
