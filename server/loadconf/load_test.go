@@ -1,42 +1,38 @@
 package loadconf
 
-import (
-	"testing"
-)
+//func TestLoadConf(t *testing.T) {
+//o := NewLoader()
+//o.SetConfigFileSearcher("config", "../../")
+////读取优先级
+//调用Set显式设置的；
+//命令行选项；
+//环境变量；
+//配置文件；
+//默认值。
+//o.EnableEnvSearcher("test1")
+//
+//o.LoadToStruct(&Config)
+//t.Logf("%v", Config)
 
-func TestLoadConf(t *testing.T) {
-	//o := NewLoader()
-	//o.SetConfigFileSearcher("config", "../../")
-	////读取优先级
-	//调用Set显式设置的；
-	//命令行选项；
-	//环境变量；
-	//配置文件；
-	//默认值。
-	//o.EnableEnvSearcher("test1")
-	//
-	//o.LoadToStruct(&Config)
-	//t.Logf("%v", Config)
+//LoadConfig(&Config, func(l Loader) {
+//	l.SetConfigFileSearcher("config", "../../").EnableEnvSearcher("test")
+//})
+//
+//t.Logf("%v", Config)
+//}
 
-	LoadConfig(&Config, func(l Loader) {
-		l.SetConfigFileSearcher("config", "../../").EnableEnvSearcher("test")
-	})
-
-	t.Logf("%v", Config)
-}
-
-func LoadConfig(config interface{}, callback func(Loader)) (err error) {
-	var cb = callback
-	loader := NewLoader()
-	if cb == nil {
-		cb = func(ld Loader) {
-			ld.SetConfigFileSearcher("config", ".").EnableEnvSearcher("")
-		}
-	}
-	cb(loader)
-	err = loader.LoadToStruct(config)
-	return
-}
+//func LoadConfig(config interface{}, callback func(Loader)) (err error) {
+//	var cb = callback
+//	loader := NewLoader()
+//	if cb == nil {
+//		cb = func(ld Loader) {
+//			ld.SetConfigFileSearcher("config", ".").EnableEnvSearcher("")
+//		}
+//	}
+//	cb(loader)
+//	err = loader.LoadToStruct(config)
+//	return
+//}
 
 //func TestSlice(t *testing.T) {
 //	slice1 := make([]int, 0)

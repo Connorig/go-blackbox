@@ -40,10 +40,10 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 	return
 }
 
-func (app *application) getCache() cache.Rediser {
+func (app *application) GetCache() cache.Rediser {
 	return app.builder.redisDb
 }
 
-func (app *application) getDb() *gorm.DB {
+func (app *application) GetDb() *gorm.DB {
 	return app.builder.gormDb
 }
