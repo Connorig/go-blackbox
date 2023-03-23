@@ -1,6 +1,20 @@
 package goblackbox
 
 //
+//import (
+//	"context"
+//	"github.com/Domingor/go-blackbox/server/cache"
+//	"github.com/Domingor/go-blackbox/server/datasource"
+//	"github.com/Domingor/go-blackbox/server/loadconf"
+//	"github.com/Domingor/go-blackbox/server/webiris"
+//	"github.com/kataras/iris/v12"
+//	"gorm.io/gorm"
+//	"io/ioutil"
+//	"net/http"
+//	"testing"
+//	"time"
+//)
+//
 //type User struct {
 //	gorm.Model
 //	Name string
@@ -17,7 +31,7 @@ package goblackbox
 //
 //	go func() {
 //
-//		app.Start(func(ctx context.Context, builder *applicationBuilder) error {
+//		app.Start(func(ctx context.Context, builder *ApplicationBuild) error {
 //
 //			builder.LoadConfig(&loadconf.Config, func(loader loadconf.Loader) {
 //				loader.SetConfigFileSearcher("config", ".")
@@ -76,11 +90,11 @@ package goblackbox
 //}
 //
 //func Router(application *iris.Application) {
-//	application.PartyFunc("/v1", func(p router.Party) {
-//		p.Get("/one", func(c *context2.Context) {
-//			c.WriteString("Here you are!")
-//		})
-//	})
+//	//application.PartyFunc("/v1", func(p router.Party) {
+//	//	p.Get("/one", func(c *context2.Context) {
+//	//		c.WriteString("Here you are!")
+//	//	})
+//	//})
 //}
 //
 //func RegisterTables() (tables []interface{}) {

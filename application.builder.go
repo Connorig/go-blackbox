@@ -12,19 +12,40 @@ import (
 )
 
 type ApplicationBuilder interface {
-	EnableWeb(port, logLevel string, components webiris.PartyComponent) *applicationBuilder
-	EnableDb(dbConfig *datasource.PostgresConfig, models ...interface{}) *applicationBuilder
-	EnableCache(ctx context.Context, redConfig cache.RedisOptions) *applicationBuilder
+	EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild
+	EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild
+	EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild
 	LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error
 }
 
-type applicationBuilder struct {
+type ApplicationBuild struct {
 	irisApp webiris.WebBaseFunc
 	gormDb  *gorm.DB
 	redisDb cache.Rediser
 }
 
-func (app *applicationBuilder) LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error {
+func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild {
+	app.irisApp = webiris.Init(
+		timeFormat,
+		port,
+		logLevel,
+		components)
+
+	app.irisApp.Run()
+	return app
+}
+func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild {
+	//	// 初始化数据，注册模型
+	datasource.GormInit(dbConfig, models...)
+	app.gormDb = datasource.GetDbInstance()
+	return app
+}
+func (app *ApplicationBuild) EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild {
+	//	// 初始化redis
+	app.redisDb = cache.Init(ctx, redConfig)
+	return app
+}
+func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error {
 	loader := loadconf.NewLoader()
 	if loaderFun == nil {
 		return fmt.Errorf("loaderFun is nil")
@@ -35,28 +56,4 @@ func (app *applicationBuilder) LoadConfig(configStruct interface{}, loaderFun fu
 		logrus.Errorf("%s", err)
 	}
 	return nil
-}
-
-func (app *applicationBuilder) EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *applicationBuilder {
-	app.irisApp = webiris.Init(
-		timeFormat,
-		port,
-		logLevel,
-		components)
-
-	app.irisApp.Run()
-	return app
-}
-
-func (app *applicationBuilder) EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *applicationBuilder {
-	// 初始化数据，注册模型
-	datasource.GormInit(dbConfig, models...)
-	app.gormDb = datasource.GetDbInstance()
-	return app
-}
-
-func (app *applicationBuilder) EnableCache(ctx context.Context, redConfig cache.RedisOptions) *applicationBuilder {
-	// 初始化redis
-	app.redisDb = cache.Init(ctx, redConfig)
-	return app
 }
