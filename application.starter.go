@@ -1,13 +1,10 @@
-package goblackbox
+package appbox
 
 import (
 	"context"
 	"fmt"
-	"github.com/Domingor/go-blackbox/server/cache"
-	"gorm.io/gorm"
+	"github.com/Domingor/go-blackbox/etc"
 )
-
-var ctx context.Context
 
 type Application interface {
 	Start(builder func(ctx context.Context, builder *ApplicationBuild) error) error
@@ -19,7 +16,7 @@ type application struct {
 
 func New() (app *application) {
 	builder := &ApplicationBuild{}
-	ctx = context.Background()
+
 	app = &application{
 		builder,
 	}
@@ -32,18 +29,13 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 		err = fmt.Errorf("application builder is nil")
 		return
 	}
+	ctx := etc.GetContext().Ctx
+
 	// 属性构建初始化
 	err = builder(ctx, app.builder)
+
 	if err != nil {
 		err = fmt.Errorf("application builder fail checkout what have happened")
 	}
 	return
-}
-
-func (app *application) GetCache() cache.Rediser {
-	return app.builder.redisDb
-}
-
-func (app *application) GetDb() *gorm.DB {
-	return app.builder.gormDb
 }
