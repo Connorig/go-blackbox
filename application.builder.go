@@ -1,8 +1,9 @@
-package goblackbox
+package appbox
 
 import (
 	"context"
 	"fmt"
+	"github.com/Domingor/go-blackbox/etc"
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/datasource"
 	"github.com/Domingor/go-blackbox/server/loadconf"
@@ -37,12 +38,16 @@ func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, compon
 func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild {
 	//	// 初始化数据，注册模型
 	datasource.GormInit(dbConfig, models...)
-	app.gormDb = datasource.GetDbInstance()
+	//app.gormDb = datasource.GetDbInstance()
+	// 放入容器
+	etc.Set(datasource.GetDbInstance())
+
 	return app
 }
 func (app *ApplicationBuild) EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild {
-	//	// 初始化redis
-	app.redisDb = cache.Init(ctx, redConfig)
+	// 初始化redis，放入容器
+	etc.Set(cache.Init(ctx, redConfig))
+
 	return app
 }
 func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error {

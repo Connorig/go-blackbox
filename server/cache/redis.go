@@ -14,27 +14,27 @@ type Rediser interface {
 	SetTtl(key string, value interface{}, ttl time.Duration) (err error)
 }
 
-type redisCache struct {
+type RedisCache struct {
 	ctx        context.Context
 	proxy      *cache.Cache
 	defaultTtl time.Duration
 }
 
-func (rc *redisCache) Get(key string, value interface{}) (err error) {
+func (rc *RedisCache) Get(key string, value interface{}) (err error) {
 	err = rc.proxy.Get(rc.ctx, key, value)
 	return
 }
-func (rc *redisCache) GetRedisClient() *cache.Cache {
+func (rc *RedisCache) GetRedisClient() *cache.Cache {
 	return rc.proxy
 }
-func (rc *redisCache) IsExists(key string) bool {
+func (rc *RedisCache) IsExists(key string) bool {
 	return rc.proxy.Exists(rc.ctx, key)
 }
-func (rc *redisCache) Set(Key string, value interface{}) (err error) {
+func (rc *RedisCache) Set(Key string, value interface{}) (err error) {
 	rc.SetTtl(Key, value, 0)
 	return
 }
-func (rc *redisCache) SetTtl(key string, value interface{}, ttl time.Duration) (err error) {
+func (rc *RedisCache) SetTtl(key string, value interface{}, ttl time.Duration) (err error) {
 	if ttl <= 0 {
 		ttl = rc.defaultTtl
 	}

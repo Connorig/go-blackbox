@@ -12,11 +12,11 @@ import (
 type RedisOptions redis.Options
 
 var (
-	once    sync.Once
-	rediser Rediser
+	once        sync.Once
+	redisCacher *RedisCache
 )
 
-func Init(ctx context.Context, redisOptions RedisOptions) Rediser {
+func Init(ctx context.Context, redisOptions RedisOptions) *RedisCache {
 
 	once.Do(func() {
 		options := redis.Options(redisOptions)
@@ -32,12 +32,12 @@ func Init(ctx context.Context, redisOptions RedisOptions) Rediser {
 			LocalCache: cache.NewTinyLFU(1000, time.Minute),
 		})
 
-		rediser = &redisCache{
+		redisCacher = &RedisCache{
 			ctx:   ctx,
 			proxy: cache,
 			//defaultTtl: 0,
 		}
 	})
 
-	return rediser
+	return redisCacher
 }
