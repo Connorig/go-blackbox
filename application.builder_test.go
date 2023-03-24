@@ -29,7 +29,7 @@ func TestLoader(t *testing.T) {
 
 		app.Start(func(ctx context.Context, builder *ApplicationBuild) error {
 
-			builder.LoadConfig(&loadconf.Config, func(loader loadconf.Loader) {
+			err := builder.LoadConfig(&loadconf.Config, func(loader loadconf.Loader) {
 				loader.SetConfigFileSearcher("config", ".")
 			})
 
@@ -62,7 +62,8 @@ func TestLoader(t *testing.T) {
 			//	loadconf.Config.Web.Listen,
 			//	loadconf.Config.Web.DebugLevel,
 			//	Router)
-			return nil
+
+			return err
 		})
 	}()
 
@@ -73,7 +74,7 @@ func TestLoader(t *testing.T) {
 	//t.Log(etc.GetCache())
 
 	t.Log(GormDb())
-	t.Log(GlobalCtx())
+	t.Log(GlobalCtx().Ctx)
 	t.Log(RedisCache())
 
 	//t.Run("test", func(t *testing.T) {

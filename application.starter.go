@@ -31,6 +31,7 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 		err = fmt.Errorf("application builder is nil")
 		return
 	}
+	// 全局context
 	ctx := etc.GetContext().Ctx
 
 	// 属性构建初始化

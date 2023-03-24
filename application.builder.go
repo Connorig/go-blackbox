@@ -8,7 +8,6 @@ import (
 	"github.com/Domingor/go-blackbox/server/datasource"
 	"github.com/Domingor/go-blackbox/server/loadconf"
 	"github.com/Domingor/go-blackbox/server/webiris"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -38,7 +37,7 @@ func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, compon
 func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild {
 	//	// 初始化数据，注册模型
 	datasource.GormInit(dbConfig, models...)
-	//app.gormDb = datasource.GetDbInstance()
+
 	// 放入容器
 	etc.Set(datasource.GetDbInstance())
 
@@ -55,10 +54,9 @@ func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func
 	if loaderFun == nil {
 		return fmt.Errorf("loaderFun is nil")
 	}
+	// 加载解析配置文件属性
 	loaderFun(loader)
+
 	err := loader.LoadToStruct(configStruct)
-	if err != nil {
-		logrus.Errorf("%s", err)
-	}
-	return nil
+	return err
 }
