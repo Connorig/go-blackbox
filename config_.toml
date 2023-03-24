@@ -1,0 +1,22 @@
+name = "golang"
+version = "1.0"
+
+[web]
+listen = ":9000"
+debugLevel = "debug"
+
+[db]
+dbName = "test"
+user = "ows"
+password = "thingple"
+host = "127.0.0.1"
+port = 5439
+database = "postgres"
+ssl = "disable" #require/verify-full/verify-ca/disable
+
+
+[redis]
+#password = "123456"
+addrs = "127.0.0.1:16379"
+poolSize = 1
+db = 0

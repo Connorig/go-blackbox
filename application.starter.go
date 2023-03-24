@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/Domingor/go-blackbox/etc"
+	"github.com/Domingor/go-blackbox/server/cache"
+	"gorm.io/gorm"
 )
 
 type Application interface {
@@ -38,4 +40,16 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 		err = fmt.Errorf("application builder fail checkout what have happened")
 	}
 	return
+}
+
+func GormDb() *gorm.DB {
+	return etc.GetDb()
+}
+
+func GlobalCtx() *etc.GlobalContext {
+	return etc.GetContext()
+}
+
+func RedisCache() cache.Rediser {
+	return etc.GetCache()
 }

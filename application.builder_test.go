@@ -2,7 +2,6 @@ package appbox
 
 import (
 	"context"
-	"github.com/Domingor/go-blackbox/etc"
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/datasource"
 	"github.com/Domingor/go-blackbox/server/loadconf"
@@ -69,9 +68,13 @@ func TestLoader(t *testing.T) {
 
 	//等待初始化完成。
 	time.Sleep(time.Second * 2)
-	t.Log(etc.GetContext())
-	t.Log(etc.GetDb())
-	t.Log(etc.GetCache())
+	//t.Log(etc.GetContext())
+	//t.Log(etc.GetDb())
+	//t.Log(etc.GetCache())
+
+	t.Log(GormDb())
+	t.Log(GlobalCtx())
+	t.Log(RedisCache())
 
 	//t.Run("test", func(t *testing.T) {
 	//	resp, err := http.Get("http://localhost:9000/v1/one")
