@@ -15,14 +15,14 @@ import (
 
 var beanMap map[reflect.Type]reflect.Value
 
-type globalContext struct {
+type GlobalContext struct {
 	Ctx context.Context
 }
 
 func init() {
 	beanMap = make(map[reflect.Type]reflect.Value)
 	background := context.Background()
-	Set(&globalContext{Ctx: background})
+	Set(&GlobalContext{Ctx: background})
 }
 
 func Set(beans ...any) {
@@ -47,16 +47,19 @@ func Get[T any](bean T) T {
 	return bean
 }
 
+// 获取数据库实例
 func GetDb() *gorm.DB {
 	get := Get((*gorm.DB)(nil))
 	return get
 }
 
-func GetContext() *globalContext {
-	get := Get((*globalContext)(nil))
+// 获取上下文
+func GetContext() *GlobalContext {
+	get := Get((*GlobalContext)(nil))
 	return get
 }
 
+// 获取redis实例
 func GetCache() cache.Rediser {
 	get := Get((*cache.RedisCache)(nil))
 	return get
