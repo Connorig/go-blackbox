@@ -10,7 +10,7 @@ import (
 /**
 * @Author: Connor
 * @Date:   23.3.23 11:39
-* @Description:
+* @Description: 自定义容器，同于全局存取个个服务实例：iris.application\gorm.db\redis.client
  */
 
 var beanMap map[reflect.Type]reflect.Value
