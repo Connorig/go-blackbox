@@ -20,3 +20,7 @@ ssl = "disable" #require/verify-full/verify-ca/disable
 addrs = "127.0.0.1:16379"
 poolSize = 1
 db = 0
+
+[logConf]
+outDirPath = "D://test//log"
+logLevel = "debug"

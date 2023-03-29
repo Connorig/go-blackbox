@@ -1,4 +1,4 @@
-package zap_server
+package zaplog
 
 import (
 	"fmt"
@@ -11,12 +11,12 @@ import (
 
 // level log level
 var (
-	level  zapcore.Level
-	ZAPLOG *zap.Logger
+	level       zapcore.Level
+	ZAPLOG      *zap.Logger
+	ZAPLOGSUGAR *zap.SugaredLogger
 )
 
-// init
-func init() {
+func Init() {
 	var logger *zap.Logger
 
 	if !dir.IsExist(CONFIG.Director) {
@@ -49,8 +49,10 @@ func init() {
 	if CONFIG.ShowLine {
 		logger = logger.WithOptions(zap.AddCaller())
 	}
+	// 标准日志
 	ZAPLOG = logger
-	ZAPLOG.Info("initializing logger succeed.")
+	// 功能类似于printf
+	ZAPLOGSUGAR = logger.Sugar()
 }
 
 // getEncoderConfig 获取zapcore.EncoderConfig
@@ -105,19 +107,20 @@ func customTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendString(t.Format(CONFIG.Prefix + "2006/01/02 - 15:04:05.000"))
 }
 
-type StringsArray [][]string
-
-// MarshalLogArray
-func (ss StringsArray) MarshalLogArray(arr zapcore.ArrayEncoder) error {
-	for i := range ss {
-		for ii := range ss[i] {
-			arr.AppendString(ss[i][ii])
-		}
-	}
-	return nil
-}
-
-// Strings constructs a field that carries a slice of strings.
-func Strings(key string, ss [][]string) zap.Field {
-	return zap.Array(key, StringsArray(ss))
-}
+//
+//type StringsArray [][]string
+//
+//// MarshalLogArray
+//func (ss StringsArray) MarshalLogArray(arr zapcore.ArrayEncoder) error {
+//	for i := range ss {
+//		for ii := range ss[i] {
+//			arr.AppendString(ss[i][ii])
+//		}
+//	}
+//	return nil
+//}
+//
+//// Strings constructs a field that carries a slice of strings.
+//func Strings(key string, ss [][]string) zap.Field {
+//	return zap.Array(key, StringsArray(ss))
+//}

@@ -1,12 +1,11 @@
-package zap_server
+package zaplog
 
 import (
+	zaprotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	"go.uber.org/zap/zapcore"
 	"os"
 	"path"
 	"time"
-
-	zaprotatelogs "github.com/lestrrat-go/file-rotatelogs"
-	"go.uber.org/zap/zapcore"
 )
 
 // GetWriteSyncer

@@ -44,6 +44,7 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 
 	// 启动iris之后再执行seed
 	err = seed.Seed(app.builder.seeds...)
+
 	if err != nil {
 		err = fmt.Errorf("application builder seed fail checkout what've happened. %s", err.Error())
 	}

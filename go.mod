@@ -9,6 +9,7 @@ require (
 	github.com/kataras/iris/v12 v12.2.0-beta3
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/redis/go-redis/v9 v9.0.2
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/snowlyg/helper v0.1.42
 	github.com/spf13/viper v1.15.0
