@@ -3,6 +3,8 @@ package etc
 import (
 	"context"
 	"github.com/Domingor/go-blackbox/server/cache"
+	"github.com/Domingor/go-blackbox/server/cronjobs"
+	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 	"reflect"
 )
@@ -25,7 +27,10 @@ func init() {
 	beanMap = make(map[reflect.Type]reflect.Value)
 	// 获取全局上下文
 	background := context.Background()
+	// 设置全局上下文到容器
 	Set(&GlobalContext{Ctx: background})
+	// 设置定时任务到容器
+	Set(cronjobs.CronInstance())
 }
 
 // Set 将struct类型对象放入容器中，只能传入指针-struct类型数据
@@ -68,5 +73,11 @@ func GetContext() *GlobalContext {
 // GetCache 获取redis实例
 func GetCache() cache.Rediser {
 	get := Get((*cache.RedisCache)(nil))
+	return get
+}
+
+// GetCronJobInstance 获取定时任务实例
+func GetCronJobInstance() *cron.Cron {
+	get := Get((*cron.Cron)(nil))
 	return get
 }
