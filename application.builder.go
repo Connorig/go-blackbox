@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Domingor/go-blackbox/etc"
+	"github.com/Domingor/go-blackbox/seed"
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/datasource"
 	"github.com/Domingor/go-blackbox/server/loadconf"
@@ -22,6 +23,8 @@ type ApplicationBuild struct {
 	irisApp webiris.WebBaseFunc
 	gormDb  *gorm.DB
 	redisDb cache.Rediser
+
+	seeds []seed.SeedFunc
 }
 
 func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild {
@@ -34,6 +37,7 @@ func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, compon
 	app.irisApp.Run()
 	return app
 }
+
 func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild {
 	//	// 初始化数据，注册模型
 	datasource.GormInit(dbConfig, models...)
@@ -43,12 +47,14 @@ func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, model
 
 	return app
 }
+
 func (app *ApplicationBuild) EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild {
 	// 初始化redis，放入容器
 	etc.Set(cache.Init(ctx, redConfig))
 
 	return app
 }
+
 func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error {
 	loader := loadconf.NewLoader()
 	if loaderFun == nil {
@@ -59,4 +65,9 @@ func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func
 
 	err := loader.LoadToStruct(configStruct)
 	return err
+}
+
+func (app *ApplicationBuild) SetSeeds(seedFuncs ...seed.SeedFunc) *ApplicationBuild {
+	app.seeds = append(app.seeds, seedFuncs...)
+	return app
 }

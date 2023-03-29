@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Domingor/go-blackbox/etc"
+	"github.com/Domingor/go-blackbox/seed"
 	"github.com/Domingor/go-blackbox/server/cache"
 	"gorm.io/gorm"
 )
@@ -38,7 +39,13 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 	err = builder(ctx, app.builder)
 
 	if err != nil {
-		err = fmt.Errorf("application builder fail checkout what have happened")
+		err = fmt.Errorf("application builder fail checkout what've happened. %s", err.Error())
+	}
+
+	// 启动iris之后再执行seed
+	err = seed.Seed(app.builder.seeds...)
+	if err != nil {
+		err = fmt.Errorf("application builder seed fail checkout what've happened. %s", err.Error())
 	}
 	return
 }
