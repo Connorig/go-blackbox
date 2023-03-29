@@ -1,4 +1,4 @@
-package zap_server
+package zaplog
 
 import (
 	"os"

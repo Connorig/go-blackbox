@@ -9,6 +9,7 @@ import (
 	"github.com/Domingor/go-blackbox/server/datasource"
 	"github.com/Domingor/go-blackbox/server/loadconf"
 	"github.com/Domingor/go-blackbox/server/webiris"
+	"github.com/Domingor/go-blackbox/server/zaplog"
 	"gorm.io/gorm"
 )
 
@@ -17,6 +18,7 @@ type ApplicationBuilder interface {
 	EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild
 	EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild
 	LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error
+	InitLog(outDirPath string) *ApplicationBuild
 }
 
 type ApplicationBuild struct {
@@ -65,6 +67,18 @@ func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func
 
 	err := loader.LoadToStruct(configStruct)
 	return err
+}
+
+func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild {
+	if len(outDirPath) > 0 {
+		zaplog.CONFIG.Director = outDirPath
+	}
+	if len(level) > 0 {
+		zaplog.CONFIG.Level = level
+	}
+	// 初始化日志
+	zaplog.Init()
+	return app
 }
 
 func (app *ApplicationBuild) SetSeeds(seedFuncs ...seed.SeedFunc) *ApplicationBuild {
