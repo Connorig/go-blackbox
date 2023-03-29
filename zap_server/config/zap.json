@@ -1,0 +1,11 @@
+{
+  "director": "logs",
+  "encode-level": "LowercaseColorLevelEncoder",
+  "format": "console",
+  "level": "debug",
+  "link-name": "latest_log",
+  "log-in-console": false,
+  "prefix": "[IRIS-ADMIN]",
+  "show-line": true,
+  "stacktrace-key": "stacktrace"
+}

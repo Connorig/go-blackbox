@@ -2,6 +2,7 @@ package datasource
 
 import (
 	"fmt"
+	"github.com/Domingor/go-blackbox/utils"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -79,9 +80,17 @@ func gormPgSql(pgConfig *PostgresConfig) (err error) {
 		fmt.Printf("open datasource is failed %v \n", err)
 	}
 
-	err = _db.AutoMigrate(tables...) // 初始化model 数据表
-	if err != nil {
-		fmt.Println("AutoMigrate tables failed ", err)
+	for i, item := range tables {
+		if utils.IsNilFixed(item) {
+			tables = append(tables[:i], tables[i+1:]...)
+		}
+	}
+
+	if len(tables) > 0 {
+		err = _db.AutoMigrate(tables...) // 初始化model 数据表
+		if err != nil {
+			fmt.Println("AutoMigrate tables failed ", err)
+		}
 	}
 
 	sqlDB, _ := _db.DB() //设置数据库连接池参数
