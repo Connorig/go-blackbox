@@ -12,8 +12,8 @@ import (
 // level log level
 var (
 	level       zapcore.Level
-	ZAPLOG      *zap.Logger
-	ZAPLOGSUGAR *zap.SugaredLogger
+	ZAPLOG      *zap.Logger        //标准打印
+	ZAPLOGSUGAR *zap.SugaredLogger // 类似于printf
 )
 
 func Init() {
