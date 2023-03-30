@@ -8,9 +8,9 @@ import (
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/datasource"
 	"github.com/Domingor/go-blackbox/server/loadconf"
+	"github.com/Domingor/go-blackbox/server/mongodb"
 	"github.com/Domingor/go-blackbox/server/webiris"
 	"github.com/Domingor/go-blackbox/server/zaplog"
-	"gorm.io/gorm"
 )
 
 type ApplicationBuilder interface {
@@ -18,13 +18,14 @@ type ApplicationBuilder interface {
 	EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild
 	EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild
 	LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error
-	InitLog(outDirPath string) *ApplicationBuild
+	InitLog(outDirPath, level string) *ApplicationBuild
+	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild
 }
 
 type ApplicationBuild struct {
 	irisApp webiris.WebBaseFunc
-	gormDb  *gorm.DB
-	redisDb cache.Rediser
+	//gormDb  *gorm.DB
+	//redisDb cache.Rediser
 
 	seeds []seed.SeedFunc
 }
@@ -78,6 +79,16 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 	}
 	// 初始化日志
 	zaplog.Init()
+	return app
+}
+
+func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild {
+	client, err := mongodb.GetClient(dbConfig, etc.GetContext().Ctx)
+	if err != nil {
+		zaplog.ZAPLOGSUGAR.Debugf("init mongoDb fail err %s", err)
+	}
+	// mongoDb客户端放入容器
+	etc.Set(client)
 	return app
 }
 
