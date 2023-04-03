@@ -23,10 +23,12 @@ type ApplicationBuilder interface {
 }
 
 type ApplicationBuild struct {
+	// 创建Iris实例对象
 	irisApp webiris.WebBaseFunc
 	//gormDb  *gorm.DB
 	//redisDb cache.Rediser
 
+	// 启动种子list集合
 	seeds []seed.SeedFunc
 }
 
