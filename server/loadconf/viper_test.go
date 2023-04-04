@@ -38,7 +38,7 @@ package loadconf
 //	// Name
 //	// Version
 //	// Web.Listen
-//	// Db.User
+//	// Db.user
 //	// Db.Password
 //	if err != nil {
 //		t.Logf("%s", err)
@@ -50,7 +50,7 @@ package loadconf
 //		// Name ==> 环境变量= TEST_NAME , TEST是前缀
 //		// Version
 //		// Web.Listen ==> TEST_WEB_LISTEN
-//		// Db.User    ==> TEST_DB_USER
+//		// Db.user    ==> TEST_DB_USER
 //		// Db.Password  ==> TEST_DB_PASSWORD
 //		if err != nil {
 //			t.Logf("%s", err)

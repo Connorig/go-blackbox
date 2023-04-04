@@ -68,9 +68,9 @@ func TestLoader(t *testing.T) {
 			})
 
 			//postConfig := datasource.PostgresConfig{
-			//	UserName: loadconf.Config.Db.User,
+			//	UserName: loadconf.Config.Db.user,
 			//	Password: loadconf.Config.Db.Password,
-			//	Host:     loadconf.Config.Db.Host,
+			//	host:     loadconf.Config.Db.host,
 			//	Port:     loadconf.Config.Db.Port,
 			//	DbName:   loadconf.Config.Db.DbName,
 			//	InitDb:   false,
@@ -158,13 +158,13 @@ func Setup(ctx context.Context) (err error) {
 	return
 }
 
-//type User struct {
+//type user struct {
 //	gorm.Model
 //	Name string
 //	Age  int
 //}
 //
-//func (User) TableName() string {
+//func (user) TableName() string {
 //	return "user_info"
 //}
 //
@@ -181,9 +181,9 @@ func Setup(ctx context.Context) (err error) {
 //			})
 //
 //			postConfig := datasource.PostgresConfig{
-//				UserName: loadconf.Config.Db.User,
+//				UserName: loadconf.Config.Db.user,
 //				Password: loadconf.Config.Db.Password,
-//				Host:     loadconf.Config.Db.Host,
+//				host:     loadconf.Config.Db.host,
 //				Port:     loadconf.Config.Db.Port,
 //				DbName:   loadconf.Config.Db.DbName,
 //				InitDb:   false,
@@ -248,7 +248,7 @@ func Setup(ctx context.Context) (err error) {
 //
 //func RegisterTables() (tables []interface{}) {
 //	tables = append(tables,
-//		new(User),
+//		new(user),
 //	)
 //	return
 //}
