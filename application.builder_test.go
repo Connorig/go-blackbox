@@ -6,6 +6,9 @@ import (
 	"github.com/Domingor/go-blackbox/server/loadconf"
 	"github.com/Domingor/go-blackbox/server/zaplog"
 	"github.com/kataras/iris/v12"
+	context2 "github.com/kataras/iris/v12/context"
+
+	"github.com/kataras/iris/v12/core/router"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"testing"
@@ -129,11 +132,11 @@ func TestLoader(t *testing.T) {
 }
 
 func Router(application *iris.Application) {
-	//application.PartyFunc("/v1", func(p router.Party) {
-	//	p.Get("/one", func(c *context2.Context) {
-	//		c.WriteString("Here you are!")
-	//	})
-	//})
+	application.PartyFunc("/v1", func(p router.Party) {
+		p.Get("/one", func(c *context2.Context) {
+			c.WriteString("Here you are!")
+		})
+	})
 }
 
 func RegisterTables() (tables []interface{}) {

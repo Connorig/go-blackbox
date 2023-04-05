@@ -13,5 +13,5 @@ type MongoDBConfig struct {
 }
 
 func (md *MongoDBConfig) GetApplyURI() string {
-	return str.Join("mongodb://", md.Addr)
+	return str.Join("mongodb://", md.Addr, "?connect=direct")
 }
