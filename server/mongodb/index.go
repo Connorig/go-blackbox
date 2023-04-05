@@ -2,10 +2,10 @@ package mongodb
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
@@ -16,7 +16,9 @@ type Client struct {
 
 // GetClient ctx, cancel := context.WithTimeout(context.Background(), CONFIG.Timeout*time.Second)
 func GetClient(dbCig *MongoDBConfig, ctx context.Context) (*Client, error) {
-	mc, err := mongo.Connect(ctx, options.Client().ApplyURI(dbCig.GetApplyURI()))
+	uri := dbCig.GetApplyURI()
+	mc, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+
 	if err != nil {
 		return nil, err
 	}

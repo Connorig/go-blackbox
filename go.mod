@@ -8,11 +8,13 @@ require (
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/kataras/iris/v12 v12.2.0-beta3
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
+	github.com/rabbitmq/amqp091-go v1.8.0
 	github.com/redis/go-redis/v9 v9.0.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/snowlyg/helper v0.1.42
 	github.com/spf13/viper v1.15.0
+	github.com/streadway/amqp v1.0.0
 	go.mongodb.org/mongo-driver v1.11.3
 	go.uber.org/zap v1.21.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
