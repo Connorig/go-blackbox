@@ -1,4 +1,4 @@
-package mongdb2
+package mongdbdemo
 
 import "testing"
 
