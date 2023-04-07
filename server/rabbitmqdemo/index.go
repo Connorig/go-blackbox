@@ -1,9 +1,9 @@
-package rabbitmq
+package rabbitmqdemo
 
 import (
 	"context"
 	"fmt"
-	amqp "github.com/rabbitmq/amqp091-go"
+	amqp "github.com/rabbitmqdemo/amqp091-go"
 	"time"
 )
 
