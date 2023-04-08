@@ -6,6 +6,7 @@ import (
 	"github.com/Domingor/go-blackbox/etc"
 	"github.com/Domingor/go-blackbox/seed"
 	"github.com/Domingor/go-blackbox/server/cache"
+	"github.com/Domingor/go-blackbox/server/cronjobs"
 	"github.com/Domingor/go-blackbox/server/datasource"
 	"github.com/Domingor/go-blackbox/server/loadconf"
 	"github.com/Domingor/go-blackbox/server/mongodb"
@@ -20,18 +21,24 @@ type ApplicationBuilder interface {
 	LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error
 	InitLog(outDirPath, level string) *ApplicationBuild
 	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild
+	InitCronJob() *ApplicationBuild
 }
 
 type ApplicationBuild struct {
 	// 创建Iris实例对象
 	irisApp webiris.WebBaseFunc
+
 	//gormDb  *gorm.DB
 	//redisDb cache.Rediser
 
 	// 启动种子list集合
 	seeds []seed.SeedFunc
+
+	// 是否启动定时服务，在enableCronjob后为true，会自动start()
+	IsRunningCronJob bool
 }
 
+// EnableWeb 启动Web服务
 func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild {
 	app.irisApp = webiris.Init(
 		timeFormat,
@@ -43,6 +50,7 @@ func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, compon
 	return app
 }
 
+// EnableDb 启动数据库操作对象
 func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild {
 	//	// 初始化数据，注册模型
 	datasource.GormInit(dbConfig, models...)
@@ -53,6 +61,7 @@ func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, model
 	return app
 }
 
+// EnableCache 启动缓存
 func (app *ApplicationBuild) EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild {
 	// 初始化redis，放入容器
 	etc.Set(cache.Init(ctx, redConfig))
@@ -60,6 +69,7 @@ func (app *ApplicationBuild) EnableCache(ctx context.Context, redConfig cache.Re
 	return app
 }
 
+// LoadConfig 加载配置文件、环境变量值
 func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error {
 	loader := loadconf.NewLoader()
 	if loaderFun == nil {
@@ -72,6 +82,7 @@ func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func
 	return err
 }
 
+// InitLog 初始化自定义日志
 func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild {
 	if len(outDirPath) > 0 {
 		zaplog.CONFIG.Director = outDirPath
@@ -84,6 +95,7 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 	return app
 }
 
+// EnableMongoDB 启动MongoDB客户端
 func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild {
 	client, err := mongodb.GetClient(dbConfig, etc.GetContext().Ctx)
 	if err != nil {
@@ -94,7 +106,19 @@ func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *App
 	return app
 }
 
+// SetSeeds 设置启动项目时，要执行的一些钩子函数
 func (app *ApplicationBuild) SetSeeds(seedFuncs ...seed.SeedFunc) *ApplicationBuild {
 	app.seeds = append(app.seeds, seedFuncs...)
+	return app
+}
+
+// InitCronJob 初始化定时任务对象，存放入IOC
+func (app *ApplicationBuild) InitCronJob() *ApplicationBuild {
+	instance := cronjobs.CronInstance()
+	// 设置启动定时任务
+	app.IsRunningCronJob = true
+
+	// 定时任务客户端放入容器
+	etc.Set(instance)
 	return app
 }

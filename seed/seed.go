@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// SeedFunc 用户启动项目时的一些回调、初始化工作
+// SeedFunc 启动项目时的一些回调、初始化工作
 //type SeedFunc interface {
 //	Init(etc context.Context) (err error)
 //}

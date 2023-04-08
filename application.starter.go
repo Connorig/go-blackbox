@@ -6,6 +6,7 @@ import (
 	"github.com/Domingor/go-blackbox/etc"
 	"github.com/Domingor/go-blackbox/seed"
 	"github.com/Domingor/go-blackbox/server/cache"
+	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 )
 
@@ -45,6 +46,11 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 	// 启动iris之后再执行seed
 	err = seed.Seed(app.builder.seeds...)
 
+	// 执行定时任务
+	if app.builder.IsRunningCronJob {
+		CronJobSingle().Start()
+	}
+
 	if err != nil {
 		err = fmt.Errorf("application builder seed fail checkout what've happened. %s", err.Error())
 	}
@@ -61,4 +67,7 @@ func GlobalCtx() *etc.GlobalContext {
 
 func RedisCache() cache.Rediser {
 	return etc.GetCache()
+}
+func CronJobSingle() *cron.Cron {
+	return etc.GetCronJobInstance()
 }
