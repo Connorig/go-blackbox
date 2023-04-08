@@ -9,8 +9,9 @@ func TestQueue2(t *testing.T) {
 
 	// 创建mq
 	go MqStart()
-
+	// 等待创建Mq操作对象，并监听队列
 	time.Sleep(time.Second * 1)
+
 	t.Log(StartQueue)
 
 	go func() {
