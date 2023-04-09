@@ -4,7 +4,7 @@ import "testing"
 
 func TestGetClient(t *testing.T) {
 
-	//GetClient()
+	GetClient()
 
 	//GetCollection()
 
