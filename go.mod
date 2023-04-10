@@ -5,10 +5,11 @@ go 1.18
 require (
 	github.com/fatih/structs v1.1.0
 	github.com/go-redis/cache/v9 v9.0.0
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/kataras/iris/v12 v12.2.0-beta3
+	github.com/kataras/jwt v0.1.8
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
-	github.com/rabbitmq/amqp091-go v1.8.0
 	github.com/redis/go-redis/v9 v9.0.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.8.1
@@ -85,6 +86,7 @@ require (
 	github.com/yosssi/ace v0.0.5 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	go.uber.org/atomic v1.9.0 // indirect
+	go.uber.org/goleak v1.2.1 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/net v0.6.0 // indirect
