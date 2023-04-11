@@ -79,7 +79,7 @@ func gormPgSql(pgConfig *PostgresConfig) (err error) {
 	if _db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: newLogger}); err != nil {
 		fmt.Printf("open datasource is failed %v \n", err)
 	}
-
+	// 过滤 nil结构体
 	for i, item := range tables {
 		if appassert.IsNilFixed(item) {
 			tables = append(tables[:i], tables[i+1:]...)
