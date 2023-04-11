@@ -94,8 +94,8 @@ func (r *RabbitMQ) CloseMqChannel() (err error) {
 	return err
 }
 
-// 生产者发送消息
-func (mq *RabbitMQ) sendMsg(body interface{}) (err error) {
+// Send 生产者发送消息
+func (mq *RabbitMQ) SendMsg(body interface{}) (err error) {
 	err = mq.MqOpenChannel()
 	ch := mq.Channel
 	if err != nil {
@@ -240,8 +240,8 @@ func (mq *RabbitMQ) listenReceiver(receiver Receiver) {
 	}
 }
 
-// 生产者发送延时消息
-func (mq *RabbitMQ) sendDelayMsg(body string, ttl int64) (err error) {
+// SendDelayMsg 生产者发送延时消息
+func (mq *RabbitMQ) SendDelayMsg(body string, ttl int64) (err error) {
 	err = mq.MqOpenChannel()
 	ch := mq.Channel
 	if err != nil {
@@ -322,8 +322,8 @@ func (mq *RabbitMQ) sendDelayMsg(body string, ttl int64) (err error) {
 	return
 }
 
-// 发送重试消息
-func (mq *RabbitMQ) sendRetryMsg(body string, retry_nums int32, args ...string) {
+// SendRetryMsg 发送重试消息
+func (mq *RabbitMQ) SendRetryMsg(body string, retry_nums int32, args ...string) {
 	err := mq.MqOpenChannel()
 	ch := mq.Channel
 	if err != nil {
@@ -418,8 +418,8 @@ func NewMq(q QueueExchange) RabbitMQ {
 	}
 }
 
-// SendMsg 发送消息
-func SendMsg(queueExchange QueueExchange, msg string) (err error) {
+// Send 发送消息
+func Send(queueExchange QueueExchange, msg interface{}) (err error) {
 	mq := NewMq(queueExchange)
 	err = mq.MqConnect()
 	if err != nil {
@@ -430,7 +430,7 @@ func SendMsg(queueExchange QueueExchange, msg string) (err error) {
 		_ = mq.CloseMqConnect()
 	}()
 
-	err = mq.sendMsg(msg)
+	err = mq.SendMsg(msg)
 
 	return
 }
@@ -578,5 +578,5 @@ func retryMsg(msg []byte, retry_nums int32, queueExchange QueueExchange) {
 		_ = mq.CloseMqConnect()
 	}()
 	//fmt.Printf("%+v",queueExchange)
-	mq.sendRetryMsg(string(msg), retry_nums, oldRoutingKey, oldExchangeName)
+	mq.SendRetryMsg(string(msg), retry_nums, oldRoutingKey, oldExchangeName)
 }

@@ -26,9 +26,9 @@ func TestQueue2(t *testing.T) {
 				},
 			}
 			//发送消息
-			err := StartQueue.sendMsg(maps)
+			err := StartQueue.SendMsg(maps)
 
-			StartQueue.sendMsg(maps)
+			StartQueue.SendMsg(maps)
 			if err != nil {
 				t.Errorf("发送消息失败 %s", err)
 			}

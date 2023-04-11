@@ -3,7 +3,8 @@ package appbox
 import (
 	"context"
 	"fmt"
-	"github.com/Domingor/go-blackbox/etc"
+	"github.com/Domingor/go-blackbox/appioc"
+	"github.com/Domingor/go-blackbox/apputils/apptoken"
 	"github.com/Domingor/go-blackbox/seed"
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/cronjobs"
@@ -12,6 +13,7 @@ import (
 	"github.com/Domingor/go-blackbox/server/mongodb"
 	"github.com/Domingor/go-blackbox/server/webiris"
 	"github.com/Domingor/go-blackbox/server/zaplog"
+	"time"
 )
 
 type ApplicationBuilder interface {
@@ -22,6 +24,7 @@ type ApplicationBuilder interface {
 	InitLog(outDirPath, level string) *ApplicationBuild
 	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild
 	InitCronJob() *ApplicationBuild
+	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild
 }
 
 type ApplicationBuild struct {
@@ -51,12 +54,12 @@ func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, compon
 }
 
 // EnableDb 启动数据库操作对象
-func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild {
+func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, models ...interface{}) *ApplicationBuild {
 	//	// 初始化数据，注册模型
-	datasource.GormInit(dbConfig, models...)
+	datasource.GormInit(dbConfig, models)
 
 	// 放入容器
-	etc.Set(datasource.GetDbInstance())
+	appioc.Set(datasource.GetDbInstance())
 
 	return app
 }
@@ -64,7 +67,7 @@ func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, model
 // EnableCache 启动缓存
 func (app *ApplicationBuild) EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild {
 	// 初始化redis，放入容器
-	etc.Set(cache.Init(ctx, redConfig))
+	appioc.Set(cache.Init(ctx, redConfig))
 
 	return app
 }
@@ -97,12 +100,12 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 
 // EnableMongoDB 启动MongoDB客户端
 func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild {
-	client, err := mongodb.GetClient(dbConfig, etc.GetContext().Ctx)
+	client, err := mongodb.GetClient(dbConfig, appioc.GetContext().Ctx)
 	if err != nil {
 		zaplog.ZAPLOGSUGAR.Debugf("init mongoDb fail err %s", err)
 	}
 	// mongoDb客户端放入容器
-	etc.Set(client)
+	appioc.Set(client)
 	return app
 }
 
@@ -119,6 +122,11 @@ func (app *ApplicationBuild) InitCronJob() *ApplicationBuild {
 	app.IsRunningCronJob = true
 
 	// 定时任务客户端放入容器
-	etc.Set(instance)
+	appioc.Set(instance)
+	return app
+}
+
+func (app *ApplicationBuild) SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild {
+	apptoken.Init(AMinute, RHour, TokenIssuer)
 	return app
 }

@@ -6,16 +6,23 @@ import (
 	"time"
 )
 
-const (
-	ATokenExpiredDuration = 60 * time.Second
-	RTokenExpiredDuration = 2 * time.Minute
-	TokenIssuer           = "Homelander"
+var (
+	aTokenExpiredDuration = 30 * time.Minute   //默认30分钟
+	rTokenExpiredDuration = 7 * 24 * time.Hour // 默认7天
+	tokenIssuer           = "Homelander"
 )
 
 var (
 	mySecret          = []byte("xxxx")
 	ErrorInvalidToken = errors.New("verify Token Failed")
 )
+
+// Init 初始化设置token-过期时间、重新刷新时间、token签名
+func Init(AMinute, RHour time.Duration, TokenIssuer string) {
+	aTokenExpiredDuration = AMinute
+	rTokenExpiredDuration = RHour
+	tokenIssuer = TokenIssuer
+}
 
 type MyClaim struct {
 	UserID    int64  `json:"userId"`
@@ -34,8 +41,8 @@ func keyFunc(token *jwt.Token) (interface{}, error) {
 // GenToken 颁发token access token 和 refresh token
 func GenToken(UserID int64, Username string) (atoken, rtoken string, err error) {
 	rc := jwt.RegisteredClaims{
-		ExpiresAt: getJWTTime(ATokenExpiredDuration),
-		Issuer:    TokenIssuer,
+		ExpiresAt: getJWTTime(aTokenExpiredDuration),
+		Issuer:    tokenIssuer,
 	}
 	at := MyClaim{
 		UserID,
@@ -46,7 +53,7 @@ func GenToken(UserID int64, Username string) (atoken, rtoken string, err error) 
 
 	// refresh token 不需要保存任何用户信息
 	rt := rc
-	rt.ExpiresAt = getJWTTime(RTokenExpiredDuration)
+	rt.ExpiresAt = getJWTTime(rTokenExpiredDuration)
 	rtoken, err = jwt.NewWithClaims(jwt.SigningMethodHS256, rt).SignedString(mySecret)
 	return
 }

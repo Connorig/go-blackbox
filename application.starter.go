@@ -3,9 +3,10 @@ package appbox
 import (
 	"context"
 	"fmt"
-	"github.com/Domingor/go-blackbox/etc"
+	"github.com/Domingor/go-blackbox/appioc"
 	"github.com/Domingor/go-blackbox/seed"
 	"github.com/Domingor/go-blackbox/server/cache"
+	"github.com/Domingor/go-blackbox/server/mongodb"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 )
@@ -34,7 +35,7 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 		return
 	}
 	// 全局context
-	ctx := etc.GetContext().Ctx
+	ctx := appioc.GetContext().Ctx
 
 	// 属性构建初始化
 	err = builder(ctx, app.builder)
@@ -58,16 +59,20 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 }
 
 func GormDb() *gorm.DB {
-	return etc.GetDb()
+	return appioc.GetDb()
 }
 
-func GlobalCtx() *etc.GlobalContext {
-	return etc.GetContext()
+func GlobalCtx() *appioc.GlobalContext {
+	return appioc.GetContext()
 }
 
 func RedisCache() cache.Rediser {
-	return etc.GetCache()
+	return appioc.GetCache()
 }
 func CronJobSingle() *cron.Cron {
-	return etc.GetCronJobInstance()
+	return appioc.GetCronJobInstance()
+}
+
+func MongoDb() *mongodb.Client {
+	return appioc.GetMongoDb()
 }

@@ -109,9 +109,9 @@ func TestLoader(t *testing.T) {
 
 	//等待初始化完成。
 	time.Sleep(time.Second * 2)
-	//t.Log(etc.GetContext())
-	//t.Log(etc.GetDb())
-	//t.Log(etc.GetCache())
+	//t.Log(appioc.GetContext())
+	//t.Log(appioc.GetDb())
+	//t.Log(appioc.GetCache())
 
 	//t.Log(GormDb())
 	//t.Log(GlobalCtx().Ctx)
@@ -219,9 +219,9 @@ func Setup(ctx context.Context) (err error) {
 //
 //	//等待初始化完成。
 //	time.Sleep(time.Second * 2)
-//	//t.Log(etc.GetContext())
-//	//t.Log(etc.GetDb())
-//	//t.Log(etc.GetCache())
+//	//t.Log(appioc.GetContext())
+//	//t.Log(appioc.GetDb())
+//	//t.Log(appioc.GetCache())
 //
 //	t.Log(GormDb())
 //	t.Log(GlobalCtx().Ctx)

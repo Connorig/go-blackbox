@@ -1,9 +1,10 @@
-package etc
+package appioc
 
 import (
 	"context"
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/cronjobs"
+	"github.com/Domingor/go-blackbox/server/mongodb"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 	"reflect"
@@ -79,5 +80,11 @@ func GetCache() cache.Rediser {
 // GetCronJobInstance 获取定时任务实例
 func GetCronJobInstance() *cron.Cron {
 	get := Get((*cron.Cron)(nil))
+	return get
+}
+
+// GetMongoDb 获取MongoDbClient
+func GetMongoDb() *mongodb.Client {
+	get := Get((*mongodb.Client)(nil))
 	return get
 }
