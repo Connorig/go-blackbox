@@ -126,6 +126,7 @@ func (app *ApplicationBuild) InitCronJob() *ApplicationBuild {
 	return app
 }
 
+// SetupToken 设置系统token有效期
 func (app *ApplicationBuild) SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild {
 	apptoken.Init(AMinute, RHour, TokenIssuer)
 	return app
