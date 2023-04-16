@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+// ApplicationBuilder app builder接口提供系统初始化服务基础功能
 type ApplicationBuilder interface {
 	EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild
 	EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild

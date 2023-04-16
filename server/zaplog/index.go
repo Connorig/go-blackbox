@@ -11,8 +11,8 @@ import (
 
 // level log level
 var (
-	level       zapcore.Level
-	ZAPLOG      *zap.Logger        //标准打印
+	level       zapcore.Level      // 设置日期打印级别
+	ZAPLOG      *zap.Logger        // 标准打印
 	ZAPLOGSUGAR *zap.SugaredLogger // 类似于printf
 )
 
