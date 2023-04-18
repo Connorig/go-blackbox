@@ -9,7 +9,11 @@ import (
 	"github.com/Domingor/go-blackbox/server/mongodb"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
+	"sync"
 )
+
+// 初始化执行器
+var doOnce sync.Once
 
 type Application interface {
 	Start(builder func(ctx context.Context, builder *ApplicationBuild) error) error
@@ -20,14 +24,17 @@ type application struct {
 }
 
 func New() (app *application) {
-	builder := &ApplicationBuild{}
+	doOnce.Do(func() {
+		builder := &ApplicationBuild{}
 
-	app = &application{
-		builder,
-	}
+		app = &application{
+			builder,
+		}
+	})
 	return
 }
 
+// Start 全局启动配置器，初始化个个服务配置信息
 func (app *application) Start(builder func(ctx context.Context, builder *ApplicationBuild) error) (err error) {
 
 	if builder == nil {
@@ -58,21 +65,27 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 	return
 }
 
+// GormDb 获取操作数据库-Gorm实例
 func GormDb() *gorm.DB {
 	return appioc.GetDb()
 }
 
+// GlobalCtx 获取context上下文
 func GlobalCtx() *appioc.GlobalContext {
 	return appioc.GetContext()
 }
 
+// RedisCache 获取Redis缓存实例
 func RedisCache() cache.Rediser {
 	return appioc.GetCache()
 }
+
+// CronJobSingle 获取定时任务执行器实例
 func CronJobSingle() *cron.Cron {
 	return appioc.GetCronJobInstance()
 }
 
+// MongoDb 获取MongoDB实例
 func MongoDb() *mongodb.Client {
 	return appioc.GetMongoDb()
 }
