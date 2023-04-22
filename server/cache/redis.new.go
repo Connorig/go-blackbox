@@ -16,6 +16,7 @@ var (
 	redisCacher *RedisCache
 )
 
+// Init 初始化缓存配置
 func Init(ctx context.Context, redisOptions RedisOptions) *RedisCache {
 
 	once.Do(func() {
