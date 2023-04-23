@@ -49,7 +49,7 @@ func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, compon
 		port,
 		logLevel,
 		components)
-
+	// 启动web，此时会阻塞。后面的代码不会被轮到执行
 	app.irisApp.Run()
 	return app
 }
