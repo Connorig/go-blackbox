@@ -14,13 +14,13 @@ port = 5439
 database = "postgres"
 ssl = "disable" #require/verify-full/verify-ca/disable
 
-
 [redis]
 #password = "123456"
 addrs = "127.0.0.1:16379"
 poolSize = 1
 db = 0
 
+# 日志配置
 [logConf]
 outDirPath = "D://test//log"
 logLevel = "debug"
