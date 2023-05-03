@@ -1,10 +1,13 @@
-name = "golang"
-version = "1.0"
+# 项目基础打印信息
+name = "go-black-box"
+version = "1.10.1"
 
+# web端口
 [web]
 listen = ":9000"
 debugLevel = "debug"
 
+# 数据源
 [db]
 dbName = "test"
 user = "ows"
@@ -14,6 +17,7 @@ port = 5439
 database = "postgres"
 ssl = "disable" #require/verify-full/verify-ca/disable
 
+# 缓存配置
 [redis]
 #password = "123456"
 addrs = "127.0.0.1:16379"

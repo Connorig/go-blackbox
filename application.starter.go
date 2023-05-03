@@ -10,6 +10,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 	"sync"
+	"time"
 )
 
 // 初始化执行器
@@ -62,6 +63,8 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 	if err != nil {
 		err = fmt.Errorf("application builder seed fail checkout what've happened. %s", err.Error())
 	}
+	// 打印输出web服务已启动
+	fmt.Println("web server is running...", time.Now().Format("2022-03-23 14:23:20"))
 	return
 }
 
