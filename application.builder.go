@@ -16,6 +16,8 @@ import (
 	"time"
 )
 
+const TimeFormat = "2006-01-02 15:04:05"
+
 // ApplicationBuilder app builder接口提供系统初始化服务基础功能
 type ApplicationBuilder interface {
 	EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild
@@ -49,8 +51,11 @@ func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, compon
 		port,
 		logLevel,
 		components)
-	// 启动web，此时会阻塞。后面的代码不会被轮到执行
-	app.irisApp.Run()
+
+	go func() {
+		// 启动web，此时会阻塞。后面的代码不会被轮到执行
+		app.irisApp.Run()
+	}()
 	return app
 }
 

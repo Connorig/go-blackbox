@@ -45,7 +45,7 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 	// 全局context
 	ctx := appioc.GetContext().Ctx
 
-	// 属性构建初始化
+	// 属性\服务构建初始化
 	err = builder(ctx, app.builder)
 
 	if err != nil {
@@ -64,7 +64,7 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 		err = fmt.Errorf("application builder seed fail checkout what've happened. %s", err.Error())
 	}
 	// 打印输出web服务已启动
-	fmt.Println("web server is running...", time.Now().Format("2022-03-23 14:23:20"))
+	fmt.Println("web server is running...", time.Now().Format(TimeFormat))
 	return
 }
 
