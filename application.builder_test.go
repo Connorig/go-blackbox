@@ -15,15 +15,40 @@ import (
 	"time"
 )
 
+func TestApplicationBuild_EnableWeb(t *testing.T) {
+
+	err := New().Start(func(ctx context.Context, builder *ApplicationBuild) error {
+		err := builder.LoadConfig(&loadconf.Config, func(loader loadconf.Loader) {
+			loader.SetConfigFileSearcher("config", ".")
+		})
+		if err != nil {
+			t.Error(err)
+			return err
+		}
+
+		builder.
+			InitLog(".", "debug").
+			SetSeeds(Setup).
+			EnableWeb(TimeFormat,
+				loadconf.Config.Web.Listen,
+				loadconf.Config.Web.DebugLevel, Router1)
+		return err
+	})
+	if err != nil {
+		t.Error(err)
+	}
+	time.Sleep(10 * time.Minute)
+}
+
 type User struct {
 	gorm.Model
 	Name string
 	Age  int
 }
 
-type Struct struct {
-	Field int
-}
+//type Struct struct {
+//	Field int
+//}
 
 /*
 (* T)(nil) 它返回nil指针或没有指针，但仍然为struct的所有字段分配内存。
@@ -241,13 +266,14 @@ func Setup(ctx context.Context) (err error) {
 //	//})
 //}
 //
-//func Router(application *iris.Application) {
-//	//application.PartyFunc("/v1", func(p router.Party) {
-//	//	p.Get("/one", func(c *context2.Context) {
-//	//		c.WriteString("Here you are!")
-//	//	})
-//	//})
-//}
+func Router1(application *iris.Application) {
+	//application.PartyFunc("/v1", func(p router.Party) {
+	//	p.Get("/one", func(c *context2.Context) {
+	//		c.WriteString("Here you are!")
+	//	})
+	//})
+}
+
 //
 //func RegisterTables() (tables []interface{}) {
 //	tables = append(tables,

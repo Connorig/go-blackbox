@@ -10,12 +10,11 @@ import (
 * @Date:   23.3.22 15:53
 * @Description:
  */
-const TimeFormat = "2006-01-02 15:04:05"
 
 type PartyComponent func(app *iris.Application)
 
 type WebBaseFunc interface {
-	Run()
+	Run() error
 }
 
 type WebIris struct {
@@ -45,10 +44,11 @@ func Init(timeFormat, port, logLevel string, components PartyComponent) *WebIris
 	}
 }
 
-func (w *WebIris) Run() {
-	w.app.Listen(w.port,
+func (w *WebIris) Run() (err error) {
+	err = w.app.Listen(w.port,
 		iris.WithoutInterruptHandler,
 		iris.WithoutServerError(iris.ErrServerClosed),
 		iris.WithOptimizations,
 		iris.WithTimeFormat(w.timeFormat))
+	return
 }
