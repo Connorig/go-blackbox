@@ -16,31 +16,31 @@ import (
 	"time"
 )
 
-const TimeFormat = "2006-01-02 15:04:05"
+const (
+	// TimeFormat 日期格式化
+	TimeFormat = "2006-01-02 15:04:05"
+)
 
 // ApplicationBuilder app builder接口提供系统初始化服务基础功能
 type ApplicationBuilder interface {
-	EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild
-	EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild
-	EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild
-	LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error
-	InitLog(outDirPath, level string) *ApplicationBuild
-	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild
-	InitCronJob() *ApplicationBuild
-	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild
+	EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild // 启动web服务
+	EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild             // 启动数据库
+	EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild                  // 启动缓存
+	LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error                       // 加载配置文件、环境变量等
+	InitLog(outDirPath, level string) *ApplicationBuild                                               // 初始化日志打印
+	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                                  // 启动缓存数据库
+	InitCronJob() *ApplicationBuild                                                                   // 初始化定时任务
+	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild                    // 配置wen-token属性
 }
 
 type ApplicationBuild struct {
 	// 创建Iris实例对象
 	irisApp webiris.WebBaseFunc
 
-	//gormDb  *gorm.DB
-	//redisDb cache.Rediser
-
 	// 启动种子list集合
 	seeds []seed.SeedFunc
 
-	// 是否启动定时服务，在enableCronjob后为true，会自动start()
+	// 是否启动定时服务，在enableCronjob后为true，会自动start()，即开始调用定时Cron表达式函数
 	IsRunningCronJob bool
 }
 
@@ -52,6 +52,7 @@ func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, compon
 		logLevel,
 		components)
 
+	// 开启协程监听TCP-wen端口服务
 	go func() {
 		// 启动web，此时会阻塞。后面的代码不会被轮到执行
 		app.irisApp.Run()
@@ -66,7 +67,6 @@ func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, model
 
 	// 放入容器
 	appioc.Set(datasource.GetDbInstance())
-
 	return app
 }
 
@@ -74,7 +74,6 @@ func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, model
 func (app *ApplicationBuild) EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild {
 	// 初始化redis，放入容器
 	appioc.Set(cache.Init(ctx, redConfig))
-
 	return app
 }
 
@@ -84,9 +83,11 @@ func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func
 	if loaderFun == nil {
 		return fmt.Errorf("loaderFun is nil")
 	}
+
 	// 加载解析配置文件属性
 	loaderFun(loader)
 
+	// 读取到的属性值赋值给配置对象
 	err := loader.LoadToStruct(configStruct)
 	return err
 }
@@ -95,11 +96,16 @@ func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func
 func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild {
 	if len(outDirPath) > 0 {
 		zaplog.CONFIG.Director = outDirPath
+	} else {
+		zaplog.CONFIG.Director = "." // 默认路径
 	}
 	if len(level) > 0 {
 		zaplog.CONFIG.Level = level
+	} else {
+		zaplog.CONFIG.Level = "debug" // 默认级别
 	}
-	// 初始化日志
+
+	// 初始化日志，通过zaplog.日志对象进行调用
 	zaplog.Init()
 	return app
 }

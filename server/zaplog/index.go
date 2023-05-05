@@ -49,7 +49,7 @@ func Init() {
 	if CONFIG.ShowLine {
 		logger = logger.WithOptions(zap.AddCaller())
 	}
-	// 标准日志
+	// 全局标准日志对象
 	ZAPLOG = logger
 	// 功能类似于printf
 	ZAPLOGSUGAR = logger.Sugar()
