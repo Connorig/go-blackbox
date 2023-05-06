@@ -20,10 +20,12 @@ type Application interface {
 	Start(builder func(ctx context.Context, builder *ApplicationBuild) error) error
 }
 
+// app启动应用
 type application struct {
 	builder *ApplicationBuild
 }
 
+// New 创建app-starter启动器
 func New() (app *application) {
 	doOnce.Do(func() {
 		builder := &ApplicationBuild{}
