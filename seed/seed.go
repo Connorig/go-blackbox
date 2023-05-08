@@ -8,11 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// SeedFunc 启动项目时的一些回调、初始化工作
-//type SeedFunc interface {
-//	Init(appioc context.Context) (err error)
-//}
-
 // SeedFunc 自定义种子函数
 type SeedFunc func(etc context.Context) (err error)
 
