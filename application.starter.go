@@ -29,7 +29,7 @@ type application struct {
 func New() (app *application) {
 	doOnce.Do(func() {
 		builder := &ApplicationBuild{}
-
+		// 创建app启动器
 		app = &application{
 			builder,
 		}
