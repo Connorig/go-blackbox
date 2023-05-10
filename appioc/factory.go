@@ -13,12 +13,13 @@ import (
 /**
 * @Author: Connor
 * @Date:   23.3.23 11:39
-* @Description: 自定义容器，同于全局存取个个服务实例：iris.application\gorm.db\redis.client
+* @Description: 自定义容器，用于全局存取所有服务实例：iris.application\gorm.db\redis.client
  */
 
+// 存储服务实例对象，单例模式
 var beanMap map[reflect.Type]reflect.Value
 
-// GlobalContext 全局存区容器
+// GlobalContext 封装全局存区容器
 type GlobalContext struct {
 	Ctx context.Context
 }
@@ -65,7 +66,7 @@ func GetDb() *gorm.DB {
 	return get
 }
 
-// GetContext 获取上下文
+// GetContext 获取全局上下文
 func GetContext() *GlobalContext {
 	get := Get((*GlobalContext)(nil))
 	return get
