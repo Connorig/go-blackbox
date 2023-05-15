@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Domingor/go-blackbox/server/loadconf"
+	"github.com/Domingor/go-blackbox/server/shutdown"
 	"github.com/Domingor/go-blackbox/server/zaplog"
 	"github.com/kataras/iris/v12"
 	context2 "github.com/kataras/iris/v12/context"
@@ -14,6 +15,21 @@ import (
 	"testing"
 	"time"
 )
+
+func Test2(t *testing.T) {
+	go time.AfterFunc(time.Second*10, func() {
+		shutdown.Exit("time to shutdown")
+	})
+
+	err := New().Start(func(ctx context.Context, builder *ApplicationBuild) error {
+		builder.EnableWeb("", ":8899", "debug", nil)
+
+		return nil
+	})
+	if err != nil {
+
+	}
+}
 
 func TestApplicationBuild_EnableWeb(t *testing.T) {
 
