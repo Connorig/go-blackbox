@@ -5,6 +5,7 @@ import (
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/cronjobs"
 	"github.com/Domingor/go-blackbox/server/mongodb"
+	"github.com/Domingor/go-blackbox/server/shutdown"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 	"reflect"
@@ -28,9 +29,9 @@ func init() {
 	// 初始化加载IOC容器ß
 	beanMap = make(map[reflect.Type]reflect.Value)
 	// 获取全局上下文
-	background := context.Background()
+	//background := context.Background()
 	// 设置全局上下文到容器ßß
-	Set(&GlobalContext{Ctx: background})
+	Set(&GlobalContext{Ctx: shutdown.Context()})
 
 	// 设置定时任务到容器-单例模式
 	Set(cronjobs.CronInstance())

@@ -1,8 +1,11 @@
 package webiris
 
 import (
+	"context"
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/recover"
+	"time"
 )
 
 /**
@@ -14,7 +17,7 @@ import (
 type PartyComponent func(app *iris.Application)
 
 type WebBaseFunc interface {
-	Run() error
+	Run(ctx context.Context) error
 }
 
 type WebIris struct {
@@ -33,8 +36,10 @@ func Init(timeFormat, port, logLevel string, components PartyComponent) *WebIris
 	// 日志级别
 	application.Logger().SetLevel(logLevel)
 
-	// 注册路路由
-	components(application)
+	if components != nil {
+		// 注册路路由
+		components(application)
+	}
 
 	// 返回WebIris实例
 	return &WebIris{
@@ -44,11 +49,37 @@ func Init(timeFormat, port, logLevel string, components PartyComponent) *WebIris
 	}
 }
 
-func (w *WebIris) Run() (err error) {
+func (w *WebIris) shutdownFuture(ctx context.Context) {
+	if ctx == nil {
+		return
+	}
+	var c context.Context
+	var cancel context.CancelFunc
+	defer func() {
+		if cancel != nil {
+			cancel()
+		}
+	}()
+	for {
+		select {
+		case <-ctx.Done():
+			c = context.TODO()
+			if err := w.app.Shutdown(c); nil != err {
+			}
+			return
+		default:
+			time.Sleep(time.Millisecond * 500)
+		}
+	}
+}
+func (w *WebIris) Run(ctx context.Context) (err error) {
+
 	err = w.app.Listen(w.port,
 		iris.WithoutInterruptHandler,
 		iris.WithoutServerError(iris.ErrServerClosed),
 		iris.WithOptimizations,
 		iris.WithTimeFormat(w.timeFormat))
+	fmt.Println(err)
+	go w.shutdownFuture(ctx)
 	return
 }
