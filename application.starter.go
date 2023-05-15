@@ -52,19 +52,21 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 
 	if err != nil {
 		err = fmt.Errorf("application builder fail checkout what've happened. %s", err.Error())
+		return
 	}
 
 	// 启动iris之后再执行seed
 	err = seed.Seed(app.builder.seeds...)
+
+	if err != nil {
+		err = fmt.Errorf("application builder seed fail checkout what've happened. %s", err.Error())
+	}
 
 	// 执行定时任务
 	if app.builder.IsRunningCronJob {
 		CronJobSingle().Start()
 	}
 
-	if err != nil {
-		err = fmt.Errorf("application builder seed fail checkout what've happened. %s", err.Error())
-	}
 	// 打印输出web服务已启动
 	fmt.Println("web server is running...", time.Now().Format(TimeFormat))
 	return
