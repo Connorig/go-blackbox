@@ -1,30 +1,35 @@
-# 项目基础打印信息
-name = "go-black-box"
-version = "1.10.1"
+name = "golang"
+version = "1.0"
 
-# web端口
 [web]
-listen = ":9000"
+listen = ":9528"
 debugLevel = "debug"
 
-# 数据源
 [db]
-dbName = "test"
+dbName = "postgres"
 user = "ows"
 password = "thingple"
-host = "127.0.0.1"
+host = "10.211.55.5"
 port = 5439
-database = "postgres"
+database = "workorderdb"
 ssl = "disable" #require/verify-full/verify-ca/disable
 
-# 缓存配置
+
 [redis]
-#password = "123456"
-addrs = "127.0.0.1:16379"
+password = "123456"
+addrs = "10.211.55.5:6379"
 poolSize = 1
 db = 0
 
-# 日志配置
-[logConf]
-outDirPath = "D://test//log"
-logLevel = "debug"
+[rabbitmq]
+queueName = "test.001.queue"
+dns = "amqp://guest:guest@10.211.55.5:5672/"
+
+[mongodb]
+timeout = 20
+db = "admin"
+addr = "admin:admin@10.211.55.5:27017/"
+
+[logConfig]
+debugLevel = "debug"
+outputPath = "."
