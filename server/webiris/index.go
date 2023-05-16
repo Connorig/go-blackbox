@@ -2,7 +2,7 @@ package webiris
 
 import (
 	"context"
-	"fmt"
+	"github.com/Domingor/go-blackbox/server/zaplog"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/recover"
 	"time"
@@ -79,7 +79,8 @@ func (w *WebIris) Run(ctx context.Context) (err error) {
 		iris.WithoutServerError(iris.ErrServerClosed),
 		iris.WithOptimizations,
 		iris.WithTimeFormat(w.timeFormat))
-	fmt.Println(err)
-	go w.shutdownFuture(ctx)
+	//fmt.Println(err)
+	zaplog.ZAPLOGSUGAR.Error(err)
+	//go w.shutdownFuture(ctx)
 	return
 }

@@ -17,17 +17,19 @@ import (
 )
 
 func Test2(t *testing.T) {
-	go time.AfterFunc(time.Second*10, func() {
+	go time.AfterFunc(time.Second*30, func() {
 		shutdown.Exit("time to shutdown")
 	})
 
 	err := New().Start(func(ctx context.Context, builder *ApplicationBuild) error {
-		builder.EnableWeb("", ":8899", "debug", nil)
+		builder.
+			InitLog(".", "debug").
+			EnableWeb("", ":8899", "debug", nil)
 
 		return nil
 	})
 	if err != nil {
-
+		t.Error(err)
 	}
 }
 

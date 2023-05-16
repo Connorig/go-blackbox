@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/Domingor/go-blackbox/appioc"
+	"github.com/Domingor/go-blackbox/seed"
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/mongodb"
 	"github.com/Domingor/go-blackbox/server/shutdown"
+	"github.com/Domingor/go-blackbox/server/zaplog"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 	"sync"
+	"time"
 )
 
 // 初始化执行器
@@ -55,11 +58,11 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 	}
 
 	// 启动iris之后再执行seed
-	//err = seed.Seed(app.builder.seeds...)
+	seedErr := seed.Seed(app.builder.seeds...)
 
-	//if err != nil {
-	//	err = fmt.Errorf("application builder seed fail checkout what've happened. %s", err.Error())
-	//}
+	if seedErr != nil {
+		zaplog.ZAPLOGSUGAR.Errorf("application builder seed fail checkout what've happened. %s", seedErr.Error())
+	}
 
 	// 执行定时任务
 	if app.builder.IsRunningCronJob {
@@ -67,13 +70,14 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 	}
 
 	// 打印输出web服务已启动
-	//zaplog.ZAPLOGSUGAR.Info("web server is running...", time.Now().Format(TimeFormat))
-	fmt.Println("web server is running...")
+	zaplog.ZAPLOGSUGAR.Info("web server is running...", time.Now().Format(TimeFormat))
+	//fmt.Println("web server is running...")
 
 	if err == nil {
 		shutdown.WaitExit(&shutdown.Configuration{
 			BeforeExit: func(s string) {
 				fmt.Println(s)
+				zaplog.ZAPLOGSUGAR.Info(s)
 				//if len(onTerminate) > 0 {
 				//	for _, terminateFunc := range onTerminate {
 				//		if terminateFunc != nil {
