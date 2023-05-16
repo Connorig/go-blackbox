@@ -40,7 +40,7 @@ type PostgresConfig struct {
 }
 
 // GormInit 初始化配置 pg连接信息、初始化model表信息
-func GormInit(pg *PostgresConfig, models ...interface{}) {
+func GormInit(pg *PostgresConfig, models []interface{}) {
 	pgConfig = pg
 	tables = models
 	// 初始化
@@ -79,10 +79,13 @@ func gormPgSql(pgConfig *PostgresConfig) (err error) {
 	if _db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: newLogger}); err != nil {
 		fmt.Printf("open datasource is failed %v \n", err)
 	}
+
+	//models := make([]interface{}, 0)
 	// 过滤 nil结构体
 	for i, item := range tables {
 		if appassert.IsNilFixed(item) {
 			tables = append(tables[:i], tables[i+1:]...)
+			//models = append(models, item)
 		}
 	}
 

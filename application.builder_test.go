@@ -3,6 +3,7 @@ package appbox
 import (
 	"context"
 	"fmt"
+	"github.com/Domingor/go-blackbox/server/datasource"
 	"github.com/Domingor/go-blackbox/server/loadconf"
 	"github.com/Domingor/go-blackbox/server/shutdown"
 	"github.com/Domingor/go-blackbox/server/zaplog"
@@ -17,14 +18,33 @@ import (
 )
 
 func Test2(t *testing.T) {
-	go time.AfterFunc(time.Second*30, func() {
+	go time.AfterFunc(time.Second*100, func() {
 		shutdown.Exit("time to shutdown")
 	})
-
 	err := New().Start(func(ctx context.Context, builder *ApplicationBuild) error {
+
+		err := builder.LoadConfig(&loadconf.Config, func(loader loadconf.Loader) {
+			loader.SetConfigFileSearcher("config", ".")
+		})
+		if err != nil {
+			return err
+		}
+
+		postConfig := &datasource.PostgresConfig{
+			UserName:     loadconf.Config.Db.User,
+			Password:     loadconf.Config.Db.Password,
+			Host:         loadconf.Config.Db.Host,
+			Port:         loadconf.Config.Db.Port,
+			DbName:       loadconf.Config.Db.DbName,
+			SSL:          loadconf.Config.Db.Ssl,
+			MaxIdleConns: loadconf.Config.Db.MaxIdleConns,
+			MaxOpenConns: loadconf.Config.Db.MaxOpenConns,
+		}
+
 		builder.
 			InitLog(".", "debug").
-			EnableWeb("", ":8899", "debug", nil)
+			EnableWeb("", ":8899", "debug", nil).
+			EnableDb(postConfig, RegisterTables()...)
 
 		return nil
 	})
