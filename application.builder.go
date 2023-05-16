@@ -56,13 +56,13 @@ func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, compon
 
 	// 开启协程监听TCP-wen端口服务
 	go func() {
-		//zaplog.ZAPLOGSUGAR.Info("start web serve...")
-		fmt.Println("start web now...")
+		zaplog.ZAPLOGSUGAR.Info("start web serve...")
+		//fmt.Println("start web now...")
 		// 启动web，此时会阻塞。后面的代码不会被轮到执行
 		err := app.irisApp.Run(getContext)
 		if err != nil {
-			//zaplog.ZAPLOGSUGAR.Infof("start web error %s", err)
-			fmt.Sprintf("start web error %s", err)
+			zaplog.ZAPLOGSUGAR.Infof("start web error %s", err)
+			//fmt.Sprintf("start web error %s", err)
 		}
 		fmt.Println("end web now...")
 	}()
