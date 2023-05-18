@@ -74,9 +74,9 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 	//fmt.Println("web server is running...")
 
 	if err == nil {
+		// 全部服务启动成功后，阻塞主线程，开始监听web端口服务
 		shutdown.WaitExit(&shutdown.Configuration{
 			BeforeExit: func(s string) {
-				fmt.Println(s)
 				zaplog.ZAPLOGSUGAR.Info(s)
 				//if len(onTerminate) > 0 {
 				//	for _, terminateFunc := range onTerminate {
