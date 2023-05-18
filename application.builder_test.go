@@ -3,7 +3,6 @@ package appbox
 import (
 	"context"
 	"fmt"
-	"github.com/Domingor/go-blackbox/server/datasource"
 	"github.com/Domingor/go-blackbox/server/loadconf"
 	"github.com/Domingor/go-blackbox/server/shutdown"
 	"github.com/Domingor/go-blackbox/server/zaplog"
@@ -30,21 +29,21 @@ func Test2(t *testing.T) {
 			return err
 		}
 
-		postConfig := &datasource.PostgresConfig{
-			UserName:     loadconf.Config.Db.User,
-			Password:     loadconf.Config.Db.Password,
-			Host:         loadconf.Config.Db.Host,
-			Port:         loadconf.Config.Db.Port,
-			DbName:       loadconf.Config.Db.DbName,
-			SSL:          loadconf.Config.Db.Ssl,
-			MaxIdleConns: loadconf.Config.Db.MaxIdleConns,
-			MaxOpenConns: loadconf.Config.Db.MaxOpenConns,
-		}
+		//postConfig := &datasource.PostgresConfig{
+		//	UserName:     loadconf.Config.Db.User,
+		//	Password:     loadconf.Config.Db.Password,
+		//	Host:         loadconf.Config.Db.Host,
+		//	Port:         loadconf.Config.Db.Port,
+		//	DbName:       loadconf.Config.Db.DbName,
+		//	SSL:          loadconf.Config.Db.Ssl,
+		//	MaxIdleConns: loadconf.Config.Db.MaxIdleConns,
+		//	MaxOpenConns: loadconf.Config.Db.MaxOpenConns,
+		//}
 
 		builder.
 			InitLog(".", "debug").
-			EnableWeb("", ":8899", "debug", nil).
-			EnableDb(postConfig, RegisterTables()...)
+			EnableWeb("", ":8899", "debug", nil)
+		//EnableDb(postConfig, RegisterTables()...)
 
 		return nil
 	})
