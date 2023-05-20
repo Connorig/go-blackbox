@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// level log level
 var (
 	level       zapcore.Level      // 设置日期打印级别
 	ZAPLOG      *zap.Logger        // 标准打印
@@ -106,21 +105,3 @@ func getEncoderCore() (core zapcore.Core) {
 func customTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendString(t.Format(CONFIG.Prefix + "2006/01/02 - 15:04:05.000"))
 }
-
-//
-//type StringsArray [][]string
-//
-//// MarshalLogArray
-//func (ss StringsArray) MarshalLogArray(arr zapcore.ArrayEncoder) error {
-//	for i := range ss {
-//		for ii := range ss[i] {
-//			arr.AppendString(ss[i][ii])
-//		}
-//	}
-//	return nil
-//}
-//
-//// Strings constructs a field that carries a slice of strings.
-//func Strings(key string, ss [][]string) zap.Field {
-//	return zap.Array(key, StringsArray(ss))
-//}
