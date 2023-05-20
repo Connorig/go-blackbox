@@ -71,12 +71,12 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 
 	// 打印输出web服务已启动
 	zaplog.ZAPLOGSUGAR.Info("web server is running...", time.Now().Format(TimeFormat))
-	//fmt.Println("web server is running...")
 
 	if err == nil {
 		// 全部服务启动成功后，阻塞主线程，开始监听web端口服务
 		shutdown.WaitExit(&shutdown.Configuration{
 			BeforeExit: func(s string) {
+				// 收到消息-开始执行钩子函数
 				zaplog.ZAPLOGSUGAR.Info(s)
 				//if len(onTerminate) > 0 {
 				//	for _, terminateFunc := range onTerminate {
