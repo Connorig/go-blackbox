@@ -8,22 +8,23 @@ import (
 )
 
 type Configuration struct {
+	// 退出前回调操作
 	BeforeExit func(string)
-	Signals    []os.Signal
+	// 定义要接受的系统信号
+	Signals []os.Signal
 }
 
 /*
-
-信号
-SIGHUP 终端控制进程结束(终端连接断开
-SIGINT 用户发送INTR字符(Ctrl+C)触发
-SIGQUIT 用户发送QUIT字符(Ctrl+/触发
-SIGKILL 无条件结束程序(不能被捕获、阻塞或忽略
-SIGUSR1 用户保留
-SIGUSR2 用户保留
-SIGPIPE 消息管道损坏(FIFO/Socket通信时，管道未打开而进行写操作)
-SIGALRM 时钟定时信号
-SIGTERM 结束程序(可以被捕获、阻塞或忽略
+系统信号
+	SIGHUP 	终端控制进程结束(终端连接断开
+	SIGINT 	用户发送INTR字符(Ctrl+C)触发
+	SIGQUIT 用户发送QUIT字符(Ctrl+/触发
+	SIGKILL 无条件结束程序(不能被捕获、阻塞或忽略
+	SIGUSR1 用户保留
+	SIGUSR2 用户保留
+	SIGPIPE 消息管道损坏(FIFO/Socket通信时，管道未打开而进行写操作)
+	SIGALRM 时钟定时信号
+	SIGTERM 结束程序(可以被捕获、阻塞或忽略
 */
 
 // 定义通道-接收系统信号值类型
@@ -47,7 +48,7 @@ func Context() context.Context {
 }
 
 func WaitExit(config *Configuration) {
-
+	// 创建系统信号通道
 	sigChan := make(chan os.Signal, 1)
 
 	if config != nil {
