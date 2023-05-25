@@ -49,7 +49,7 @@ func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePat
 	m.SetHeader("Subject", subject)                                      // 设置邮件主题
 	m.SetBody("text/html", body)                                         // 设置邮件正文
 
-	//一个文件（加入发送一个 txt 文件）：/tmp/foo.txt，我需要将这个文件以邮件附件的方式进行发送，同时指定附件名为：附件.txt
+	//一个文件（加入发送一个 txt 文件）：/tmp/foo.txt，需要将这个文件以邮件附件的方式进行发送，同时指定附件名为：附件.txt
 	//同时解决了文件名乱码问题
 
 	if len(fileName) > 0 && len(filePath) > 0 {

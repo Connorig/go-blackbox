@@ -14,10 +14,11 @@ type Rediser interface {
 	SetTtl(key string, value interface{}, ttl time.Duration) (err error)
 }
 
+// RedisCache 封装操作客户端
 type RedisCache struct {
 	ctx        context.Context
 	proxy      *cache.Cache
-	defaultTtl time.Duration
+	defaultTtl time.Duration // 默认过期时间
 }
 
 func (rc *RedisCache) Get(key string, value interface{}) (err error) {
@@ -34,6 +35,8 @@ func (rc *RedisCache) Set(Key string, value interface{}) (err error) {
 	rc.SetTtl(Key, value, 0)
 	return
 }
+
+// SetTtl 设置key过期时间
 func (rc *RedisCache) SetTtl(key string, value interface{}, ttl time.Duration) (err error) {
 	if ttl <= 0 {
 		ttl = rc.defaultTtl
