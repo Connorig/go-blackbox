@@ -2,10 +2,8 @@ package webiris
 
 import (
 	"context"
-	"github.com/Domingor/go-blackbox/server/zaplog"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/recover"
-	"time"
 )
 
 /**
@@ -14,6 +12,7 @@ import (
 * @Description:
  */
 
+// 路由组件
 type PartyComponent func(app *iris.Application)
 
 type WebBaseFunc interface {
@@ -49,38 +48,37 @@ func Init(timeFormat, port, logLevel string, components PartyComponent) *WebIris
 	}
 }
 
-func (w *WebIris) shutdownFuture(ctx context.Context) {
-	if ctx == nil {
-		return
-	}
-	var c context.Context
-	var cancel context.CancelFunc
-	defer func() {
-		if cancel != nil {
-			cancel()
-		}
-	}()
-	for {
-		select {
-		case <-ctx.Done():
-			c = context.TODO()
-			if err := w.app.Shutdown(c); nil != err {
-			}
-			return
-		default:
-			time.Sleep(time.Millisecond * 500)
-		}
-	}
-}
-func (w *WebIris) Run(ctx context.Context) (err error) {
+//func (w *WebIris) shutdownFuture(ctx context.Context) {
+//	if ctx == nil {
+//		return
+//	}
+//	var c context.Context
+//	var cancel context.CancelFunc
+//	defer func() {
+//		if cancel != nil {
+//			cancel()
+//		}
+//	}()
+//	for {
+//		select {
+//		case <-ctx.Done():
+//			c = context.TODO()
+//			if err := w.app.Shutdown(c); nil != err {
+//			}
+//			return
+//		default:
+//			time.Sleep(time.Millisecond * 500)
+//		}
+//	}
+//}
 
+func (w *WebIris) Run(ctx context.Context) (err error) {
+	// 启动web服务，监听端口（阻塞）
 	err = w.app.Listen(w.port,
 		iris.WithoutInterruptHandler,
 		iris.WithoutServerError(iris.ErrServerClosed),
 		iris.WithOptimizations,
 		iris.WithTimeFormat(w.timeFormat))
-	//fmt.Println(err)
-	zaplog.ZAPLOGSUGAR.Error(err)
-	//go w.shutdownFuture(ctx)
+	//zaplog.ZAPLOGSUGAR.Error(err)
 	return
 }
