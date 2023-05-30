@@ -28,9 +28,8 @@ type GlobalContext struct {
 func init() {
 	// 初始化加载IOC容器ß
 	beanMap = make(map[reflect.Type]reflect.Value)
-	// 获取全局上下文
-	//background := context.Background()
-	// 设置全局上下文到容器ßß
+
+	// 获取全局上下文,设置全局上下文到容器
 	Set(&GlobalContext{Ctx: shutdown.Context()})
 
 	// 设置定时任务到容器-单例模式

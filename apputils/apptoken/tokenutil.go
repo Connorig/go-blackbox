@@ -69,7 +69,6 @@ func VerifyToken(tokenID string) (*MyClaim, error) {
 		err = ErrorInvalidToken
 		return nil, err
 	}
-
 	return myc, nil
 }
 
