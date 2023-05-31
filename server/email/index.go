@@ -31,6 +31,10 @@ func GetClient(emailCong *MailConnConf) *Client {
 }
 
 // SendMail 发送邮件
+// mailTo 支持多人发送
+// subject 信息主体
+// fileName 附件名称
+// filePath 文件路径
 func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePath string) error {
 	// 设置邮箱主体
 	mailConn := map[string]string{
@@ -51,7 +55,6 @@ func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePat
 
 	//一个文件（加入发送一个 txt 文件）：/tmp/foo.txt，需要将这个文件以邮件附件的方式进行发送，同时指定附件名为：附件.txt
 	//同时解决了文件名乱码问题
-
 	if len(fileName) > 0 && len(filePath) > 0 {
 		m.Attach(filePath,
 			gomail.Rename(fileName), //重命名
@@ -62,7 +65,6 @@ func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePat
 			}),
 		)
 	}
-
 	/*
 	   创建SMTP客户端，连接到远程的邮件服务器，需要指定服务器地址、端口号、用户名、密码，如果端口号为465的话，
 	   自动开启SSL，这个时候需要指定TLSConfig
