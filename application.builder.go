@@ -31,6 +31,7 @@ type ApplicationBuilder interface {
 	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                                  // 启动缓存数据库
 	InitCronJob() *ApplicationBuild                                                                   // 初始化定时任务
 	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild                    // 配置wen-token属性
+	EnableStaticSource() *ApplicationBuild                                                            // TODO 加载静态资源
 }
 
 type ApplicationBuild struct {
@@ -150,5 +151,10 @@ func (app *ApplicationBuild) InitCronJob() *ApplicationBuild {
 // SetupToken 设置系统token有效期
 func (app *ApplicationBuild) SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild {
 	apptoken.Init(AMinute, RHour, TokenIssuer)
+	return app
+}
+
+// TODO EnableStaticSource 加载web服务静态资源文件
+func (app *ApplicationBuild) EnableStaticSource() *ApplicationBuild {
 	return app
 }
