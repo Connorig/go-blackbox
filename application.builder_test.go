@@ -6,6 +6,7 @@ import (
 	"github.com/Domingor/go-blackbox/server/loadconf"
 	"github.com/Domingor/go-blackbox/server/shutdown"
 	"github.com/Domingor/go-blackbox/server/zaplog"
+	"github.com/Domingor/go-blackbox/static"
 	"github.com/kataras/iris/v12"
 	context2 "github.com/kataras/iris/v12/context"
 
@@ -42,9 +43,10 @@ func Test2(t *testing.T) {
 
 		builder.
 			InitLog(".", "debug").
+			EnableStaticSource(static.StaticFile).
 			EnableWeb("", ":8899", "debug", nil)
-		//EnableDb(postConfig, RegisterTables()...)
 
+		//EnableDb(postConfig, RegisterTables()...)
 		return nil
 	})
 	if err != nil {
