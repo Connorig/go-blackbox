@@ -2,6 +2,7 @@ package appbox
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"github.com/Domingor/go-blackbox/appioc"
 	"github.com/Domingor/go-blackbox/apputils/apptoken"
@@ -13,6 +14,7 @@ import (
 	"github.com/Domingor/go-blackbox/server/mongodb"
 	"github.com/Domingor/go-blackbox/server/webiris"
 	"github.com/Domingor/go-blackbox/server/zaplog"
+	"net/http"
 	"time"
 )
 
@@ -31,6 +33,7 @@ type ApplicationBuilder interface {
 	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                                  // 启动缓存数据库
 	InitCronJob() *ApplicationBuild                                                                   // 初始化定时任务
 	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild                    // 配置wen-token属性
+	EnableStaticSource() *ApplicationBuild                                                            // TODO 加载静态资源
 }
 
 type ApplicationBuild struct {
@@ -42,6 +45,9 @@ type ApplicationBuild struct {
 
 	// 是否启动定时服务，在enableCronjob后为true，会自动start()，即开始调用定时Cron表达式函数
 	IsRunningCronJob bool
+
+	isLoadingStaticFs bool
+	StaticFs          http.FileSystem
 }
 
 // EnableWeb 启动Web服务
@@ -57,12 +63,17 @@ func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, compon
 	// 开启协程监听TCP-wen端口服务
 	go func() {
 		zaplog.ZAPLOGSUGAR.Info("start web serve...")
-		//fmt.Println("start web now...")
+
+		if app.isLoadingStaticFs {
+			err := app.irisApp.StaticSource(app.StaticFs)
+			if err != nil {
+				return
+			}
+		}
 		// 启动web，此时会阻塞。后面的代码不会被轮到执行
 		err := app.irisApp.Run(getContext)
 		if err != nil {
 			zaplog.ZAPLOGSUGAR.Infof("start web error %s", err)
-			//fmt.Sprintf("start web error %s", err)
 		}
 		fmt.Println("end web now...")
 	}()
@@ -150,5 +161,14 @@ func (app *ApplicationBuild) InitCronJob() *ApplicationBuild {
 // SetupToken 设置系统token有效期
 func (app *ApplicationBuild) SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild {
 	apptoken.Init(AMinute, RHour, TokenIssuer)
+	return app
+}
+
+// EnableStaticSource TODO 加载web服务静态资源文件
+func (app *ApplicationBuild) EnableStaticSource(file embed.FS) *ApplicationBuild {
+	// 封装为 Https文件系统
+	app.isLoadingStaticFs = true
+	app.StaticFs = http.FS(file)
+
 	return app
 }

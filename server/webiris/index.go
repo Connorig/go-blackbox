@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/recover"
+	"net/http"
 )
 
 /**
@@ -12,11 +13,12 @@ import (
 * @Description:
  */
 
-// 路由组件
+// PartyComponent 路由组件
 type PartyComponent func(app *iris.Application)
 
 type WebBaseFunc interface {
 	Run(ctx context.Context) error
+	StaticSource(fs http.FileSystem) error
 }
 
 type WebIris struct {
@@ -25,6 +27,7 @@ type WebIris struct {
 	timeFormat string // 时间格式化
 }
 
+// Init 初始化iris配置
 func Init(timeFormat, port, logLevel string, components PartyComponent) *WebIris {
 	// 创建iris实例
 	application := iris.New()
@@ -72,6 +75,7 @@ func Init(timeFormat, port, logLevel string, components PartyComponent) *WebIris
 //	}
 //}
 
+// Run 启动iris服务并监听端口
 func (w *WebIris) Run(ctx context.Context) (err error) {
 	// 启动web服务，监听端口（阻塞）
 	err = w.app.Listen(w.port,
@@ -79,6 +83,12 @@ func (w *WebIris) Run(ctx context.Context) (err error) {
 		iris.WithoutServerError(iris.ErrServerClosed),
 		iris.WithOptimizations,
 		iris.WithTimeFormat(w.timeFormat))
-	//zaplog.ZAPLOGSUGAR.Error(err)
+	return
+}
+
+// StaticSource 配置静态文件访问路径
+func (w *WebIris) StaticSource(fs http.FileSystem) (err error) {
+	// 添加静态资源，如vue打包后的asset/*,index.html 可直接通过服务 / 访问静态网站
+	w.app.HandleDir("/", fs)
 	return
 }
