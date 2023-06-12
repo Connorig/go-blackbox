@@ -16,3 +16,6 @@
 /*.log
 /*_log
 *.idea
+
+*.sh
+Dockerfile
