@@ -8,7 +8,6 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/kataras/iris/v12 v12.2.0-beta3
-	github.com/kataras/jwt v0.1.8
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/redis/go-redis/v9 v9.0.2
 	github.com/robfig/cron/v3 v3.0.1
@@ -21,6 +20,7 @@ require (
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/postgres v1.4.8
 	gorm.io/gorm v1.24.5
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (

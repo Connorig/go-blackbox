@@ -57,13 +57,13 @@ func Init() {
 // getEncoderConfig 获取zapcore.EncoderConfig
 func getEncoderConfig() (conf zapcore.EncoderConfig) {
 	conf = zapcore.EncoderConfig{
-		MessageKey:     "message",
-		LevelKey:       "level",
-		TimeKey:        "time",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		StacktraceKey:  CONFIG.StacktraceKey,
-		LineEnding:     zapcore.DefaultLineEnding,
+		MessageKey:    "message",
+		LevelKey:      "level",
+		TimeKey:       "time",
+		NameKey:       "logger",
+		CallerKey:     "caller",
+		StacktraceKey: CONFIG.StacktraceKey,
+		//LineEnding:     zapcore.DefaultLineEnding,
 		EncodeLevel:    zapcore.LowercaseLevelEncoder,
 		EncodeTime:     customTimeEncoder,
 		EncodeDuration: zapcore.SecondsDurationEncoder,

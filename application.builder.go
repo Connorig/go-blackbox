@@ -62,7 +62,8 @@ func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, compon
 
 	// 开启协程监听TCP-wen端口服务
 	go func() {
-		zaplog.ZAPLOGSUGAR.Info("start web serve...")
+		//zaplog.ZAPLOGSUGAR.Info("start web serve...")
+		zaplog.Logger("test").Sugar().Info("start web serve...")
 
 		if app.isLoadingStaticFs {
 			err := app.irisApp.StaticSource(app.StaticFs)
@@ -75,7 +76,6 @@ func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, compon
 		if err != nil {
 			zaplog.ZAPLOGSUGAR.Infof("start web error %s", err)
 		}
-		fmt.Println("end web now...")
 	}()
 	return app
 }
@@ -114,19 +114,31 @@ func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func
 
 // InitLog 初始化自定义日志
 func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild {
-	if len(outDirPath) > 0 {
-		zaplog.CONFIG.Director = outDirPath
-	} else {
-		zaplog.CONFIG.Director = "." // 默认路径
-	}
-	if len(level) > 0 {
-		zaplog.CONFIG.Level = level
-	} else {
-		zaplog.CONFIG.Level = "debug" // 默认级别
-	}
+	//if len(outDirPath) > 0 {
+	//	zaplog.CONFIG.Director = outDirPath
+	//} else {
+	//	zaplog.CONFIG.Director = "." // 默认路径
+	//}
+	//if len(level) > 0 {
+	//	zaplog.CONFIG.Level = level
+	//} else {
+	//	zaplog.CONFIG.Level = "debug" // 默认级别
+	//}
+	//
+	//// 初始化日志，通过zaplog.日志对象进行调用
+	//zaplog.Init()
 
-	// 初始化日志，通过zaplog.日志对象进行调用
-	zaplog.Init()
+	//zaplog.WithLogger("test", &LoggerConfig{
+	//	Filename: "test_filename",
+	//	Options: &LoggerOptions{
+	//		MaxBackups: 10,
+	//		Compress:   true,
+	//		Stderr:     true,
+	//	},
+	//})
+
+	zaplog.Logger("test").Sugar().Infof("%s hello", "nihao")
+
 	return app
 }
 
