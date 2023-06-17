@@ -43,6 +43,7 @@ func New() (app *application) {
 func (app *application) Start(builder func(ctx context.Context, builder *ApplicationBuild) error) (err error) {
 
 	if builder == nil {
+		zaplog.Logger("test").Sugar().Info("application builder is nil")
 		err = fmt.Errorf("application builder is nil")
 		return
 	}
@@ -53,6 +54,7 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 	err = builder(ctx, app.builder)
 
 	if err != nil {
+		zaplog.Logger("test").Sugar().Info("application builder fail, please checkout what have happened here.")
 		err = fmt.Errorf("application builder fail checkout what've happened. %s", err.Error())
 		return
 	}
@@ -61,7 +63,8 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 	seedErr := seed.Seed(app.builder.seeds...)
 
 	if seedErr != nil {
-		zaplog.ZAPLOGSUGAR.Errorf("application builder seed fail checkout what've happened. %s", seedErr.Error())
+		//zaplog.ZAPLOGSUGAR.Errorf("application builder seed fail checkout what've happened. %s", seedErr.Error())
+		zaplog.Logger("test").Sugar().Infof("application builder fail, please checkout what have happened here. %s", seedErr.Error())
 	}
 
 	// 执行定时任务

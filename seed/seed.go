@@ -13,7 +13,7 @@ type SeedFunc func(etc context.Context) (err error)
 
 // Seed exec seed funcs
 func Seed(SeedFunctions ...SeedFunc) error {
-	zaplog.ZAPLOG.Debug("Seed funcs are running now.")
+	//zaplog.ZAPLOG.Debug("Seed funcs are running now.")
 
 	if len(SeedFunctions) == 0 {
 		return errors.New("there is no seed func needed to run")
