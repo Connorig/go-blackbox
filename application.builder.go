@@ -137,6 +137,7 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 	//	},
 	//})
 
+	// 修改zaplog日志配置
 	zaplog.Logger("test").Sugar().Infof("%s hello", "nihao")
 
 	return app
