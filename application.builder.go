@@ -47,7 +47,22 @@ type ApplicationBuild struct {
 	IsRunningCronJob bool
 
 	isLoadingStaticFs bool
-	StaticFs          http.FileSystem
+	// 静态服务文件系统
+	StaticFs http.FileSystem
+	// 是否开启web
+	IsEnableWeb bool
+	// 是否开启数据库
+	IsEnableDB bool
+	// 是否开启redis
+	IsEnableCache bool
+	// 是否开始RabbitMq
+	IsEnableRabbitMq bool
+	// 是否开始定时任务
+	IsEnableCronTask bool
+	// 是否开启mongoDB
+	IsEnableMongoDB bool
+	// 是否开启静态服务文件
+	IsEnableStaticFileServe bool
 }
 
 // EnableWeb 启动Web服务
@@ -114,6 +129,7 @@ func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func
 
 // InitLog 初始化自定义日志
 func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild {
+
 	//if len(outDirPath) > 0 {
 	//	zaplog.CONFIG.Director = outDirPath
 	//} else {
