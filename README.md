@@ -13,3 +13,13 @@ go集成常用开发框架-快速开发
 8. 定时任务Cronjob
 9. Zaplog 日志框架
 10. WebToken身份验证
+
+### 赞助商
+
+- 感谢[JetBrains](https://www.jetbrains.com/?from=gowebsocket)对本项目的支持！
+<br/>
+<p align="center">
+    <a href="https://www.jetbrains.com/?from=gowebsocket">
+        <img border="0" src="http://img.91vh.com/img/jetbrains_logo.png" width="200"/>
+    </a>
+</p>
