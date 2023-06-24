@@ -30,23 +30,10 @@ func Test2(t *testing.T) {
 			return err
 		}
 
-		//postConfig := &datasource.PostgresConfig{
-		//	UserName:     loadconf.Config.Db.User,
-		//	Password:     loadconf.Config.Db.Password,
-		//	Host:         loadconf.Config.Db.Host,
-		//	Port:         loadconf.Config.Db.Port,
-		//	DbName:       loadconf.Config.Db.DbName,
-		//	SSL:          loadconf.Config.Db.Ssl,
-		//	MaxIdleConns: loadconf.Config.Db.MaxIdleConns,
-		//	MaxOpenConns: loadconf.Config.Db.MaxOpenConns,
-		//}
-
 		builder.
 			InitLog(".", "debug").
 			EnableStaticSource(static.StaticFile).
 			EnableWeb("", ":8899", "debug", nil)
-
-		//EnableDb(postConfig, RegisterTables()...)
 		return nil
 	})
 	if err != nil {
@@ -166,7 +153,7 @@ func TestLoader(t *testing.T) {
 			//	loadconf.Config.Web.DebugLevel,
 			//	Router)
 			//fmt.Println("builder finished...")
-			zaplog.ZAPLOG.Info("builder finished...", zap.Any("Err", 1))
+			zaplog.Logger.Info("builder finished...", zap.Any("Err", 1))
 			return err
 		})
 	}()
@@ -225,86 +212,85 @@ func Setup(ctx context.Context) (err error) {
 	return
 }
 
-//type user struct {
-//	gorm.Model
-//	Name string
-//	Age  int
-//}
+//	type user struct {
+//		gorm.Model
+//		Name string
+//		Age  int
+//	}
 //
-//func (user) TableName() string {
-//	return "user_info"
-//}
+//	func (user) TableName() string {
+//		return "user_info"
+//	}
 //
-//func TestLoader(t *testing.T) {
+// func TestLoader(t *testing.T) {
 //
-//	app := New()
+//		app := New()
 //
-//	go func() {
+//		go func() {
 //
-//		app.Start(func(ctx context.Context, builder *ApplicationBuild) error {
+//			app.Start(func(ctx context.Context, builder *ApplicationBuild) error {
 //
-//			err := builder.LoadConfig(&loadconf.Config, func(loader loadconf.Loader) {
-//				loader.SetConfigFileSearcher("config", ".")
+//				err := builder.LoadConfig(&loadconf.Config, func(loader loadconf.Loader) {
+//					loader.SetConfigFileSearcher("config", ".")
+//				})
+//
+//				postConfig := datasource.PostgresConfig{
+//					UserName: loadconf.Config.Db.user,
+//					Password: loadconf.Config.Db.Password,
+//					host:     loadconf.Config.Db.host,
+//					Port:     loadconf.Config.Db.Port,
+//					DbName:   loadconf.Config.Db.DbName,
+//					InitDb:   false,
+//					//AliasName:    "",
+//					SSL:          loadconf.Config.Db.Ssl,
+//					MaxIdleConns: loadconf.Config.Db.MaxIdleConns,
+//					MaxOpenConns: loadconf.Config.Db.MaxOpenConns,
+//				}
+//
+//				cacheOptins := cache.RedisOptions{
+//					Addr:     loadconf.Config.Redis.Addrs,
+//					Password: loadconf.Config.Redis.Password,
+//					PoolSize: loadconf.Config.Redis.PoolSize,
+//					DB:       loadconf.Config.Redis.Db,
+//				}
+//
+//				tables := RegisterTables()
+//
+//				builder.
+//					EnableDb(&postConfig, tables).
+//					EnableCache(ctx, cacheOptins)
+//				//EnableWeb(webiris.TimeFormat,
+//				//	loadconf.Config.Web.Listen,
+//				//	loadconf.Config.Web.DebugLevel,
+//				//	Router)
+//
+//				return err
 //			})
+//		}()
 //
-//			postConfig := datasource.PostgresConfig{
-//				UserName: loadconf.Config.Db.user,
-//				Password: loadconf.Config.Db.Password,
-//				host:     loadconf.Config.Db.host,
-//				Port:     loadconf.Config.Db.Port,
-//				DbName:   loadconf.Config.Db.DbName,
-//				InitDb:   false,
-//				//AliasName:    "",
-//				SSL:          loadconf.Config.Db.Ssl,
-//				MaxIdleConns: loadconf.Config.Db.MaxIdleConns,
-//				MaxOpenConns: loadconf.Config.Db.MaxOpenConns,
-//			}
+//		//等待初始化完成。
+//		time.Sleep(time.Second * 2)
+//		//t.Log(appioc.GetContext())
+//		//t.Log(appioc.GetDb())
+//		//t.Log(appioc.GetCache())
 //
-//			cacheOptins := cache.RedisOptions{
-//				Addr:     loadconf.Config.Redis.Addrs,
-//				Password: loadconf.Config.Redis.Password,
-//				PoolSize: loadconf.Config.Redis.PoolSize,
-//				DB:       loadconf.Config.Redis.Db,
-//			}
+//		t.Log(GormDb())
+//		t.Log(GlobalCtx().Ctx)
+//		t.Log(RedisCache())
 //
-//			tables := RegisterTables()
-//
-//			builder.
-//				EnableDb(&postConfig, tables).
-//				EnableCache(ctx, cacheOptins)
-//			//EnableWeb(webiris.TimeFormat,
-//			//	loadconf.Config.Web.Listen,
-//			//	loadconf.Config.Web.DebugLevel,
-//			//	Router)
-//
-//			return err
-//		})
-//	}()
-//
-//	//等待初始化完成。
-//	time.Sleep(time.Second * 2)
-//	//t.Log(appioc.GetContext())
-//	//t.Log(appioc.GetDb())
-//	//t.Log(appioc.GetCache())
-//
-//	t.Log(GormDb())
-//	t.Log(GlobalCtx().Ctx)
-//	t.Log(RedisCache())
-//
-//	//t.Run("test", func(t *testing.T) {
-//	//	resp, err := http.Get("http://localhost:9000/v1/one")
-//	//	if err != nil {
-//	//		t.Errorf("test web start get %v", err)
-//	//	}
-//	//	defer resp.Body.Close()
-//	//	s, err := ioutil.ReadAll(resp.Body)
-//	//	if err != nil {
-//	//		t.Errorf("test web start get %v", err)
-//	//	}
-//	//	t.Logf("%s", s)
-//	//})
-//}
-//
+//		//t.Run("test", func(t *testing.T) {
+//		//	resp, err := http.Get("http://localhost:9000/v1/one")
+//		//	if err != nil {
+//		//		t.Errorf("test web start get %v", err)
+//		//	}
+//		//	defer resp.Body.Close()
+//		//	s, err := ioutil.ReadAll(resp.Body)
+//		//	if err != nil {
+//		//		t.Errorf("test web start get %v", err)
+//		//	}
+//		//	t.Logf("%s", s)
+//		//})
+//	}
 func Router1(application *iris.Application) {
 	//application.PartyFunc("/v1", func(p router.Party) {
 	//	p.Get("/one", func(c *context2.Context) {

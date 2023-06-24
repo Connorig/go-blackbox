@@ -13,7 +13,7 @@ type SeedFunc func(etc context.Context) (err error)
 
 // Seed exec seed funcs
 func Seed(SeedFunctions ...SeedFunc) error {
-	//zaplog.ZAPLOG.Debug("Seed funcs are running now.")
+	//zaplog.Logger.Debug("Seed funcs are running now.")
 
 	if len(SeedFunctions) == 0 {
 		return errors.New("there is no seed func needed to run")
@@ -22,10 +22,10 @@ func Seed(SeedFunctions ...SeedFunc) error {
 		// 批量执行种子函数，传入上下文对象
 		err := v(appioc.GetContext().Ctx)
 		if err != nil {
-			zaplog.ZAPLOG.Error("Seed func running fail.", zap.Any("err", err))
+			zaplog.Logger.Error("Seed func running fail.", zap.Any("err", err))
 			return err
 		}
 	}
-	zaplog.ZAPLOG.Info("all seed func are run now")
+	zaplog.Logger.Info("all seed func are run now")
 	return nil
 }

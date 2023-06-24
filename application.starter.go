@@ -8,11 +8,10 @@ import (
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/mongodb"
 	"github.com/Domingor/go-blackbox/server/shutdown"
-	"github.com/Domingor/go-blackbox/server/zaplog"
+	log "github.com/Domingor/go-blackbox/server/zaplog"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 	"sync"
-	"time"
 )
 
 // 初始化执行器
@@ -43,19 +42,19 @@ func New() (app *application) {
 func (app *application) Start(builder func(ctx context.Context, builder *ApplicationBuild) error) (err error) {
 
 	if builder == nil {
-		zaplog.Logger("test").Sugar().Info("application builder is nil")
+		log.SugaredLogger.Debug("application builder is nil")
 		err = fmt.Errorf("application builder is nil")
 		return
 	}
 	// 全局context
 	ctx := appioc.GetContext().Ctx
 
-	// 属性\服务构建初始化
+	// 服务构建初始化
 	err = builder(ctx, app.builder)
 
 	if err != nil {
-		zaplog.Logger("test").Sugar().Info("application builder fail, please checkout what have happened here.")
-		err = fmt.Errorf("application builder fail checkout what've happened. %s", err.Error())
+		log.SugaredLogger.Debug("application builder fail, please check what have happened here!")
+		err = fmt.Errorf("application builder fail, please check what have happened here! %s", err.Error())
 		return
 	}
 
@@ -63,8 +62,7 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 	seedErr := seed.Seed(app.builder.seeds...)
 
 	if seedErr != nil {
-		//zaplog.ZAPLOGSUGAR.Errorf("application builder seed fail checkout what've happened. %s", seedErr.Error())
-		zaplog.Logger("test").Sugar().Infof("application builder fail, please checkout what have happened here. %s", seedErr.Error())
+		log.SugaredLogger.Debug("seed.Seed fail,", seedErr.Error())
 	}
 
 	// 执行定时任务
@@ -73,14 +71,15 @@ func (app *application) Start(builder func(ctx context.Context, builder *Applica
 	}
 
 	// 打印输出web服务已启动
-	zaplog.ZAPLOGSUGAR.Info("web server is running...", time.Now().Format(TimeFormat))
+	log.SugaredLogger.Info("web server is running now")
 
 	if err == nil {
 		// 全部服务启动成功后，阻塞主线程，开始监听web端口服务
 		shutdown.WaitExit(&shutdown.Configuration{
 			BeforeExit: func(s string) {
 				// 收到消息-开始执行钩子函数
-				zaplog.ZAPLOGSUGAR.Info(s)
+
+				log.SugaredLogger.Info(s)
 				//if len(onTerminate) > 0 {
 				//	for _, terminateFunc := range onTerminate {
 				//		if terminateFunc != nil {
