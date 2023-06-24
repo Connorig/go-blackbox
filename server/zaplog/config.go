@@ -1,12 +1,12 @@
 package zaplog
 
 var CONFIG = Zap{
-	Level:         "debug",
-	Format:        "console",
-	Prefix:        "[go-blackbox]",
-	Director:      "D://go-blackbox//logs",
-	LinkName:      "latest_log",
-	ShowLine:      false,
+	Level:    "debug",
+	Format:   "console",
+	Prefix:   "[go-blackbox]",
+	Director: ".",
+	LinkName: "latest_log",
+	//ShowLine:      true,
 	EncodeLevel:   "LowercaseColorLevelEncoder",
 	StacktraceKey: "stacktrace",
 	LogInConsole:  true,

@@ -1,7 +1,6 @@
 package zaplog
 
 import (
-	"go.uber.org/zap"
 	"testing"
 )
 
@@ -16,9 +15,9 @@ func TestGetEncoderConfig(t *testing.T) {
 }
 
 func TestLog(t *testing.T) {
-	sugar := ZAPLOG.Sugar()
+	sugar := Logger.Sugar()
 	sugar.Debugf("Debug %d", 1)
 
-	desugar := sugar.Desugar()
-	desugar.Debug("debug", zap.Any("key", 1))
+	//desugar := sugar.Desugar()
+	//desugar.Debug("debug", zap.Any("key", 1))
 }

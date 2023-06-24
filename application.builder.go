@@ -13,7 +13,7 @@ import (
 	"github.com/Domingor/go-blackbox/server/loadconf"
 	"github.com/Domingor/go-blackbox/server/mongodb"
 	"github.com/Domingor/go-blackbox/server/webiris"
-	"github.com/Domingor/go-blackbox/server/zaplog"
+	log "github.com/Domingor/go-blackbox/server/zaplog"
 	"net/http"
 	"time"
 )
@@ -33,7 +33,7 @@ type ApplicationBuilder interface {
 	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                                  // 启动缓存数据库
 	InitCronJob() *ApplicationBuild                                                                   // 初始化定时任务
 	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild                    // 配置wen-token属性
-	EnableStaticSource() *ApplicationBuild                                                            // TODO 加载静态资源
+	EnableStaticSource() *ApplicationBuild                                                            // 加载静态资源
 }
 
 type ApplicationBuild struct {
@@ -67,29 +67,33 @@ type ApplicationBuild struct {
 
 // EnableWeb 启动Web服务
 func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild {
+	// 初始化iris对象
 	app.irisApp = webiris.Init(
-		timeFormat,
-		port,
-		logLevel,
-		components)
+		timeFormat, // 日期格式化
+		port,       // 监听服务端口
+		logLevel,   // 日志级别
+		components) // router路由组件
 
+	// 全局上下文对象
 	getContext := appioc.GetContext().Ctx
 
 	// 开启协程监听TCP-wen端口服务
 	go func() {
-		//zaplog.ZAPLOGSUGAR.Info("start web serve...")
-		zaplog.Logger("test").Sugar().Info("start web serve...")
+		log.SugaredLogger.Info("starting web service...")
 
+		// 判断是否加载静态文件
 		if app.isLoadingStaticFs {
 			err := app.irisApp.StaticSource(app.StaticFs)
 			if err != nil {
+				log.SugaredLogger.Debug("app.irisApp.StaticSource fail!")
 				return
 			}
 		}
 		// 启动web，此时会阻塞。后面的代码不会被轮到执行
 		err := app.irisApp.Run(getContext)
+
 		if err != nil {
-			zaplog.ZAPLOGSUGAR.Infof("start web error %s", err)
+			log.SugaredLogger.Infof("run web service error! %s", err)
 		}
 	}()
 	return app
@@ -130,32 +134,16 @@ func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func
 // InitLog 初始化自定义日志
 func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild {
 
-	//if len(outDirPath) > 0 {
-	//	zaplog.CONFIG.Director = outDirPath
-	//} else {
-	//	zaplog.CONFIG.Director = "." // 默认路径
-	//}
-	//if len(level) > 0 {
-	//	zaplog.CONFIG.Level = level
-	//} else {
-	//	zaplog.CONFIG.Level = "debug" // 默认级别
-	//}
-	//
-	//// 初始化日志，通过zaplog.日志对象进行调用
-	//zaplog.Init()
+	if len(outDirPath) > 0 {
+		log.CONFIG.Director = outDirPath
+	}
 
-	//zaplog.WithLogger("test", &LoggerConfig{
-	//	Filename: "test_filename",
-	//	Options: &LoggerOptions{
-	//		MaxBackups: 10,
-	//		Compress:   true,
-	//		Stderr:     true,
-	//	},
-	//})
+	if len(level) > 0 {
+		log.CONFIG.Level = level
+	}
 
-	// 修改zaplog日志配置
-	zaplog.Logger("test").Sugar().Infof("%s hello", "nihao")
-
+	// 初始化日志，通过zaplog.日志对象进行调用
+	log.Init()
 	return app
 }
 
@@ -163,7 +151,7 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild {
 	client, err := mongodb.GetClient(dbConfig, appioc.GetContext().Ctx)
 	if err != nil {
-		zaplog.ZAPLOGSUGAR.Debugf("init mongoDb fail err %s", err)
+		log.SugaredLogger.Debugf("init mongoDb fail err %s", err)
 	}
 	// mongoDb客户端放入容器
 	appioc.Set(client)
@@ -193,7 +181,7 @@ func (app *ApplicationBuild) SetupToken(AMinute, RHour time.Duration, TokenIssue
 	return app
 }
 
-// EnableStaticSource TODO 加载web服务静态资源文件
+// EnableStaticSource  加载web服务静态资源文件
 func (app *ApplicationBuild) EnableStaticSource(file embed.FS) *ApplicationBuild {
 	// 封装为 Https文件系统
 	app.isLoadingStaticFs = true
