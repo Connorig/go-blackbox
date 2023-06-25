@@ -48,6 +48,7 @@ func Init() {
 	//if CONFIG.ShowLine {
 	//	logger = logger.WithOptions(zap.AddCaller())
 	//}
+
 	// 全局标准日志对象
 	Logger = logger
 	// 功能类似于printf
