@@ -44,7 +44,8 @@ func Init() {
 	} else {
 		logger = zap.New(getEncoderCore())
 	}
-	//
+
+	// 默认开启链路追踪，不需要打印行
 	//if CONFIG.ShowLine {
 	//	logger = logger.WithOptions(zap.AddCaller())
 	//}

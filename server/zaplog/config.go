@@ -2,17 +2,17 @@ package zaplog
 
 // CONFIG 基础配置
 var CONFIG = Zap{
-	Level:    "debug",
-	Format:   "console",
-	Prefix:   "[go-blackbox]",
-	Director: ".",
-	LinkName: "latest_log",
-	//ShowLine:      true,
+	Level:            "debug",
+	Format:           "console",
+	Prefix:           "[go-blackbox]",
+	Director:         ".",
+	LinkName:         "latest_log",
+	ShowLine:         true,
 	EncodeLevel:      "LowercaseColorLevelEncoder",
-	StacktraceKey:    "stacktrace",
+	StacktraceKey:    "stacktrace", // 开启链路跟踪
 	LogInConsole:     true,
-	MaxAge:           7 * 24,
-	WithRotationTime: 24,
+	MaxAge:           7 * 24, // 清除日志时间/hour
+	WithRotationTime: 24,     // 轮训生成日志间隔时间/hour
 }
 
 type Zap struct {

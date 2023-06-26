@@ -9,7 +9,6 @@ import (
 	"github.com/Domingor/go-blackbox/static"
 	"github.com/kataras/iris/v12"
 	context2 "github.com/kataras/iris/v12/context"
-
 	"github.com/kataras/iris/v12/core/router"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
