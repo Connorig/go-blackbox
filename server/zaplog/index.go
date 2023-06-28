@@ -98,14 +98,14 @@ func getEncoder() zapcore.Encoder {
 // getEncoderCore
 func getEncoderCore() (core zapcore.Core) {
 
-	// 动态判断当前日志级别分别打印到不同级别文件中
+	// 根据当前logger实例到日志级别将内容输入到对应到文件中
 	debugSyncer := GetWriteSyncer2("/zap/debug.log")
 	infoSyncer := GetWriteSyncer2("/zap/info.log")
 	warnSyncer := GetWriteSyncer2("/zap/warn.log")
 	errorSyncer := GetWriteSyncer2("/zap/error.log")
 
 	// 实现判断日志等级的interface
-	// 根据当前logger实例到日志级别将内容输入到对应到文件中
+	// 动态判断当前日志级别分别打印到不同级别文件中
 	debugLevel := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return lvl >= zapcore.DebugLevel
 	})
