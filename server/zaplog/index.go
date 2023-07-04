@@ -72,6 +72,7 @@ func getEncoderConfig() (conf zapcore.EncoderConfig) {
 
 	// 配置日志打印格式
 	conf = zapcore.EncoderConfig{
+
 		CallerKey:      "caller_line", // 打印文件名和行数
 		LevelKey:       "level_name",
 		MessageKey:     "msg",
