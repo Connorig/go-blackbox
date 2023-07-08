@@ -16,7 +16,6 @@ var (
 
 func Init() {
 	var logger *zap.Logger
-
 	if !dir.IsExist(CONFIG.Director) {
 		dir.InsureDir(CONFIG.Director)
 	}
