@@ -9,8 +9,10 @@ import (
 )
 
 var (
-	level         zapcore.Level      // 设置日志打印级别
-	Logger        *zap.Logger        // 标准打印
+	level zapcore.Level // 设置日志打印级别
+
+	Logger *zap.Logger // 标准打印
+
 	SugaredLogger *zap.SugaredLogger // 类似于printf
 )
 
