@@ -39,13 +39,11 @@ type ApplicationBuilder interface {
 type ApplicationBuild struct {
 	// 创建Iris实例对象
 	irisApp webiris.WebBaseFunc
-
 	// 启动种子list集合
 	seeds []seed.SeedFunc
-
 	// 是否启动定时服务，在enableCronjob后为true，会自动start()，即开始调用定时Cron表达式函数
 	IsRunningCronJob bool
-
+	// 是否加载静态Vue文件
 	isLoadingStaticFs bool
 	// 静态服务文件系统
 	StaticFs http.FileSystem
