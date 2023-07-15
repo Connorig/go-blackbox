@@ -1,25 +1,30 @@
 package zaplog
 
+// CONFIG 基础配置
 var CONFIG = Zap{
-	Level:         "debug",
-	Format:        "console",
-	Prefix:        "[go-blackbox]",
-	Director:      "D://go-blackbox//logs",
-	LinkName:      "latest_log",
-	ShowLine:      false,
-	EncodeLevel:   "LowercaseColorLevelEncoder",
-	StacktraceKey: "stacktrace",
-	LogInConsole:  true,
+	Level:            "debug",
+	Format:           "console",
+	Prefix:           "[go-blackbox]",
+	Director:         ".",
+	LinkName:         "latest_log",
+	ShowLine:         true,
+	EncodeLevel:      "LowercaseColorLevelEncoder",
+	StacktraceKey:    "stacktrace", // 开启链路跟踪
+	LogInConsole:     true,
+	MaxAge:           7 * 24, // 清除日志时间/hour
+	WithRotationTime: 24,     // 轮训生成日志间隔时间/hour
 }
 
 type Zap struct {
-	Level         string `mapstructure:"level" json:"level" yaml:"level"` //debug ,info,warn,error,panic,fatal
-	Format        string `mapstructure:"format" json:"format" yaml:"format"`
-	Prefix        string `mapstructure:"prefix" json:"prefix" yaml:"prefix"`
-	Director      string `mapstructure:"director" json:"director"  yaml:"director"`
-	LinkName      string `mapstructure:"link-name" json:"link-name" yaml:"link-name"`
-	ShowLine      bool   `mapstructure:"show-line" json:"show-line" yaml:"show-line"`
-	EncodeLevel   string `mapstructure:"encode-level" json:"encode-level" yaml:"encode-level"`
-	StacktraceKey string `mapstructure:"stacktrace-key" json:"stacktrace-key" yaml:"stacktrace-key"`
-	LogInConsole  bool   `mapstructure:"log-in-console" json:"log-in-console" yaml:"log-in-console"`
+	Level            string `mapstructure:"level" json:"level" yaml:"level"` //debug ,info,warn,error,panic,fatal
+	Format           string `mapstructure:"format" json:"format" yaml:"format"`
+	Prefix           string `mapstructure:"prefix" json:"prefix" yaml:"prefix"`
+	Director         string `mapstructure:"director" json:"director"  yaml:"director"`
+	LinkName         string `mapstructure:"link-name" json:"link-name" yaml:"link-name"`
+	ShowLine         bool   `mapstructure:"show-line" json:"show-line" yaml:"show-line"`
+	EncodeLevel      string `mapstructure:"encode-level" json:"encode-level" yaml:"encode-level"`
+	StacktraceKey    string `mapstructure:"stacktrace-key" json:"stacktrace-key" yaml:"stacktrace-key"`
+	LogInConsole     bool   `mapstructure:"log-in-console" json:"log-in-console" yaml:"log-in-console"`
+	MaxAge           int
+	WithRotationTime int
 }
