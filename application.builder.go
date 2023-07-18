@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	// TimeFormat 日期格式化
+	// TimeFormat 日期格式
 	TimeFormat = "2006-01-02 15:04:05"
 )
 
@@ -131,7 +131,6 @@ func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func
 
 // InitLog 初始化自定义日志
 func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild {
-
 	if len(outDirPath) > 0 {
 		log.CONFIG.Director = outDirPath
 	}
@@ -184,6 +183,5 @@ func (app *ApplicationBuild) EnableStaticSource(file embed.FS) *ApplicationBuild
 	// 封装为 Https文件系统
 	app.isLoadingStaticFs = true
 	app.StaticFs = http.FS(file)
-
 	return app
 }
