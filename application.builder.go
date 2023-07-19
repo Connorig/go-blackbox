@@ -4,7 +4,6 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"github.com/Domingor/go-blackbox/appioc"
 	"github.com/Domingor/go-blackbox/apputils/apptoken"
 	"github.com/Domingor/go-blackbox/seed"
 	"github.com/Domingor/go-blackbox/server/cache"
@@ -14,6 +13,7 @@ import (
 	"github.com/Domingor/go-blackbox/server/mongodb"
 	"github.com/Domingor/go-blackbox/server/webiris"
 	log "github.com/Domingor/go-blackbox/server/zaplog"
+	"github.com/Domingor/go-blackbox/simpleioc"
 	"net/http"
 	"time"
 )
@@ -41,6 +41,8 @@ type ApplicationBuild struct {
 	irisApp webiris.WebBaseFunc
 	// 启动种子list集合
 	seeds []seed.SeedFunc
+
+	//=========================================》 启动标识
 	// 是否启动定时服务，在enableCronjob后为true，会自动start()，即开始调用定时Cron表达式函数
 	IsRunningCronJob bool
 	// 是否加载静态Vue文件
@@ -65,52 +67,36 @@ type ApplicationBuild struct {
 
 // EnableWeb 启动Web服务
 func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild {
+	// 开启web服务
+	app.IsEnableWeb = true
+
+	if timeFormat == "" {
+		timeFormat = TimeFormat
+	}
+
 	// 初始化iris对象
 	app.irisApp = webiris.Init(
 		timeFormat, // 日期格式化
 		port,       // 监听服务端口
 		logLevel,   // 日志级别
 		components) // router路由组件
-
-	// 全局上下文对象
-	getContext := appioc.GetContext().Ctx
-
-	// 开启协程监听TCP-wen端口服务
-	go func() {
-		log.SugaredLogger.Info("starting web service...")
-
-		// 判断是否加载静态文件
-		if app.isLoadingStaticFs {
-			err := app.irisApp.StaticSource(app.StaticFs)
-			if err != nil {
-				log.SugaredLogger.Debug("app.irisApp.StaticSource fail!")
-				return
-			}
-		}
-		// 启动web，此时会阻塞。后面的代码不会被轮到执行
-		err := app.irisApp.Run(getContext)
-
-		if err != nil {
-			log.SugaredLogger.Infof("run web service error! %s", err)
-		}
-	}()
 	return app
 }
 
 // EnableDb 启动数据库操作对象
 func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, models ...interface{}) *ApplicationBuild {
-	//	// 初始化数据，注册模型
+	// 初始化数据，注册模型
 	datasource.GormInit(dbConfig, models)
 
-	// 放入容器
-	appioc.Set(datasource.GetDbInstance())
+	// 放入ioc容器
+	simpleioc.Set(datasource.GetDbInstance())
 	return app
 }
 
 // EnableCache 启动缓存
 func (app *ApplicationBuild) EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild {
 	// 初始化redis，放入容器
-	appioc.Set(cache.Init(ctx, redConfig))
+	simpleioc.Set(cache.Init(ctx, redConfig))
 	return app
 }
 
@@ -139,19 +125,19 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 		log.CONFIG.Level = level
 	}
 
-	// 初始化日志，通过zaplog.日志对象进行调用
+	// 初始化日志，通过 zapLog.日志对象进行调用
 	log.Init()
 	return app
 }
 
 // EnableMongoDB 启动MongoDB客户端
 func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild {
-	client, err := mongodb.GetClient(dbConfig, appioc.GetContext().Ctx)
+	client, err := mongodb.GetClient(dbConfig, simpleioc.GetContext().Ctx)
 	if err != nil {
 		log.SugaredLogger.Debugf("init mongoDb fail err %s", err)
 	}
 	// mongoDb客户端放入容器
-	appioc.Set(client)
+	simpleioc.Set(client)
 	return app
 }
 
@@ -168,7 +154,7 @@ func (app *ApplicationBuild) InitCronJob() *ApplicationBuild {
 	app.IsRunningCronJob = true
 
 	// 定时任务客户端放入容器
-	appioc.Set(instance)
+	simpleioc.Set(instance)
 	return app
 }
 
@@ -180,7 +166,10 @@ func (app *ApplicationBuild) SetupToken(AMinute, RHour time.Duration, TokenIssue
 
 // EnableStaticSource  加载web服务静态资源文件
 func (app *ApplicationBuild) EnableStaticSource(file embed.FS) *ApplicationBuild {
-	// 封装为 Https文件系统
+	// 开启静态服务器
+	app.isLoadingStaticFs = true
+
+	// 封装 Https文件系统
 	app.isLoadingStaticFs = true
 	app.StaticFs = http.FS(file)
 	return app
