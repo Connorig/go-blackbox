@@ -3,8 +3,8 @@ package seed
 import (
 	"context"
 	"errors"
-	"github.com/Domingor/go-blackbox/appioc"
 	"github.com/Domingor/go-blackbox/server/zaplog"
+	"github.com/Domingor/go-blackbox/simpleioc"
 	"go.uber.org/zap"
 )
 
@@ -20,7 +20,7 @@ func Seed(SeedFunctions ...SeedFunc) error {
 	}
 	for _, v := range SeedFunctions {
 		// 批量执行种子函数，传入上下文对象
-		err := v(appioc.GetContext().Ctx)
+		err := v(simpleioc.GetContext().Ctx)
 		if err != nil {
 			zaplog.Logger.Error("Seed func running fail.", zap.Any("err", err))
 			return err

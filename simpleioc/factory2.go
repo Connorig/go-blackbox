@@ -1,4 +1,4 @@
-package appioc
+package simpleioc
 
 import (
 	"errors"
