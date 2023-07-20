@@ -41,7 +41,7 @@ func New() (app *application) {
 func (app *application) Start(builderFun func(ctx context.Context, builder *ApplicationBuild) error) (err error) {
 
 	// 开始执行构建服务程序
-	if err = app.toStartBuildingServices(builderFun); err == nil {
+	if err = app.buildingService(builderFun); err == nil {
 		// 全部服务启动成功后，阻塞主线程，开始监听web端口服务:
 		// 这里会监听一个无缓存chanel，阻塞式监听消息。防止main现场结束，一旦main现场结束，web服务的协程也会结束，即服务终止。
 		shutdown.WaitExit(&shutdown.Configuration{
@@ -55,13 +55,13 @@ func (app *application) Start(builderFun func(ctx context.Context, builder *Appl
 	return
 }
 
-func (app *application) toStartBuildingServices(builderFun func(ctx context.Context, builder *ApplicationBuild) error) (err error) {
+// 根据build配置是否开启服务标识进行一一初始化
+func (app *application) buildingService(builderFun func(ctx context.Context, builder *ApplicationBuild) error) (err error) {
 	// 构建器必须有效！
 	if builderFun == nil {
 		err = errors.New("builderFun is not a expected function for building")
 		return
 	}
-
 	// 传入全局Context，开始执行配置信息
 	if err = builderFun(simpleioc.GetContext().Ctx, app.builder); err != nil {
 		return
