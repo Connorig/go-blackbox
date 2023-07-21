@@ -2,7 +2,7 @@ package cache
 
 import (
 	"context"
-	"fmt"
+	"github.com/Domingor/go-blackbox/server/zaplog"
 	"github.com/go-redis/cache/v9"
 	"github.com/redis/go-redis/v9"
 	"sync"
@@ -23,22 +23,21 @@ func Init(ctx context.Context, redisOptions RedisOptions) *RedisCache {
 		options := redis.Options(redisOptions)
 		rdb := redis.NewClient(&options)
 
-		ping := rdb.Ping(ctx)
-		if ping != nil {
-			fmt.Errorf("init redis error")
+		if ping := rdb.Ping(ctx); ping != nil {
+			zaplog.SugaredLogger.Debug("ping redis error")
+			return
 		}
 
-		cache := cache.New(&cache.Options{
+		cacheProxy := cache.New(&cache.Options{
 			Redis:      rdb,
 			LocalCache: cache.NewTinyLFU(1000, time.Minute),
 		})
 
 		redisCacher = &RedisCache{
 			ctx:   ctx,
-			proxy: cache,
+			proxy: cacheProxy,
 			//defaultTtl: 0,
 		}
 	})
-
 	return redisCacher
 }
