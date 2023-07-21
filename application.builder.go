@@ -26,14 +26,14 @@ const (
 // ApplicationBuilder app builder接口提供系统初始化服务基础功能
 type ApplicationBuilder interface {
 	EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild // 启动web服务
-	EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild             // 启动数据库
-	EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild                  // 启动缓存
+	EnableDb(dbConfig *datasource.PostgresConfig, models ...interface{}) *ApplicationBuild            // 启动数据库
+	EnableCache(redConfig cache.RedisOptions) *ApplicationBuild                                       // 启动缓存
 	LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error                       // 加载配置文件、环境变量等
 	InitLog(outDirPath, level string) *ApplicationBuild                                               // 初始化日志打印
 	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                                  // 启动缓存数据库
 	InitCronJob() *ApplicationBuild                                                                   // 初始化定时任务
 	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild                    // 配置wen-token属性
-	EnableStaticSource() *ApplicationBuild                                                            // 加载静态资源
+	EnableStaticSource(file embed.FS) *ApplicationBuild                                               // 加载静态资源
 }
 
 type ApplicationBuild struct {
@@ -41,6 +41,14 @@ type ApplicationBuild struct {
 	irisApp webiris.WebBaseFunc
 	// 启动种子list集合
 	seeds []seed.SeedFunc
+	// 数据库配置
+	dbConfig *datasource.PostgresConfig
+	// 注册表模块-tables
+	dbModels []interface{}
+	// 上下文对象
+	ctx context.Context
+	// redis配置对象
+	redisOptions cache.RedisOptions
 
 	//=========================================》 启动标识
 	// 是否启动定时服务，在enableCronjob后为true，会自动start()，即开始调用定时Cron表达式函数
@@ -63,6 +71,8 @@ type ApplicationBuild struct {
 	IsEnableMongoDB bool
 	// 是否开启静态服务文件
 	IsEnableStaticFileServe bool
+	// 是否开启日志zapLogs
+	IsEnableZapLogs bool
 }
 
 // EnableWeb 启动Web服务
@@ -85,18 +95,20 @@ func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, compon
 
 // EnableDb 启动数据库操作对象
 func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, models ...interface{}) *ApplicationBuild {
-	// 初始化数据，注册模型
-	datasource.GormInit(dbConfig, models)
+	//开启 db
+	app.IsEnableDB = true
 
-	// 放入ioc容器
-	simpleioc.Set(datasource.GetDbInstance())
+	app.dbConfig = dbConfig
+
+	app.dbModels = models
 	return app
 }
 
 // EnableCache 启动缓存
-func (app *ApplicationBuild) EnableCache(ctx context.Context, redConfig cache.RedisOptions) *ApplicationBuild {
-	// 初始化redis，放入容器
-	simpleioc.Set(cache.Init(ctx, redConfig))
+func (app *ApplicationBuild) EnableCache(redConfig cache.RedisOptions) *ApplicationBuild {
+	app.IsEnableCache = true
+
+	app.redisOptions = redConfig
 	return app
 }
 
@@ -117,6 +129,8 @@ func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func
 
 // InitLog 初始化自定义日志
 func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild {
+	app.IsEnableZapLogs = true
+
 	if len(outDirPath) > 0 {
 		log.CONFIG.Director = outDirPath
 	}
@@ -138,12 +152,6 @@ func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *App
 	}
 	// mongoDb客户端放入容器
 	simpleioc.Set(client)
-	return app
-}
-
-// SetSeeds 设置启动项目时，要执行的一些钩子函数
-func (app *ApplicationBuild) SetSeeds(seedFuncs ...seed.SeedFunc) *ApplicationBuild {
-	app.seeds = append(app.seeds, seedFuncs...)
 	return app
 }
 
@@ -170,7 +178,22 @@ func (app *ApplicationBuild) EnableStaticSource(file embed.FS) *ApplicationBuild
 	app.isLoadingStaticFs = true
 
 	// 封装 Https文件系统
-	app.isLoadingStaticFs = true
 	app.StaticFs = http.FS(file)
 	return app
 }
+
+// SetSeeds 设置启动项目时，要执行的一些钩子函数
+func (app *ApplicationBuild) SetSeeds(seedFuncs ...seed.SeedFunc) *ApplicationBuild {
+	app.seeds = append(app.seeds, seedFuncs...)
+	return app
+}
+
+//func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild // 启动web服务
+//func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild             // 启动数据库
+//func (app *ApplicationBuild) EnableCache(redConfig cache.RedisOptions) *ApplicationBuild                                       // 启动缓存
+//func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error                       // 加载配置文件、环境变量等
+//func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild                                               // 初始化日志打印
+//func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                                  // 启动缓存数据库
+//func (app *ApplicationBuild) InitCronJob() *ApplicationBuild                                                                   // 初始化定时任务
+//func (app *ApplicationBuild) SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild                    // 配置wen-token属性
+//func (app *ApplicationBuild) EnableStaticSource(file embed.FS) *ApplicationBuild                                               // 加载静态资源
