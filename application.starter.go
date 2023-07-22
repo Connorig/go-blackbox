@@ -27,6 +27,7 @@ type application struct {
 
 // New 创建app-starter启动器
 func New() (app *application) {
+	// single instance
 	doOnce.Do(func() {
 		builder := &ApplicationBuild{}
 		// 创建app启动器
