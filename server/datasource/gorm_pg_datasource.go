@@ -3,9 +3,11 @@ package datasource
 import (
 	"fmt"
 	"github.com/Domingor/go-blackbox/apputils/appassert"
+	"github.com/Domingor/go-blackbox/server/zaplog"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
 	"log"
 	"os"
 	"sync"
@@ -20,7 +22,8 @@ import (
 
 var (
 	once     sync.Once
-	_db      *gorm.DB        //全局db操作对象
+	_db      *gorm.DB //全局db操作对象
+	_error   error
 	pgConfig *PostgresConfig // pg配置文件
 	tables   []interface{}   // 初始化model
 )
@@ -40,27 +43,25 @@ type PostgresConfig struct {
 }
 
 // GormInit 初始化配置 pg连接信息、初始化model表信息
-func GormInit(pg *PostgresConfig, models []interface{}) {
+func GormInit(pg *PostgresConfig, models []interface{}) (err error) {
 	pgConfig = pg
 	tables = models
 	// 初始化
-	GetDbInstance()
+	_, err = GetDbInstance()
+	return
 }
 
-//GetDbInstance 多个协程在使用公用_db调用其他方法时，会从连接池中获取连接
-func GetDbInstance() *gorm.DB {
+// GetDbInstance 多个协程在使用公用_db调用其他方法时，会从连接池中获取连接
+func GetDbInstance() (*gorm.DB, error) {
 	// 只执行一次，用于初始化_db
 	once.Do(func() {
-		fmt.Println("starting initializing...")
-		err := gormPgSql(pgConfig)
-		if err != nil {
-			fmt.Printf("starting initialize failed %s \n", err)
-		}
+		zaplog.SugaredLogger.Info("db starting initializing...")
+		_error = gormPgSql(pgConfig)
 	})
-	return _db
+	return _db, _error
 }
 
-// 获取数据库连接
+// 初始化数据库连接
 func gormPgSql(pgConfig *PostgresConfig) (err error) {
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
@@ -75,24 +76,32 @@ func gormPgSql(pgConfig *PostgresConfig) (err error) {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=Asia/Shanghai",
 		pgConfig.Host, pgConfig.UserName, pgConfig.Password, pgConfig.DbName, pgConfig.Port, pgConfig.SSL)
 
-	// 打开数据库会话
-	if _db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: newLogger}); err != nil {
-		fmt.Printf("open datasource is failed %v \n", err)
+	// 表名规则
+	namingStrategy := schema.NamingStrategy{
+		//TablePrefix:   "", // table name prefix, table for `User` would be `t_users`
+		SingularTable: true, // use singular table name, table for `User` would be `user` with this option enabled
+		//NoLowerCase:   true,                              // skip the snake_casing of names
+		//NameReplacer:  strings.NewReplacer("CID", "Cid"), // use name replacer to change struct/field name before convert it to db name
 	}
 
-	//models := make([]interface{}, 0)
+	// 打开数据库会话
+	if _db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: newLogger, NamingStrategy: namingStrategy}); err != nil {
+		zaplog.SugaredLogger.Debugf("open datasource failed %s", err)
+		return
+	}
+
 	// 过滤 nil结构体
 	for i, item := range tables {
 		if appassert.IsNilFixed(item) {
 			tables = append(tables[:i], tables[i+1:]...)
-			//models = append(models, item)
 		}
 	}
 
+	// 自动创建表
 	if len(tables) > 0 {
 		err = _db.AutoMigrate(tables...) // 初始化model 数据表
 		if err != nil {
-			fmt.Println("AutoMigrate tables failed ", err)
+			zaplog.SugaredLogger.Debugf("AutoMigrate tables failed %s", err)
 		}
 	}
 

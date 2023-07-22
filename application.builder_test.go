@@ -3,9 +3,9 @@ package appbox
 import (
 	"context"
 	"fmt"
-	"github.com/Domingor/go-blackbox/server/loadconf"
+	"github.com/Domingor/go-blackbox/server/cache"
+	"github.com/Domingor/go-blackbox/server/datasource"
 	"github.com/Domingor/go-blackbox/server/shutdown"
-	"github.com/Domingor/go-blackbox/static"
 	"github.com/kataras/iris/v12"
 	context2 "github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
@@ -15,42 +15,40 @@ import (
 )
 
 func TestWeb(t *testing.T) {
-	go time.AfterFunc(time.Second*20, func() {
+	go time.AfterFunc(time.Second*50, func() {
 		shutdown.Exit("it is about time to shutdown web server, you asshole!")
 	})
 
-	err := New().
-		Start(func(ctx context.Context, builder *ApplicationBuild) error {
-			builder.InitLog(".", "debug").
-				EnableWeb("", ":8899", "debug", Router)
-			return nil
+	err2 := New().
+		Start(func(ctx context.Context, builder *ApplicationBuild) {
+			dbConfig := &datasource.PostgresConfig{
+				UserName:     "ows",
+				Password:     "thingple",
+				Host:         "127.0.0.1",
+				Port:         5440,
+				DbName:       "aowenfm-test2",
+				InitDb:       true,
+				AliasName:    "",
+				SSL:          "disable",
+				MaxIdleConns: 20,
+				MaxOpenConns: 10,
+			}
+
+			redConfig := cache.RedisOptions{
+				Addr:     "127.0.0.1:6380",
+				Password: "123456",
+				DB:       0,
+			}
+
+			builder.
+				InitLog(".", "debug").                   // 初始化日志
+				EnableWeb("", ":8899", "debug", Router). // 开启webServer
+				EnableDb(dbConfig, RegisterTables()...). // 开启数据库操作
+				SetSeeds(Setup).InitCronJob().           // 启动服务3s后的一些后置函数、定时任务执行
+				EnableCache(redConfig)                   // 开启redis
 		})
-	t.Log(err)
-	fmt.Println("ending")
-}
 
-func Test2(t *testing.T) {
-	go time.AfterFunc(time.Second*100, func() {
-		shutdown.Exit("time to shutdown")
-	})
-	err := New().Start(func(ctx context.Context, builder *ApplicationBuild) error {
-
-		err := builder.LoadConfig(&loadconf.Config, func(loader loadconf.Loader) {
-			loader.SetConfigFileSearcher("config", ".")
-		})
-		if err != nil {
-			return err
-		}
-
-		builder.
-			InitLog(".", "debug").
-			EnableStaticSource(static.StaticFile).
-			EnableWeb("", ":8899", "debug", nil)
-		return nil
-	})
-	if err != nil {
-		t.Error(err)
-	}
+	t.Log(err2)
 }
 
 type User struct {
@@ -60,7 +58,7 @@ type User struct {
 }
 
 func (User) TableName() string {
-	return "user_info"
+	return "user_test"
 }
 
 func Router(application *iris.Application) {
@@ -82,11 +80,23 @@ func RegisterTables() (tables []interface{}) {
 }
 
 func Setup(ctx context.Context) (err error) {
-	modules := []func(context.Context) error{func(ctx context.Context) error {
-		fmt.Println("hello it's a module func.")
-		return nil
-	}}
+	modules := []func(context.Context) error{
+		// 普通后置函数
+		func(ctx context.Context) error {
+			fmt.Println("hello it's a module func.")
+			return nil
+		},
+		// 定时函数，必须InitCronJob() 才会执行定时任务
+		func(ctx context.Context) error {
+			if _, err2 := CronJobSingle().AddFunc("@every 1s", func() {
+				fmt.Println("func running in 1 sec....")
+			}); err2 != nil {
+				return err2
+			}
+			return nil
+		}}
 
+	// 批量执行
 	for _, m := range modules {
 		err = m(ctx)
 		if err != nil {
@@ -96,7 +106,7 @@ func Setup(ctx context.Context) (err error) {
 	return
 }
 
-//type Struct struct {
+//type Student struct {
 //	Field int
 //}
 
@@ -105,12 +115,12 @@ func Setup(ctx context.Context) (err error) {
 new（T）和& T {} 完全等价：分配一个零T并返回一个指向这个分配的内存的指针。唯一的区别是，& T {} 不适用于内置类型，如 int ;你只能做 new（int）。
 */
 //func TestNil(t *testing.T) {
-//	test1 := &Struct{}
-//	test2 := new(Struct)
-//	test3 := (*Struct)(nil)
-//	fmt.Printf("%#v, %#v, %#v \n", test1, test2, test3) //&main.Struct{Field:0}, &main.Struct{Field:0}, (*main.Struct)(nil)
+//	test1 := &Student{}
+//	test2 := new(Student)
+//	test3 := (*Student)(nil)
+//	fmt.Printf("%#v, %#v, %#v \n", test1, test2, test3) //&main.Student{Field:0}, &main.Student{Field:0}, (*main.Student)(nil)
 //
-//	fmt.Printf("%T, %T, %T \n", test1, test2, test3) // *main.Struct, *main.Struct, *main.Struct
+//	fmt.Printf("%T, %T, %T \n", test1, test2, test3) // *main.Student, *main.Student, *main.Student
 //
 //	test1.Field = 1
 //	fmt.Println(test1.Field) // 1
