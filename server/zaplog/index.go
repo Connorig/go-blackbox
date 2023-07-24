@@ -14,11 +14,13 @@ var (
 	SugaredLogger *zap.SugaredLogger // 类似于printf
 )
 
-func Init() {
+func Init() (err error) {
 	var logger *zap.Logger
 
 	if !dir.IsExist(CONFIG.Director) {
-		dir.InsureDir(CONFIG.Director)
+		if err := dir.InsureDir(CONFIG.Director); err != nil {
+			return
+		}
 	}
 
 	switch CONFIG.Level {
@@ -55,6 +57,7 @@ func Init() {
 	Logger = logger
 	// 功能类似于printf
 	SugaredLogger = logger.Sugar()
+	return
 }
 
 // getEncoderConfig 获取 zapcore.EncoderConfig

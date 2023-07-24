@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/datasource"
+	"github.com/Domingor/go-blackbox/server/datasource/pgmodel"
 	"github.com/Domingor/go-blackbox/server/shutdown"
 	"github.com/kataras/iris/v12"
 	context2 "github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
-	"gorm.io/gorm"
 	"testing"
 	"time"
 )
@@ -46,13 +46,14 @@ func TestWeb(t *testing.T) {
 				EnableDb(dbConfig, RegisterTables()...). // 开启数据库操作
 				SetSeeds(Setup).InitCronJob().           // 启动服务3s后的一些后置函数、定时任务执行
 				EnableCache(redConfig)                   // 开启redis
+
 		})
 
 	t.Log(err2)
 }
 
 type User struct {
-	gorm.Model
+	pgmodel.Model
 	Name string
 	Age  int
 }
