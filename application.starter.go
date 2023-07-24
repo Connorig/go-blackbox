@@ -23,8 +23,8 @@ var (
 	afterDo = make(chan struct{})
 )
 
-// AFTER_SECOND 默认时长后开始执行 后置函数
-const AFTER_SECOND = time.Second * 2
+// AfterSecond 默认时长后开始执行 后置函数
+const AfterSecond = time.Second * 2
 
 // Application app启动器接口
 type Application interface {
@@ -89,7 +89,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 	if app.builder.IsEnableDB {
 		// 初始化数据，注册模型
 		if err = datasource.GormInit(app.builder.dbConfig, app.builder.dbModels); err != nil {
-			log.SugaredLogger.Infof("init db service error %s", err)
+			log.SugaredLogger.Debugf("init db service error %s", err)
 			return err
 		}
 		// 放入ioc
@@ -103,6 +103,16 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 		// 初始化redis，放入容器
 		simpleioc.Set(cache.Init(simpleioc.GetContext().Ctx, app.builder.redisOptions))
 	}
+	//3. MongoDb
+	if app.builder.IsEnableDB {
+		if client, err := mongodb.GetClient(app.builder.mongoBbConfig, simpleioc.GetContext().Ctx); err != nil {
+			log.SugaredLogger.Debugf("init mongoDb fail err %s", err)
+		} else {
+			// mongoDb客户端放入容器
+			simpleioc.Set(client)
+		}
+	}
+
 	// n. WebService
 	if app.builder.IsEnableWeb { // 是否开启 WebServer
 		// 开启协程监听TCP-Web端口服务
@@ -121,8 +131,8 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			}
 		}()
 
-		// 3秒后调用后置函数
-		time.AfterFunc(AFTER_SECOND, func() {
+		// 诺干秒后调用后置函数（定时cron任务函数等）
+		time.AfterFunc(AfterSecond, func() {
 			afterDo <- struct{}{}
 		})
 	}

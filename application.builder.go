@@ -49,7 +49,8 @@ type ApplicationBuild struct {
 	ctx context.Context
 	// redis配置对象
 	redisOptions cache.RedisOptions
-
+	// MongoDB
+	mongoBbConfig *mongodb.MongoDBConfig
 	//=========================================》 启动标识
 	// 是否启动定时服务，在enableCronjob后为true，会自动start()，即开始调用定时Cron表达式函数
 	IsRunningCronJob bool
@@ -146,29 +147,28 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 
 // EnableMongoDB 启动MongoDB客户端
 func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild {
-	client, err := mongodb.GetClient(dbConfig, simpleioc.GetContext().Ctx)
-	if err != nil {
-		log.SugaredLogger.Debugf("init mongoDb fail err %s", err)
+	if dbConfig != nil {
+		app.IsEnableDB = true
+		app.mongoBbConfig = dbConfig
 	}
-	// mongoDb客户端放入容器
-	simpleioc.Set(client)
 	return app
 }
 
 // InitCronJob 初始化定时任务对象，存放入IOC
 func (app *ApplicationBuild) InitCronJob() *ApplicationBuild {
-	instance := cronjobs.CronInstance()
 	// 设置启动定时任务
 	app.IsRunningCronJob = true
 
 	// 定时任务客户端放入容器
-	simpleioc.Set(instance)
+	simpleioc.Set(cronjobs.CronInstance())
 	return app
 }
 
 // SetupToken 设置系统token有效期
 func (app *ApplicationBuild) SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild {
+
 	apptoken.Init(AMinute, RHour, TokenIssuer)
+
 	return app
 }
 

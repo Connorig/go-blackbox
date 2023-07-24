@@ -46,6 +46,7 @@ func TestWeb(t *testing.T) {
 				EnableDb(dbConfig, RegisterTables()...). // 开启数据库操作
 				SetSeeds(Setup).InitCronJob().           // 启动服务3s后的一些后置函数、定时任务执行
 				EnableCache(redConfig)                   // 开启redis
+
 		})
 
 	t.Log(err2)

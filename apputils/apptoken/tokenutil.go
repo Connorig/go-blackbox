@@ -19,9 +19,16 @@ var (
 
 // Init 初始化设置token-过期时间、重新刷新时间、token签名
 func Init(AMinute, RHour time.Duration, TokenIssuer string) {
-	aTokenExpiredDuration = AMinute
-	rTokenExpiredDuration = RHour
-	tokenIssuer = TokenIssuer
+
+	if AMinute > 0 {
+		aTokenExpiredDuration = AMinute
+	}
+	if RHour > 0 {
+		rTokenExpiredDuration = RHour
+	}
+	if TokenIssuer != "" && len(tokenIssuer) > 0 {
+		tokenIssuer = TokenIssuer
+	}
 }
 
 type MyClaim struct {
