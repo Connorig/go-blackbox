@@ -20,7 +20,7 @@ func TestWeb(t *testing.T) {
 	})
 
 	err2 := New().
-		Start(func(ctx context.Context, builder *ApplicationBuild) {
+		Start(func(ctx context.Context, builder *ApplicationBuild) error {
 			dbConfig := &datasource.PostgresConfig{
 				UserName:     "ows",
 				Password:     "thingple",
@@ -46,7 +46,7 @@ func TestWeb(t *testing.T) {
 				EnableDb(dbConfig, RegisterTables()...). // 开启数据库操作
 				SetSeeds(Setup).InitCronJob().           // 启动服务3s后的一些后置函数、定时任务执行
 				EnableCache(redConfig)                   // 开启redis
-
+			return nil
 		})
 
 	t.Log(err2)
