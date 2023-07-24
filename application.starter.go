@@ -107,7 +107,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 		simpleioc.Set(cache.Init(simpleioc.GetContext().Ctx, app.builder.redisOptions))
 	}
 	//3. MongoDb
-	if app.builder.IsEnableDB {
+	if app.builder.IsEnableMongoDB {
 		if client, err := mongodb.GetClient(app.builder.mongoBbConfig, simpleioc.GetContext().Ctx); err != nil {
 			log.SugaredLogger.Debugf("init mongoDb fail err %s", err)
 		} else {

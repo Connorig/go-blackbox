@@ -102,6 +102,7 @@ func gormPgSql(pgConfig *PostgresConfig) (err error) {
 		err = _db.AutoMigrate(tables...) // 初始化model 数据表
 		if err != nil {
 			zaplog.SugaredLogger.Debugf("AutoMigrate tables failed %s", err)
+			return err
 		}
 	}
 

@@ -3,14 +3,13 @@ package appbox
 import (
 	"context"
 	"fmt"
-	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/datasource"
-	"github.com/Domingor/go-blackbox/server/datasource/pgmodel"
 	"github.com/Domingor/go-blackbox/server/loadconf"
 	"github.com/Domingor/go-blackbox/server/shutdown"
 	"github.com/kataras/iris/v12"
 	context2 "github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
+	"gorm.io/gorm"
 	"testing"
 	"time"
 )
@@ -33,27 +32,26 @@ func TestWeb(t *testing.T) {
 				UserName:     "ows",
 				Password:     "thingple",
 				Host:         "127.0.0.1",
-				Port:         5440,
-				DbName:       "aowenfm-test2",
-				InitDb:       true,
+				Port:         5442,
+				DbName:       "test",
 				AliasName:    "",
 				SSL:          "disable",
 				MaxIdleConns: 20,
 				MaxOpenConns: 10,
 			}
 
-			redConfig := cache.RedisOptions{
-				Addr:     "127.0.0.1:6380",
-				Password: "123456",
-				DB:       0,
-			}
+			//redConfig := cache.RedisOptions{
+			//	Addr:     "127.0.0.1:6380",
+			//	Password: "123456",
+			//	DB:       0,
+			//}
 
 			builder.
 				InitLog(".", "debug").                   // 初始化日志
 				EnableWeb("", ":8899", "debug", Router). // 开启webServer
-				EnableDb(dbConfig, RegisterTables()...). // 开启数据库操作
-				SetSeeds(Setup).InitCronJob().           // 启动服务3s后的一些后置函数、定时任务执行
-				EnableCache(redConfig)                   // 开启redis
+				EnableDb(dbConfig, RegisterTables()...)  // 开启数据库操作
+			//SetSeeds(Setup).InitCronJob().           // 启动服务3s后的一些后置函数、定时任务执行
+			//EnableCache(redConfig)                   // 开启redis
 			return nil
 		})
 
@@ -61,14 +59,14 @@ func TestWeb(t *testing.T) {
 }
 
 type User struct {
-	pgmodel.Model
+	gorm.Model
 	Name string
 	Age  int
 }
 
-func (User) TableName() string {
-	return "user_test"
-}
+//func (User) TableName() string {
+//	return "user_test"
+//}
 
 func Router(application *iris.Application) {
 	application.PartyFunc("/v1", func(p router.Party) {
