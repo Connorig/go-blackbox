@@ -75,13 +75,15 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 		return
 	}
 
+	// 传入全局Context，开始执行配置信息，标记要启动的服务
+	if err = builderFun(simpleioc.GetContext().Ctx, app.builder); err != nil {
+		return err
+	}
+
 	// 启动日志
 	if !app.builder.IsEnableZapLogs {
 		app.builder.InitLog(".", "debug")
 	}
-
-	// 传入全局Context，开始执行配置信息，标记要启动的服务
-	builderFun(simpleioc.GetContext().Ctx, app.builder)
 
 	// TODO others services that needed to be handled.
 	// TODO write down here.
@@ -180,7 +182,7 @@ func MongoDb() *mongodb.Client {
 }
 
 func afterDoSomething() (err error) {
-	log.SugaredLogger.Info("execute seed")
+	log.SugaredLogger.Info("executing seeds")
 	// 启动iris之后再执行seed
 	if err = seed.Seed(app.builder.seeds...); err != nil {
 		log.SugaredLogger.Debug("seed.Seed running failed,", err)

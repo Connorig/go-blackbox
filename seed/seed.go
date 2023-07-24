@@ -2,7 +2,6 @@ package seed
 
 import (
 	"context"
-	"errors"
 	"github.com/Domingor/go-blackbox/server/zaplog"
 	"github.com/Domingor/go-blackbox/simpleioc"
 	"go.uber.org/zap"
@@ -13,19 +12,19 @@ type SeedFunc func(etc context.Context) (err error)
 
 // Seed exec seed funcs
 func Seed(SeedFunctions ...SeedFunc) error {
-	//zaplog.Logger.Debug("Seed funcs are running now.")
-
 	if len(SeedFunctions) == 0 {
-		return errors.New("there is no seed func needed to run")
+		zaplog.SugaredLogger.Debug("there is no seed func needed to run")
+		return nil
 	}
+
 	for _, v := range SeedFunctions {
 		// 批量执行种子函数，传入上下文对象
-		err := v(simpleioc.GetContext().Ctx)
-		if err != nil {
+		if err := v(simpleioc.GetContext().Ctx); err != nil {
 			zaplog.Logger.Error("Seed func running fail.", zap.Any("err", err))
 			return err
 		}
 	}
+
 	zaplog.Logger.Info("all seed func are run now")
 	return nil
 }
