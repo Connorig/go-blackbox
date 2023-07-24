@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/datasource"
+	"github.com/Domingor/go-blackbox/server/datasource/pgmodel"
 	"github.com/Domingor/go-blackbox/server/shutdown"
 	"github.com/kataras/iris/v12"
 	context2 "github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
-	"gorm.io/gorm"
 	"testing"
 	"time"
 )
@@ -53,7 +53,7 @@ func TestWeb(t *testing.T) {
 }
 
 type User struct {
-	gorm.Model
+	pgmodel.Model
 	Name string
 	Age  int
 }
