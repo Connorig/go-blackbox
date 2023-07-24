@@ -29,7 +29,7 @@ const AfterSecond = time.Second * 2
 // Application app启动器接口
 type Application interface {
 	// Start 用于读取配置文件、启动所有服务
-	Start(builder func(ctx context.Context, builder *ApplicationBuild)) error
+	Start(builder func(ctx context.Context, builder *ApplicationBuild) error) error
 }
 
 // app启动器-实现Application接口
@@ -51,7 +51,7 @@ func New() Application {
 }
 
 // Start 全局启动配置器，初始化个个服务配置信息
-func (app *application) Start(builderFun func(ctx context.Context, builder *ApplicationBuild)) (err error) {
+func (app *application) Start(builderFun func(ctx context.Context, builder *ApplicationBuild) error) (err error) {
 
 	// 开始执行构建服务程序
 	if err = app.buildingService(builderFun); err == nil {
@@ -68,7 +68,7 @@ func (app *application) Start(builderFun func(ctx context.Context, builder *Appl
 }
 
 // 根据build配置是否开启服务标识进行一一初始化
-func (app *application) buildingService(builderFun func(ctx context.Context, builder *ApplicationBuild)) (err error) {
+func (app *application) buildingService(builderFun func(ctx context.Context, builder *ApplicationBuild) error) (err error) {
 	// 构建器必须有效！
 	if builderFun == nil {
 		err = errors.New("builderFun is not a expected function for building")

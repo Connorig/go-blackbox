@@ -18,7 +18,7 @@ func Init() (err error) {
 	var logger *zap.Logger
 
 	if !dir.IsExist(CONFIG.Director) {
-		if err := dir.InsureDir(CONFIG.Director); err != nil {
+		if err = dir.InsureDir(CONFIG.Director); err != nil {
 			return
 		}
 	}
