@@ -141,7 +141,10 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 	}
 
 	// 初始化日志，通过 zapLog.日志对象进行调用
-	log.Init()
+	err := log.Init()
+	if err != nil {
+		fmt.Println("Log Init() err", err)
+	}
 	return app
 }
 

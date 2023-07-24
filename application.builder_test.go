@@ -6,6 +6,7 @@ import (
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/datasource"
 	"github.com/Domingor/go-blackbox/server/datasource/pgmodel"
+	"github.com/Domingor/go-blackbox/server/loadconf"
 	"github.com/Domingor/go-blackbox/server/shutdown"
 	"github.com/kataras/iris/v12"
 	context2 "github.com/kataras/iris/v12/context"
@@ -21,6 +22,13 @@ func TestWeb(t *testing.T) {
 
 	err2 := New().
 		Start(func(ctx context.Context, builder *ApplicationBuild) error {
+			// 加载项目配置文件
+			if err := builder.LoadConfig(&loadconf.Config, func(loader loadconf.Loader) {
+				loader.SetConfigFileSearcher("config", ".")
+			}); err != nil {
+				return err
+			}
+
 			dbConfig := &datasource.PostgresConfig{
 				UserName:     "ows",
 				Password:     "thingple",
