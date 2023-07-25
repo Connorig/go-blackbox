@@ -3,8 +3,6 @@ package appbox
 import (
 	"context"
 	"fmt"
-	"github.com/Domingor/go-blackbox/server/datasource"
-	"github.com/Domingor/go-blackbox/server/loadconf"
 	"github.com/Domingor/go-blackbox/server/shutdown"
 	"github.com/kataras/iris/v12"
 	context2 "github.com/kataras/iris/v12/context"
@@ -22,23 +20,23 @@ func TestWeb(t *testing.T) {
 	err2 := New().
 		Start(func(ctx context.Context, builder *ApplicationBuild) error {
 			// 加载项目配置文件
-			if err := builder.LoadConfig(&loadconf.Config, func(loader loadconf.Loader) {
-				loader.SetConfigFileSearcher("config", ".")
-			}); err != nil {
-				return err
-			}
+			//if err := builder.LoadConfig(&loadconf.Config, func(loader loadconf.Loader) {
+			//	loader.SetConfigFileSearcher("config", ".")
+			//}); err != nil {
+			//	return err
+			//}
 
-			dbConfig := &datasource.PostgresConfig{
-				UserName:     "ows",
-				Password:     "thingple",
-				Host:         "127.0.0.1",
-				Port:         5442,
-				DbName:       "test",
-				AliasName:    "",
-				SSL:          "disable",
-				MaxIdleConns: 20,
-				MaxOpenConns: 10,
-			}
+			//dbConfig := &datasource.PostgresConfig{
+			//	UserName:     "ows",
+			//	Password:     "thingple",
+			//	Host:         "127.0.0.1",
+			//	Port:         5442,
+			//	DbName:       "test",
+			//	AliasName:    "",
+			//	SSL:          "disable",
+			//	MaxIdleConns: 20,
+			//	MaxOpenConns: 10,
+			//}
 
 			//redConfig := cache.RedisOptions{
 			//	Addr:     "127.0.0.1:6380",
@@ -47,9 +45,9 @@ func TestWeb(t *testing.T) {
 			//}
 
 			builder.
-				InitLog(".", "debug").                   // 初始化日志
-				EnableWeb("", ":8899", "debug", Router). // 开启webServer
-				EnableDb(dbConfig, RegisterTables()...)  // 开启数据库操作
+				InitLog(".", "debug").                          // 初始化日志
+				EnableWeb(TimeFormat, ":8899", "debug", Router) // 开启webServer
+			//EnableDb(dbConfig, RegisterTables()...)  // 开启数据库操作
 			//SetSeeds(Setup).InitCronJob().           // 启动服务3s后的一些后置函数、定时任务执行
 			//EnableCache(redConfig)                   // 开启redis
 			return nil

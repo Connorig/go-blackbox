@@ -128,16 +128,17 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 					return
 				}
 			}
+
+			// 预留n秒给iris进行服务监听启动，n秒过后开始执行后置函数（定时cron任务函数等）
+			time.AfterFunc(AfterSecond, func() {
+				afterDo <- struct{}{}
+			})
+
 			// 启动web，此时会阻塞。后面的代码不会被轮到执行
 			if err = app.builder.irisApp.Run(simpleioc.GetContext().Ctx); err != nil {
 				log.SugaredLogger.Errorf("Runing WebService error %s", err)
 			}
 		}()
-
-		// 诺干秒后调用后置函数（定时cron任务函数等）
-		time.AfterFunc(AfterSecond, func() {
-			afterDo <- struct{}{}
-		})
 	}
 
 	// 监听 web服务启动后3秒执行后置函数
