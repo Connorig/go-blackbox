@@ -46,7 +46,6 @@ func New() Application {
 			&ApplicationBuild{},
 		}
 	})
-
 	return app
 }
 
