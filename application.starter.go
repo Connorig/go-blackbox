@@ -54,9 +54,11 @@ func (app *application) Start(builderFun func(ctx context.Context, builder *Appl
 
 	// 开始执行构建服务程序
 	if err = app.buildingService(builderFun); err == nil {
+
 		// 全部服务启动成功后，阻塞主线程，开始监听web端口服务:
 		// 这里会监听一个无缓存chanel，阻塞式监听消息。防止main现场结束，一旦main现场结束，web服务的协程也会结束，即服务终止。
 		shutdown.WaitExit(&shutdown.Configuration{
+
 			BeforeExit: func(s string) {
 				// 收到消息-开始执行钩子函数
 				log.SugaredLogger.Info(s)
