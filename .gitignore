@@ -21,3 +21,5 @@
 Dockerfile
 *.log
 .idea
+/zap
+latest_log
