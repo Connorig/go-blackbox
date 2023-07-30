@@ -2,6 +2,7 @@ package webiris
 
 import (
 	"context"
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/recover"
 	"net/http"
@@ -83,6 +84,7 @@ func (w *WebIris) Run(ctx context.Context) (err error) {
 		iris.WithoutServerError(iris.ErrServerClosed),
 		iris.WithOptimizations,
 		iris.WithTimeFormat(w.timeFormat))
+	fmt.Println(err)
 	return
 }
 

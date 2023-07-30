@@ -13,8 +13,8 @@ import (
 
 // Model gorm默认字段
 type Model struct {
-	ID        int `gorm:"primarykey"` // 主键ID
+	ID        int `gorm:"primarykey"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"` // 逻辑删除
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
