@@ -136,6 +136,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 
 		// 诺干秒后调用后置函数（定时cron任务函数等）
 		time.AfterFunc(AfterSecond, func() {
+			// 发送信道到 信道
 			afterDo <- struct{}{}
 		})
 	}
