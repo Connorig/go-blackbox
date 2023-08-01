@@ -36,7 +36,7 @@ func init() {
 	Set(cronjobs.CronInstance())
 }
 
-// Set 将struct类型对象放入容器中，只能传入指针-struct类型数据
+// Set 将struct类型对象放入容器中，只能传入指针 *struct类型数据
 func Set(beans ...any) {
 	for i := range beans {
 		_type := reflect.TypeOf(beans[i])
