@@ -38,6 +38,7 @@ func init() {
 
 // Set 将struct类型对象放入容器中，只能传入指针 *struct类型数据
 func Set(beans ...any) {
+	// TODO
 	for i := range beans {
 		_type := reflect.TypeOf(beans[i])
 		if !(_type.Kind() == reflect.Ptr && _type.Elem().Kind() == reflect.Struct) {
