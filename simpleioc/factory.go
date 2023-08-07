@@ -40,6 +40,7 @@ func init() {
 func Set(beans ...any) {
 	// TODO 根据指针类型存储
 	for i := range beans {
+
 		_type := reflect.TypeOf(beans[i])
 		if !(_type.Kind() == reflect.Ptr && _type.Elem().Kind() == reflect.Struct) {
 			panic("it is not struct pointer")
