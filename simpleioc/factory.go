@@ -68,6 +68,7 @@ func GetDb() *gorm.DB {
 
 // GetContext 获取全局上下文
 func GetContext() *GlobalContext {
+	// 传入一个nil指针，类型为 GlobalContext
 	get := Get((*GlobalContext)(nil))
 	return get
 }
