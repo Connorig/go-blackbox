@@ -83,6 +83,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 
 	// 启动日志
 	if !app.builder.IsEnableZapLogs {
+		// 未配置日志，则使用默认配置
 		app.builder.InitLog(".", "debug")
 	}
 
