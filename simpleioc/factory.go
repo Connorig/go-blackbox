@@ -63,7 +63,6 @@ func Get[T any](bean T) T {
 func GetDb() *gorm.DB {
 	// (* T)(nil) 它返回nil指针或没有指针，但仍然为struct的所有字段分配内存。
 	get := Get((*gorm.DB)(nil))
-
 	return get
 }
 
@@ -71,7 +70,6 @@ func GetDb() *gorm.DB {
 func GetContext() *GlobalContext {
 	// 传入一个nil指针，类型为 GlobalContext
 	get := Get((*GlobalContext)(nil))
-
 	return get
 }
 
