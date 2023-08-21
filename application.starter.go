@@ -147,7 +147,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 		})
 	}
 
-	// 监听 web服务启动后3秒执行后置函数
+	// 监听 web服务启动后3秒执行后置函数（定时任务、初始化等函数调用）
 	for {
 		select {
 		case <-afterDo:
