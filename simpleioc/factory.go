@@ -70,6 +70,7 @@ func GetDb() *gorm.DB {
 func GetContext() *GlobalContext {
 	// 传入一个nil指针，类型为 GlobalContext
 	get := Get((*GlobalContext)(nil))
+
 	return get
 }
 
