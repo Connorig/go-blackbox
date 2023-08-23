@@ -7,6 +7,7 @@ import "reflect"
 * @Date:   23.3.28 14:37
 * @Description:
  */
+// 断言工具类
 
 // IsNilFixed 判断当前值是否为nil，i 必须为: Ptr、Map、Array、Chan、Slice
 func IsNilFixed(i interface{}) bool {
