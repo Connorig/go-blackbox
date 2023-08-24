@@ -9,7 +9,7 @@ import (
 	"log"
 )
 
-const BITS = 2048 // 密钥长度 1024 2048
+const BITS = 2048 // 密钥长度 1024,2048
 
 // GenerateRSAKey 生成 RSA 密钥对
 func GenerateRSAKey() (*rsa.PrivateKey, *rsa.PublicKey) {
