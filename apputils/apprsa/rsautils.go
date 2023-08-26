@@ -17,6 +17,7 @@ func GenerateRSAKey() (*rsa.PrivateKey, *rsa.PublicKey) {
 	if err != nil {
 		log.Printf("生成RSA密钥对失败 %s", err)
 	}
+
 	return privateKey, &privateKey.PublicKey
 }
 
@@ -27,6 +28,7 @@ func DecodingByPrivateKey(privateKey string, result []byte) (decodeStr []byte, e
 	if err1 != nil {
 		log.Printf("base decoding error %s", err1.Error())
 	}
+
 	// 通过pem加载密钥
 	loadPrivateKey := LoadPrivateKey(decodeString)
 	// rsa 解码
@@ -43,6 +45,7 @@ func ExportPublicKeyAsPEM(publicKey *rsa.PublicKey) []byte {
 	if err != nil {
 		log.Printf("将 RSA 公钥导出为 PEM 格式失败")
 	}
+
 	pubPEM := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: pubBytes})
 	return pubPEM
 }
