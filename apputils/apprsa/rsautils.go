@@ -43,10 +43,12 @@ func DecodingByPrivateKey(privateKey string, result []byte) (decodeStr []byte, e
 func ExportPublicKeyAsPEM(publicKey *rsa.PublicKey) []byte {
 	pubBytes, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
+
 		log.Printf("将 RSA 公钥导出为 PEM 格式失败")
 	}
 
 	pubPEM := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: pubBytes})
+
 	return pubPEM
 }
 
