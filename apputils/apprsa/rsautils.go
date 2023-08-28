@@ -44,6 +44,7 @@ func ExportPublicKeyAsPEM(publicKey *rsa.PublicKey) []byte {
 
 		log.Printf("将 RSA 公钥导出为 PEM 格式失败")
 	}
+
 	pubPEM := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: pubBytes})
 	return pubPEM
 }
