@@ -44,7 +44,6 @@ func ExportPublicKeyAsPEM(publicKey *rsa.PublicKey) []byte {
 
 		log.Printf("将 RSA 公钥导出为 PEM 格式失败")
 	}
-
 	pubPEM := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: pubBytes})
 	return pubPEM
 }
@@ -61,6 +60,7 @@ func LoadPrivateKey(privPEM []byte) *rsa.PrivateKey {
 	block, _ := pem.Decode(privPEM)
 	if block == nil {
 		//panic("failed to parse PEM block containing the key")
+
 		log.Printf("解析 PEM block 私钥失败")
 	}
 	privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
