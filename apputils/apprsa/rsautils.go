@@ -52,6 +52,7 @@ func ExportPublicKeyAsPEM(publicKey *rsa.PublicKey) []byte {
 func ExportPrivateKeyAsPEM(privateKey *rsa.PrivateKey) []byte {
 	privBytes := x509.MarshalPKCS1PrivateKey(privateKey)
 	privPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: privBytes})
+
 	return privPEM
 }
 
