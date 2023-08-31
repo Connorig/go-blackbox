@@ -6,7 +6,7 @@ import (
 	text "text/template"
 )
 
-// git update-index --chmod +x script.sh
+// TODO 设置 .script.sh 可执行权限 git update-index --chmod +x script.sh
 
 // Param 基础配置
 type Param struct {
