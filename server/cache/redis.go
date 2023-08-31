@@ -7,11 +7,11 @@ import (
 )
 
 type Rediser interface {
-	Get(key string, value interface{}) (err error)
-	GetRedisClient() *cache.Cache
-	IsExists(key string) bool
-	Set(Key string, value interface{}) (err error)
-	SetTtl(key string, value interface{}, ttl time.Duration) (err error)
+	Get(key string, value interface{}) (err error)                       // 获取key-value
+	GetRedisClient() *cache.Cache                                        // 操作redis客户端
+	IsExists(key string) bool                                            // 判断key是否存在
+	Set(Key string, value interface{}) (err error)                       // 添加key-value
+	SetTtl(key string, value interface{}, ttl time.Duration) (err error) // 设置key超时时间
 }
 
 // RedisCache 封装操作客户端
