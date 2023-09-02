@@ -60,6 +60,7 @@ func rendText(data interface{}, temp string) (content string, err error) {
 	return
 }
 
+// GenerateBaseDockerfile 构建基础容器环境镜像
 func GenerateBaseDockerfile() (err error) {
 
 	dockerContent, err := rendText(nil, baseDockerFile)
