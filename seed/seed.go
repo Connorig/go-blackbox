@@ -24,7 +24,6 @@ func Seed(SeedFunctions ...SeedFunc) error {
 			return err
 		}
 	}
-
 	zaplog.Logger.Info("all seed func have been running now")
 	return nil
 }
