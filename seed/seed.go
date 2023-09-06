@@ -16,6 +16,7 @@ func Seed(SeedFunctions ...SeedFunc) error {
 		zaplog.SugaredLogger.Debug("there is no seed func needed to run")
 		return nil
 	}
+
 	// 批量执行种子函数（定时任务、初始化配置函数等）
 	for _, v := range SeedFunctions {
 		// 批量执行种子函数，传入上下文对象
