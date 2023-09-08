@@ -11,9 +11,9 @@ import (
 * @Description:
  */
 
-// Model gorm默认字段
+// Model 默认表需携带的必须字段
 type Model struct {
-	ID        int `gorm:"primarykey"`
+	ID        int `gorm:"primarykey"` // 主键
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"` // 逻辑删除
