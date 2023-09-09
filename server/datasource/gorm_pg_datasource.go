@@ -38,8 +38,8 @@ type PostgresConfig struct {
 	InitDb       bool
 	AliasName    string
 	SSL          string
-	MaxIdleConns int
-	MaxOpenConns int
+	MaxIdleConns int // 最大闲置连接数
+	MaxOpenConns int // 最大连接数
 }
 
 // GormInit 初始化配置 pg连接信息、初始化model表信息
