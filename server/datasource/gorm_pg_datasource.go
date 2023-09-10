@@ -86,7 +86,7 @@ func gormPgSql(pgConfig *PostgresConfig) (err error) {
 
 	// 打开数据库会话
 	if _db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: newLogger, NamingStrategy: namingStrategy}); err != nil {
-		zaplog.SugaredLogger.Debugf("open datasource failed %s", err)
+		zaplog.SugaredLogger.Debugf("open datasource failed %v", err)
 		return
 	}
 
@@ -101,7 +101,7 @@ func gormPgSql(pgConfig *PostgresConfig) (err error) {
 	if len(tables) > 0 {
 		err = _db.AutoMigrate(tables...) // 初始化model 数据表
 		if err != nil {
-			zaplog.SugaredLogger.Debugf("AutoMigrate tables failed %s", err)
+			zaplog.SugaredLogger.Debugf("AutoMigrate tables failed %v", err)
 			return err
 		}
 	}
