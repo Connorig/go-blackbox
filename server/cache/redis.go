@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Rediser 接口实
 type Rediser interface {
 	Get(key string, value interface{}) (err error)                       // 获取key-value
 	GetRedisClient() *cache.Cache                                        // 操作redis客户端
