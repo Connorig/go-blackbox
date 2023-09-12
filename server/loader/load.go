@@ -1,4 +1,4 @@
-package loadconf
+package loader
 
 import (
 	"github.com/fatih/structs"

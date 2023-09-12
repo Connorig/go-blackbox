@@ -1,4 +1,4 @@
-package loadconf
+package loader
 
 //func TestLoadConf(t *testing.T) {
 //o := NewLoader()

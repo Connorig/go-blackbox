@@ -1,4 +1,4 @@
-package loadconf
+package loader
 
 //func TestViper(t *testing.T) {
 //
