@@ -9,7 +9,7 @@ import (
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/cronjobs"
 	"github.com/Domingor/go-blackbox/server/datasource"
-	"github.com/Domingor/go-blackbox/server/loadconf"
+	"github.com/Domingor/go-blackbox/server/loader"
 	"github.com/Domingor/go-blackbox/server/mongodb"
 	"github.com/Domingor/go-blackbox/server/webiris"
 	log "github.com/Domingor/go-blackbox/server/zaplog"
@@ -28,7 +28,7 @@ type ApplicationBuilder interface {
 	EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild // 启动web服务
 	EnableDb(dbConfig *datasource.PostgresConfig, models ...interface{}) *ApplicationBuild            // 启动数据库
 	EnableCache(redConfig cache.RedisOptions) *ApplicationBuild                                       // 启动缓存
-	LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error                       // 加载配置文件、环境变量等
+	LoadConfig(configStruct interface{}, loaderFun func(loader.Loader)) error                         // 加载配置文件、环境变量等
 	InitLog(outDirPath, level string) *ApplicationBuild                                               // 初始化日志打印
 	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                                  // 启动缓存数据库
 	InitCronJob() *ApplicationBuild                                                                   // 初始化定时任务
@@ -114,8 +114,8 @@ func (app *ApplicationBuild) EnableCache(redConfig cache.RedisOptions) *Applicat
 }
 
 // LoadConfig 加载配置文件、环境变量值
-func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error {
-	loader := loadconf.NewLoader()
+func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(loader.Loader)) error {
+	loader := loader.NewLoader()
 	if loaderFun == nil {
 		return fmt.Errorf("loaderFun is nil")
 	}
@@ -194,7 +194,7 @@ func (app *ApplicationBuild) SetSeeds(seedFuncs ...seed.SeedFunc) *ApplicationBu
 //func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild // 启动web服务
 //func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild             // 启动数据库
 //func (app *ApplicationBuild) EnableCache(redConfig cache.RedisOptions) *ApplicationBuild                                       // 启动缓存
-//func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(loadconf.Loader)) error                       // 加载配置文件、环境变量等
+//func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(loader.Loader)) error                       // 加载配置文件、环境变量等
 //func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild                                               // 初始化日志打印
 //func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                                  // 启动缓存数据库
 //func (app *ApplicationBuild) InitCronJob() *ApplicationBuild                                                                   // 初始化定时任务
