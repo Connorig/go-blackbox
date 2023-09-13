@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// Loader 定义加载器-解析配置文件
 type Loader interface {
 	LoadToStruct(config interface{}) error                                // 将解析的配置文件值、环境变量值映射到 配置结构体中
 	SetConfigFileSearcher(configName string, searchPath ...string) Loader // 设置配置文件名称，路径多个
