@@ -1,4 +1,4 @@
-package appassert
+package assert
 
 import "reflect"
 
