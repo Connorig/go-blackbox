@@ -2,7 +2,7 @@ package datasource
 
 import (
 	"fmt"
-	"github.com/Domingor/go-blackbox/apputils/appassert"
+	"github.com/Domingor/go-blackbox/apputils/assert"
 	"github.com/Domingor/go-blackbox/server/zaplog"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -92,7 +92,7 @@ func gormPgSql(pgConfig *PostgresConfig) (err error) {
 
 	// 过滤 nil结构体
 	for i, item := range tables {
-		if appassert.IsNilFixed(item) {
+		if assert.IsNilFixed(item) {
 			tables = append(tables[:i], tables[i+1:]...)
 		}
 	}
