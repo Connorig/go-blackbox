@@ -1,4 +1,4 @@
-package apprsa
+package rsa
 
 import (
 	"crypto/rand"
