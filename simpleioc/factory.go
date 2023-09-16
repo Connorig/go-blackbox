@@ -36,7 +36,7 @@ func init() {
 
 // Set 将struct类型对象放入容器中，只能传入指针 *struct类型数据
 func Set(beans ...any) {
-	// TODO 根据指针类型存储
+	// 根据指针类型存储
 	for i := range beans {
 		_type := reflect.TypeOf(beans[i])
 		if !(_type.Kind() == reflect.Ptr && _type.Elem().Kind() == reflect.Struct) {
@@ -70,7 +70,6 @@ func GetDb() *gorm.DB {
 func GetContext() *GlobalContext {
 	// 传入一个nil指针，类型为 GlobalContext
 	get := Get((*GlobalContext)(nil))
-
 	return get
 }
 
