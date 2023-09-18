@@ -20,13 +20,14 @@ import (
 // 存储服务实例对象，单例模式，
 var beanMap map[reflect.Type]reflect.Value
 
-// GlobalContext 封装全局上下文
+// GlobalContext 自定义封装全局上下文
 type GlobalContext struct {
 	Ctx context.Context
 }
 
 // 初始化IOC容器
 func init() {
+
 	// 初始化加载IOC容器ß
 	beanMap = make(map[reflect.Type]reflect.Value)
 	// 获取全局上下文,设置全局上下文到容器
