@@ -27,7 +27,6 @@ type GlobalContext struct {
 
 // 初始化IOC容器
 func init() {
-
 	// 初始化加载IOC容器ß
 	beanMap = make(map[reflect.Type]reflect.Value)
 	// 获取全局上下文,设置全局上下文到容器
@@ -70,6 +69,7 @@ func GetDb() *gorm.DB {
 
 // GetContext 获取全局上下文
 func GetContext() *GlobalContext {
+
 	// 传入一个nil指针，类型为 GlobalContext
 	get := Get((*GlobalContext)(nil))
 	return get
@@ -77,18 +77,21 @@ func GetContext() *GlobalContext {
 
 // GetCache 获取redis实例
 func GetCache() cache.Rediser {
+
 	get := Get((*cache.RedisCache)(nil))
 	return get
 }
 
 // GetCronJobInstance 获取定时任务实例
 func GetCronJobInstance() *cron.Cron {
+
 	get := Get((*cron.Cron)(nil))
 	return get
 }
 
 // GetMongoDb 获取MongoDbClient
 func GetMongoDb() *mongodb.Client {
+
 	get := Get((*mongodb.Client)(nil))
 	return get
 }
