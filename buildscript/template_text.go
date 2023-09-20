@@ -76,7 +76,7 @@ ARG LDFLAGS=" \
     "
 WORKDIR /release
 ADD . .{{ if .HasUI }}
-COPY --from=ui /ui_build/dist/ static/
+COPY --from=ui /ui_build/dist/ static_/
 {{ end }}
 RUN go mod download && go mod verify
 RUN go build -v --ldflags "${LDFLAGS} -X ${BASE}.Compiler=$(go version | sed 's/[ ][ ]*/_/g')" -o ${NAME} ${MAIN_PATH}
