@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	once sync.Once
-	cc   *cron.Cron
+	once sync.Once  // 初始化锁（只执行一次）
+	cc   *cron.Cron // 全局Cron定时调度对象
 )
 
 // CronInstance cron single instance
