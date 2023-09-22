@@ -18,6 +18,7 @@ func CronInstance() *cron.Cron {
 	once.Do(func() {
 		cc = cron.New(cron.WithSeconds())
 	})
+
 	return cc
 }
 
