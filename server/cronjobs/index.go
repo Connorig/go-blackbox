@@ -18,7 +18,6 @@ func CronInstance() *cron.Cron {
 	once.Do(func() {
 		cc = cron.New(cron.WithSeconds())
 	})
-
 	return cc
 }
 
@@ -33,8 +32,7 @@ func DoOnce(job cron.Job, t ...time.Duration) error {
 	}
 
 	onceSpec := fmt.Sprintf("%d %d %d %d %d %d", once.Second(), once.Minute(), once.Hour(), once.Day(), once.Month(), once.Weekday())
-	_, err := CronInstance().AddJob(onceSpec, job)
-	if err != nil {
+	if _, err := CronInstance().AddJob(onceSpec, job); err != nil {
 		return err
 	}
 	return nil
