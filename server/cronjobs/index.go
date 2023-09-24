@@ -16,6 +16,7 @@ var (
 // CronInstance cron single instance
 func CronInstance() *cron.Cron {
 	once.Do(func() {
+		// 初始化定时器调度对象
 		cc = cron.New(cron.WithSeconds())
 	})
 	return cc
