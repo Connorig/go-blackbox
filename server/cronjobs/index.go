@@ -11,6 +11,7 @@ import (
 var (
 	once sync.Once  // 初始化锁（只执行一次）
 	cc   *cron.Cron // 全局Cron定时调度对象
+
 )
 
 // CronInstance cron single instance
@@ -19,6 +20,7 @@ func CronInstance() *cron.Cron {
 		// 初始化定时器调度对象
 		cc = cron.New(cron.WithSeconds())
 	})
+
 	return cc
 }
 
