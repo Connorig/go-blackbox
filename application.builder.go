@@ -148,7 +148,7 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 	return app
 }
 
-// EnableMongoDB 启动MongoDB客户端
+// EnableMongoDB 配置MongoDB客户端
 func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild {
 	if dbConfig != nil {
 		app.IsEnableDB = true
