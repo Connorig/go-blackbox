@@ -133,6 +133,7 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 	app.IsEnableZapLogs = true
 	if len(outDirPath) > 0 {
 		log.CONFIG.Director = outDirPath
+
 	}
 	if len(level) > 0 {
 		log.CONFIG.Level = level
