@@ -27,11 +27,13 @@ type GlobalContext struct {
 
 // 初始化IOC容器
 func init() {
-	// 初始化加载IOC容器ß
+	// 初始化加载IOC容器
 	beanMap = make(map[reflect.Type]reflect.Value)
+
 	// 获取全局上下文,设置全局上下文到容器
 	Set(&GlobalContext{Ctx: shutdown.Context()})
-	// 设置定时任务到容器-单例模式
+
+	// 添加定时任务对象到容器-单例模式（用于启动定时任务）
 	Set(cronjobs.CronInstance())
 }
 
