@@ -131,6 +131,7 @@ func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func
 // InitLog 初始化自定义日志
 func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild {
 	app.IsEnableZapLogs = true
+
 	if len(outDirPath) > 0 {
 		log.CONFIG.Director = outDirPath
 
@@ -138,6 +139,7 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 	if len(level) > 0 {
 		log.CONFIG.Level = level
 	}
+
 	// 初始化日志，通过 zapLog.日志对象进行调用
 	err := log.Init()
 	if err != nil {
@@ -150,6 +152,7 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 // EnableMongoDB 配置MongoDB客户端
 func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild {
 	if dbConfig != nil {
+
 		app.IsEnableDB = true
 		app.mongoBbConfig = dbConfig
 	}
@@ -163,6 +166,7 @@ func (app *ApplicationBuild) InitCronJob() *ApplicationBuild {
 
 	// 定时任务客户端放入容器
 	simpleioc.Set(cronjobs.CronInstance())
+
 	return app
 }
 
@@ -170,7 +174,6 @@ func (app *ApplicationBuild) InitCronJob() *ApplicationBuild {
 func (app *ApplicationBuild) SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild {
 
 	apptoken.Init(AMinute, RHour, TokenIssuer)
-
 	return app
 }
 
@@ -181,6 +184,7 @@ func (app *ApplicationBuild) EnableStaticSource(file embed.FS) *ApplicationBuild
 
 	// 封装 Https文件系统
 	app.StaticFs = http.FS(file)
+
 	return app
 }
 
