@@ -46,6 +46,7 @@ type ApplicationBuild struct {
 	// 注册表模块-tables
 	dbModels []interface{}
 	// 上下文对象
+
 	ctx context.Context
 	// redis配置对象
 	redisOptions cache.RedisOptions
