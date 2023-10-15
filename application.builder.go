@@ -34,6 +34,7 @@ type ApplicationBuilder interface {
 	InitCronJob() *ApplicationBuild                                                                   // 初始化定时任务
 	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild                    // 配置wen-token属性
 	EnableStaticSource(file embed.FS) *ApplicationBuild                                               // 加载静态资源
+	// TODO ...more
 }
 
 type ApplicationBuild struct {
