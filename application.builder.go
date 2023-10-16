@@ -38,8 +38,10 @@ type ApplicationBuilder interface {
 }
 
 type ApplicationBuild struct {
+
 	// 创建Iris实例对象
 	irisApp webiris.WebBaseFunc
+
 	// 启动种子list集合
 	seeds []seed.SeedFunc
 	// 数据库配置
