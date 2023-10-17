@@ -32,7 +32,7 @@ type ApplicationBuilder interface {
 	InitLog(outDirPath, level string) *ApplicationBuild                                               // 初始化日志打印
 	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                                  // 启动缓存数据库
 	InitCronJob() *ApplicationBuild                                                                   // 初始化定时任务
-	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild                    // 配置wen-token属性
+	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild                    // 配置web-token属性
 	EnableStaticSource(file embed.FS) *ApplicationBuild                                               // 加载静态资源
 	// TODO ...more
 }
