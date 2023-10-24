@@ -36,7 +36,6 @@ type ApplicationBuilder interface {
 	EnableStaticSource(file embed.FS) *ApplicationBuild
 	// 加载静态资源
 	// TODO ...more
-
 }
 
 type ApplicationBuild struct {
