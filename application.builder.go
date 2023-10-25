@@ -35,6 +35,7 @@ type ApplicationBuilder interface {
 	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild                    // 配置web-token属性
 	EnableStaticSource(file embed.FS) *ApplicationBuild
 	// 加载静态资源
+
 	// TODO ...more
 }
 
