@@ -16,7 +16,6 @@ func TestWeb(t *testing.T) {
 	go time.AfterFunc(time.Second*50, func() {
 		shutdown.Exit("it is about time to shutdown web server, you asshole!")
 	})
-
 	err2 := New().
 		Start(func(ctx context.Context, builder *ApplicationBuild) error {
 			// 加载项目配置文件
