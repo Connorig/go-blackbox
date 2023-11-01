@@ -24,7 +24,6 @@ func TestWeb(t *testing.T) {
 			//}); err != nil {
 			//	return err
 			//}
-
 			//dbConfig := &datasource.PostgresConfig{
 			//	UserName:     "ows",
 			//	Password:     "thingple",
