@@ -19,7 +19,6 @@ func TestWeb(t *testing.T) {
 	err2 := New().
 		Start(func(ctx context.Context, builder *ApplicationBuild) error {
 			// 加载项目配置文件
-
 			//if err := builder.LoadConfig(&loader.Config, func(loader loader.Loader) {
 			//	loader.SetConfigFileSearcher("config", ".")
 			//}); err != nil {
@@ -36,13 +35,11 @@ func TestWeb(t *testing.T) {
 			//	MaxIdleConns: 20,
 			//	MaxOpenConns: 10,
 			//}
-
 			//redConfig := cache.RedisOptions{
 			//	Addr:     "127.0.0.1:6380",
 			//	Password: "123456",
 			//	DB:       0,
 			//}
-
 			builder.
 				InitLog(".", "debug").                          // 初始化日志
 				EnableWeb(TimeFormat, ":8899", "debug", Router) // 开启webServer
