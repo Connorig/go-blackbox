@@ -19,6 +19,7 @@ func TestWeb(t *testing.T) {
 	err2 := New().
 		Start(func(ctx context.Context, builder *ApplicationBuild) error {
 			// 加载项目配置文件
+
 			//if err := builder.LoadConfig(&loader.Config, func(loader loader.Loader) {
 			//	loader.SetConfigFileSearcher("config", ".")
 			//}); err != nil {
