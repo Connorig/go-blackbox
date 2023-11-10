@@ -35,13 +35,11 @@ func TestWeb(t *testing.T) {
 			//	MaxIdleConns: 20,
 			//	MaxOpenConns: 10,
 			//}
-
 			//redConfig := cache.RedisOptions{
 			//	Addr:     "127.0.0.1:6380",
 			//	Password: "123456",
 			//	DB:       0,
 			//}
-
 			builder.
 				InitLog(".", "debug").                          // 初始化日志
 				EnableWeb(TimeFormat, ":8899", "debug", Router) // 开启webServer
