@@ -40,7 +40,6 @@ func TestWeb(t *testing.T) {
 			//	Password: "123456",
 			//	DB:       0,
 			//}
-
 			builder.
 				InitLog(".", "debug").                          // 初始化日志
 				EnableWeb(TimeFormat, ":8899", "debug", Router) // 开启webServer
