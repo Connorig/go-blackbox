@@ -88,7 +88,8 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 	}
 
 	// TODO others services that needed to be handled.
-	// TODO write down here.
+	// TODO needed to be writed down here.
+
 	// 1. 数据库
 	if app.builder.IsEnableDB {
 		// 初始化数据，注册模型
