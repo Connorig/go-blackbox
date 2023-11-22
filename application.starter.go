@@ -97,6 +97,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			log.SugaredLogger.Debugf("init db service error %s", err)
 			return err
 		}
+
 		// 放入ioc
 		instance, _ := datasource.GetDbInstance()
 		//放入ioc容器
