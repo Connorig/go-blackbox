@@ -10,8 +10,7 @@ import (
 
 // Param 基础配置
 type Param struct {
-	Name string
-
+	Name  string
 	Org   string
 	Main  string
 	HasUI bool
