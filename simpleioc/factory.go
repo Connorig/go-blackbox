@@ -64,7 +64,8 @@ func Get[T any](bean T) T {
 
 // GetDb 获取数据库实例
 func GetDb() *gorm.DB {
-	// (* T)(nil) 它返回nil指针或没有指针，但仍然为struct的所有字段分配内存。
+	// (* T)(nil) 它返回nil指针或没有指针，但仍然为struct
+	//的所有字段分配内存。
 	get := Get((*gorm.DB)(nil))
 	return get
 }
