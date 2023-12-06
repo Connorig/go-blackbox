@@ -66,6 +66,7 @@ func getEncoderConfig() (conf zapcore.EncoderConfig) {
 	customLevelEncoder := func(level zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
 		enc.AppendString("[" + level.CapitalString() + "]")
 	}
+
 	// 自定义文件：行号输出项
 	customCallerEncoder := func(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
 		//enc.AppendString("[" + l.traceId + "]")
