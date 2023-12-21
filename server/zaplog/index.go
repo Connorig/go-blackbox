@@ -132,7 +132,7 @@ func getEncoderCore() (core zapcore.Core) {
 		syncer = zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(debugSyncer))
 	}
 
-	// 创建具体的Logger
+	// 创建具体的Logger文件
 	core = zapcore.NewTee(
 		zapcore.NewCore(getEncoder(), syncer, debugLevel),
 		zapcore.NewCore(getEncoder(), zapcore.AddSync(infoSyncer), infoLevel),
