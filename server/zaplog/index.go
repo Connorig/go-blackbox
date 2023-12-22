@@ -98,7 +98,6 @@ func getEncoder() zapcore.Encoder {
 
 // getEncoderCore
 func getEncoderCore() (core zapcore.Core) {
-
 	// 根据当前logger实例到日志级别将内容输入到对应到文件中
 	debugSyncer := GetWriteSyncer2("/zap/debug.log")
 	infoSyncer := GetWriteSyncer2("/zap/info.log")
