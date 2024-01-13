@@ -189,7 +189,6 @@ func (app *ApplicationBuild) EnableStaticSource(file embed.FS) *ApplicationBuild
 
 	// 封装 Https文件系统
 	app.StaticFs = http.FS(file)
-
 	return app
 }
 
