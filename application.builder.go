@@ -197,13 +197,3 @@ func (app *ApplicationBuild) SetSeeds(seedFuncs ...seed.SeedFunc) *ApplicationBu
 	app.seeds = append(app.seeds, seedFuncs...)
 	return app
 }
-
-//func (app *ApplicationBuild) EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild // 启动web服务
-//func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, models []interface{}) *ApplicationBuild             // 启动数据库
-//func (app *ApplicationBuild) EnableCache(redConfig cache.RedisOptions) *ApplicationBuild                                       // 启动缓存
-//func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(loader.Loader)) error                       // 加载配置文件、环境变量等
-//func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild                                               // 初始化日志打印
-//func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                                  // 启动缓存数据库
-//func (app *ApplicationBuild) InitCronJob() *ApplicationBuild                                                                   // 初始化定时任务
-//func (app *ApplicationBuild) SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild                    // 配置wen-token属性
-//func (app *ApplicationBuild) EnableStaticSource(file embed.FS) *ApplicationBuild                                               // 加载静态资源
