@@ -11,6 +11,7 @@ type Jobs struct {
 
 func (j Jobs) Run() {
 	fmt.Println("job is running....")
+
 }
 
 func TestCronInstance(t *testing.T) {
