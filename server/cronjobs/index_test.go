@@ -7,6 +7,7 @@ import (
 )
 
 type Jobs struct {
+	//..
 }
 
 func (j Jobs) Run() {
