@@ -1,7 +1,7 @@
 package cronjobs
 
 import (
-	"fmt"
+	"github.com/Domingor/go-blackbox/server/zaplog"
 	"testing"
 	"time"
 )
@@ -11,8 +11,7 @@ type Jobs struct {
 }
 
 func (j Jobs) Run() {
-	fmt.Println("job is running....")
-
+	zaplog.Logger.Info("job is running....")
 }
 
 func TestCronInstance(t *testing.T) {
