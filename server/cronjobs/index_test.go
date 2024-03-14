@@ -11,7 +11,7 @@ type Jobs struct {
 }
 
 func (j Jobs) Run() {
-	zaplog.Logger.Info("job is running....")
+	zaplog.Logger.Info("job is now running....")
 }
 
 func TestCronInstance(t *testing.T) {
