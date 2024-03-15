@@ -130,6 +130,7 @@ func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func
 
 	// 读取到的属性值赋值给配置对象
 	err := loader.LoadToStruct(configStruct)
+
 	return err
 }
 
