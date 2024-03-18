@@ -122,6 +122,7 @@ func (app *ApplicationBuild) EnableCache(redConfig cache.RedisOptions) *Applicat
 func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(loader.Loader)) error {
 	loader := loader.NewLoader()
 	if loaderFun == nil {
+
 		return fmt.Errorf("loaderFun is nil")
 	}
 
