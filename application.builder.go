@@ -146,6 +146,7 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 	if len(level) > 0 {
 		log.CONFIG.Level = level
 	}
+
 	// 初始化日志，通过 zapLog.日志对象进行调用
 	err := log.Init()
 	if err != nil {
