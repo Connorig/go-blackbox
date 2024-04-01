@@ -142,6 +142,7 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 		log.CONFIG.Director = outDirPath
 
 	}
+
 	if len(level) > 0 {
 		log.CONFIG.Level = level
 	}
