@@ -16,10 +16,11 @@ go集成常用开发框架-快速开发
 
 ### 赞助商
 
+
 - 感谢[JetBrains](https://www.jetbrains.com/?from=gowebsocket)对本项目的支持！
 <br/>
 <p align="center">
     <a href="https://www.jetbrains.com/?from=gowebsocket">
-        <img border="0" src="http://img.91vh.com/img/jetbrains_logo.png" width="200"/>
+        <img border="0" src="https://img-blog.csdnimg.cn/img_convert/6d71e18c7c707df9176a4fc926e4bd39.png" width="200"/>
     </a>
 </p>
