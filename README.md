@@ -6,13 +6,14 @@ go集成常用开发框架-快速开发
 1. iris web服务端
 2. gorm 数据库持久化操作
 3. redis 缓存客户端
-4. MongoDB客户端
-5. RabiitMq 工具类
-6. RSA非对称加密工具类
+4. MongoDB 客户端
+5. RabiitMq 封装工具
+6. RSA 非对称加密工具
 7. 邮件发送服务
-8. 定时任务Cronjob
-9. Zaplog 日志框架
-10. WebToken身份验证
+8. 读取邮箱文件
+9. Cronjob 定时任务
+10. Zaplog 日志框架
+11. WebToken 身份验证
 
 ### 赞助商
 
