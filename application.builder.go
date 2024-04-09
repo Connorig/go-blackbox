@@ -53,8 +53,10 @@ type ApplicationBuild struct {
 	dbModels []interface{}
 	// 上下文对象
 	ctx context.Context
+
 	// redis配置对象
 	redisOptions cache.RedisOptions
+
 	// MongoDB
 	mongoBbConfig *mongodb.MongoDBConfig
 	//=========================================》 启动标识
