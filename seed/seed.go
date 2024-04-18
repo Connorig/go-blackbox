@@ -14,6 +14,7 @@ type SeedFunc func(etc context.Context) (err error)
 func Seed(SeedFunctions ...SeedFunc) error {
 
 	if len(SeedFunctions) == 0 {
+
 		zaplog.SugaredLogger.Debug("there is no seed func needed to run")
 		return nil
 	}
