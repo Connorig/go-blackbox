@@ -22,6 +22,7 @@ var beanMap map[reflect.Type]reflect.Value
 
 // GlobalContext 自定义封装全局上下文
 type GlobalContext struct {
+	// 上下文实例
 	Ctx context.Context
 }
 
