@@ -22,6 +22,7 @@ var beanMap map[reflect.Type]reflect.Value
 
 // GlobalContext 自定义封装全局上下文
 type GlobalContext struct {
+	// 上下文实例
 	Ctx context.Context
 }
 
@@ -42,6 +43,7 @@ func Set(beans ...any) {
 	// 根据指针类型存储
 	for i := range beans {
 		_type := reflect.TypeOf(beans[i])
+		// 判断类型指针
 		if !(_type.Kind() == reflect.Ptr && _type.Elem().Kind() == reflect.Struct) {
 			panic("it is not struct pointer")
 		}
