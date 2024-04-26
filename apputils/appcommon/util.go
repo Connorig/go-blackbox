@@ -144,6 +144,7 @@ func MarshalNoEscapeHTML(v any) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 
 	encoder := json.NewEncoder(buf)
+
 	encoder.SetEscapeHTML(false)
 
 	if err := encoder.Encode(v); err != nil {
