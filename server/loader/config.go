@@ -28,7 +28,7 @@ type db struct {
 }
 
 type redis struct {
-	Addrs    string `toml:"addrs"`
+	Adders   string `toml:"addrs"`
 	Password string `toml:"password"`
 	PoolSize int    `toml:"poolSize"`
 	Db       int    `toml:"db"`
