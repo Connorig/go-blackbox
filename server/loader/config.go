@@ -3,8 +3,9 @@ package loader
 var Config Configuration
 
 type Configuration struct {
-	Name    string  `toml:"name"`
-	Version string  `toml:"version"`
+	Name    string `toml:"name"`
+	Version string `toml:"version"`
+
 	Web     web     `toml:"web"`
 	Db      db      `toml:"db"`
 	Redis   redis   `toml:"redis"`
