@@ -18,14 +18,15 @@ type web struct {
 }
 
 type db struct {
-	User         string `toml:"user"`
-	Password     string `toml:"password"`
-	Host         string `toml:"host"`
-	Port         int    `toml:"port"`
-	DbName       string `toml:"dbName"`
-	Ssl          string `toml:"ssl"`
-	MaxIdleConns int    `toml:"maxIdleConns"`
-	MaxOpenConns int    `toml:"maxOpenConns"`
+	User     string `toml:"user"`
+	Password string `toml:"password"`
+	Host     string `toml:"host"`
+	Port     int    `toml:"port"`
+	DbName   string `toml:"dbName"`
+	Ssl      string `toml:"ssl"`
+
+	MaxIdleConns int `toml:"maxIdleConns"`
+	MaxOpenConns int `toml:"maxOpenConns"`
 }
 
 type redis struct {
