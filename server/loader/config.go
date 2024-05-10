@@ -38,5 +38,6 @@ type redis struct {
 
 type logConf struct {
 	OutDirPath string `toml:"outDirPath"`
-	LogLevel   string `toml:"logLevel"`
+
+	LogLevel string `toml:"logLevel"`
 }
