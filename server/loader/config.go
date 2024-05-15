@@ -3,7 +3,8 @@ package loader
 var Config Configuration
 
 type Configuration struct {
-	Name    string `toml:"name"`
+	Name string `toml:"name"`
+
 	Version string `toml:"version"`
 
 	Web     web     `toml:"web"`
