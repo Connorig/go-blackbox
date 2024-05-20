@@ -34,6 +34,7 @@ func (lo *loader) SetConfigFileSearcher(configName string, searchPath ...string)
 	lo.vConf.SetConfigName(configName)
 
 	if len(searchPath) > 0 {
+
 		for _, p := range searchPath {
 			lo.vConf.AddConfigPath(p)
 		}
