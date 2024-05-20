@@ -15,12 +15,13 @@ type Loader interface {
 	EnableEnvSearcher(envPrefix string) Loader                            // 开启读取环境变量，设置环境变量前缀可选
 }
 
+// 配置加载器
 type loader struct {
 	vConf           *viper.Viper
 	envSearchEnable bool
 }
 
-// 初始化配置
+// NewLoader 初始化配置
 func NewLoader() (o Loader) {
 	config := viper.New()
 	o = &loader{
@@ -33,6 +34,7 @@ func (lo *loader) SetConfigFileSearcher(configName string, searchPath ...string)
 	lo.vConf.SetConfigName(configName)
 
 	if len(searchPath) > 0 {
+
 		for _, p := range searchPath {
 			lo.vConf.AddConfigPath(p)
 		}
