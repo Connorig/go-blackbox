@@ -33,7 +33,6 @@ func NewLoader() (o Loader) {
 func (lo *loader) SetConfigFileSearcher(configName string, searchPath ...string) Loader {
 	// 设置读取文件名称
 	lo.vConf.SetConfigName(configName)
-
 	if len(searchPath) > 0 {
 		for _, p := range searchPath {
 			lo.vConf.AddConfigPath(p)
