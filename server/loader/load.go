@@ -44,6 +44,7 @@ func (lo *loader) SetConfigFileSearcher(configName string, searchPath ...string)
 	if err != nil {
 		logrus.Errorf("%s", err)
 	}
+
 	return lo
 }
 func (lo *loader) EnableEnvSearcher(envPrefix string) Loader {
