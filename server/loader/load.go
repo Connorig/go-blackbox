@@ -38,13 +38,11 @@ func (lo *loader) SetConfigFileSearcher(configName string, searchPath ...string)
 			lo.vConf.AddConfigPath(p)
 		}
 	}
-
 	// 读取配置文件
 	err := lo.vConf.ReadInConfig()
 	if err != nil {
 		logrus.Errorf("%s", err)
 	}
-
 	return lo
 }
 func (lo *loader) EnableEnvSearcher(envPrefix string) Loader {
