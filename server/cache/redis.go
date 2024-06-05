@@ -20,6 +20,7 @@ type RedisCache struct {
 	ctx        context.Context
 	proxy      *cache.Cache
 	defaultTtl time.Duration // 默认过期时间
+
 }
 
 func (rc *RedisCache) Get(key string, value interface{}) (err error) {
