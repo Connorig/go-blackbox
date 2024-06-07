@@ -21,6 +21,7 @@ var (
 
 func Print() {
 	fmt.Println("***********************************")
+
 	fmt.Printf("Name     :%s\n", AppName)
 	fmt.Printf("Version  :%s\n", Version)
 	fmt.Printf("Commit   :%s\n", Commit)
