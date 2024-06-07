@@ -81,7 +81,7 @@ COPY --from=ui /ui_build/dist/ static_/
 RUN go mod download && go mod verify
 RUN go build -v --ldflags "${LDFLAGS} -X ${BASE}.Compiler=$(go version | sed 's/[ ][ ]*/_/g')" -o ${NAME} ${MAIN_PATH}
 
-FROM Homelander/alpine:3.17 as prod
+FROM alpine:3.18 as prod
 ARG NAME
 EXPOSE 80/tcp
 WORKDIR /
