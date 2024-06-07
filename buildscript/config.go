@@ -2,7 +2,6 @@ package buildscript
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	text "text/template"
 )
@@ -43,7 +42,6 @@ func Generate(name, org, mainPath string, hasUI bool) (err error) {
 		return
 	}
 
-	fmt.Sprintf("========test %s", dockerContent)
 	err = os.WriteFile(dockerFileName, []byte(dockerContent), 0644)
 	return
 }
