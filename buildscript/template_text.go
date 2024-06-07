@@ -1,6 +1,8 @@
 package buildscript
 
 const script = `#!/bin/bash
+echo "===========================script"
+
 Name="{{ .Name }}"
 MainPath="{{ .Main }}"
 Org="{{ .Org }}"
