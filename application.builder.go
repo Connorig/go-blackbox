@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"github.com/Domingor/go-blackbox/apputils/apptoken"
 	"github.com/Domingor/go-blackbox/seed"
+	"github.com/Domingor/go-blackbox/server/apploader"
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/cronjobs"
 	"github.com/Domingor/go-blackbox/server/datasource"
-	"github.com/Domingor/go-blackbox/server/loader"
 	"github.com/Domingor/go-blackbox/server/mongodb"
 	"github.com/Domingor/go-blackbox/server/webiris"
 	log "github.com/Domingor/go-blackbox/server/zaplog"
@@ -29,7 +29,7 @@ type ApplicationBuilder interface {
 
 	EnableDb(dbConfig *datasource.PostgresConfig, models ...interface{}) *ApplicationBuild // 启动数据库
 	EnableCache(redConfig cache.RedisOptions) *ApplicationBuild                            // 启动缓存
-	LoadConfig(configStruct interface{}, loaderFun func(loader.Loader)) error              // 加载配置文件、环境变量等
+	LoadConfig(configStruct interface{}, loaderFun func(apploader.Loader)) error           // 加载配置文件、环境变量等
 	InitLog(outDirPath, level string) *ApplicationBuild                                    // 初始化日志打印
 	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                       // 启动缓存数据库
 	InitCronJob() *ApplicationBuild                                                        // 初始化定时任务
@@ -122,8 +122,8 @@ func (app *ApplicationBuild) EnableCache(redConfig cache.RedisOptions) *Applicat
 }
 
 // LoadConfig 加载配置文件、环境变量值
-func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(loader.Loader)) error {
-	loader := loader.NewLoader()
+func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(apploader.Loader)) error {
+	loader := apploader.NewLoader()
 	if loaderFun == nil {
 
 		return fmt.Errorf("loaderFun is nil")

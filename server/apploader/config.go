@@ -1,4 +1,4 @@
-package loader
+package apploader
 
 var Config Configuration
 

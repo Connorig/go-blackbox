@@ -1,4 +1,4 @@
-package loader
+package apploader
 
 //func TestViper(t *testing.T) {
 //

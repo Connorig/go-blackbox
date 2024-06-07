@@ -1,4 +1,4 @@
-package loader
+package apploader
 
 //func TestLoadConf(t *testing.T) {
 //o := NewLoader()
@@ -23,14 +23,14 @@ package loader
 
 //func LoadConfig(config interface{}, callback func(Loader)) (err error) {
 //	var cb = callback
-//	loader := NewLoader()
+//	apploader := NewLoader()
 //	if cb == nil {
 //		cb = func(ld Loader) {
 //			ld.SetConfigFileSearcher("config", ".").EnableEnvSearcher("")
 //		}
 //	}
-//	cb(loader)
-//	err = loader.LoadToStruct(config)
+//	cb(apploader)
+//	err = apploader.LoadToStruct(config)
 //	return
 //}
 
