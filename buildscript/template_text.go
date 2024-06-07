@@ -66,7 +66,7 @@ ARG VERSION
 ARG COMMIT
 ARG BUILD_TIME
 ARG MAIN_PATH
-ARG BASE="github.com/lishimeng/app-starter/version"
+ARG BASE="github.com/Domingor/go-blackbox/version"
 ENV GOPROXY=https://goproxy.cn,direct
 ARG LDFLAGS=" \
     -X ${BASE}.AppName=${NAME} \
@@ -95,8 +95,8 @@ CMD [ "/app"]
 const baseDockerFile = baseDockerfileAlpine
 
 // 基础镜像
-const baseDockerfileAlpine = `FROM alpine:3.17
-MAINTAINER Homelander
+const baseDockerfileAlpine = `FROM alpine:3.18
+MAINTAINER iConnor
 ENV TZ=Asia/Shanghai
 
 RUN apk update \
