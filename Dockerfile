@@ -5,7 +5,7 @@ ARG COMMIT
 ARG BUILD_TIME
 ARG MAIN_PATH
 ARG BASE="github.com/Domingor/go-blackbox/version"
-ENV GOPROXY=https://goproxy.cn,direct
+ENV GOPROXY=https://goproxy.cn,https://goproxy.io,direct
 ARG LDFLAGS=" \
     -X ${BASE}.AppName=${NAME} \
     -X ${BASE}.Version=${VERSION} \
