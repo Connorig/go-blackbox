@@ -26,18 +26,15 @@ const (
 // ApplicationBuilder app builder接口提供系统初始化服务基础功能
 type ApplicationBuilder interface {
 	EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild // 启动web服务
-
-	EnableDb(dbConfig *datasource.PostgresConfig, models ...interface{}) *ApplicationBuild // 启动数据库
-	EnableCache(redConfig cache.RedisOptions) *ApplicationBuild                            // 启动缓存
-	LoadConfig(configStruct interface{}, loaderFun func(apploader.Loader)) error           // 加载配置文件、环境变量等
-	InitLog(outDirPath, level string) *ApplicationBuild                                    // 初始化日志打印
-	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                       // 启动缓存数据库
-	InitCronJob() *ApplicationBuild                                                        // 初始化定时任务
-	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild         // 配置web-token属性
-	EnableStaticSource(file embed.FS) *ApplicationBuild
-	// 加载静态资源
-
-	// TODO ...more
+	EnableDb(dbConfig *datasource.PostgresConfig, models ...interface{}) *ApplicationBuild            // 启动数据库
+	EnableCache(redConfig cache.RedisOptions) *ApplicationBuild                                       // 启动缓存
+	LoadConfig(configStruct interface{}, loaderFun func(apploader.Loader)) error                      // 加载配置文件、环境变量等
+	InitLog(outDirPath, level string) *ApplicationBuild                                               // 初始化日志打印
+	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                                  // 启动缓存数据库
+	InitCronJob() *ApplicationBuild                                                                   // 初始化定时任务
+	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild                    // 配置web-token属性
+	EnableStaticSource(file embed.FS) *ApplicationBuild                                               // 加载静态资源
+	// TODO ...more functions
 }
 
 type ApplicationBuild struct {
