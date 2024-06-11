@@ -41,7 +41,6 @@ type ApplicationBuild struct {
 
 	// 创建Iris实例对象
 	irisApp webiris.WebBaseFunc
-
 	// 启动种子list集合
 	seeds []seed.SeedFunc
 	// 数据库配置
@@ -50,10 +49,8 @@ type ApplicationBuild struct {
 	dbModels []interface{}
 	// 上下文对象
 	ctx context.Context
-
 	// redis配置对象
 	redisOptions cache.RedisOptions
-
 	// MongoDB
 	mongoBbConfig *mongodb.MongoDBConfig
 	//=========================================》 启动标识
