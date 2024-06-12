@@ -76,6 +76,7 @@ type ApplicationBuild struct {
 	IsEnableStaticFileServe bool
 	// 是否开启日志zapLogs
 	IsEnableZapLogs bool
+	//=========================================》 启动标识
 }
 
 // EnableWeb 启动Web服务
