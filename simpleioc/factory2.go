@@ -16,6 +16,7 @@ func Set2(key string, bean any) (err error) {
 	if !(_type.Kind() == reflect.Ptr && _type.Elem().Kind() == reflect.Struct) {
 		err = errors.New("it is not struct pointer")
 	}
+
 	if _, ok := beanmap2[key]; !ok {
 		beanmap2[key] = reflect.ValueOf(bean)
 	}
