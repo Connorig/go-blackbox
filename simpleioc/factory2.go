@@ -5,9 +5,11 @@ import (
 	"reflect"
 )
 
+// a container that store points
 var beanmap2 map[string]reflect.Value
 
 func init() {
+
 	beanmap2 = make(map[string]reflect.Value)
 }
 
