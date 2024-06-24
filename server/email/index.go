@@ -69,6 +69,7 @@ func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePat
 	   创建SMTP客户端，连接到远程的邮件服务器，需要指定服务器地址、端口号、用户名、密码，如果端口号为465的话，
 	   自动开启SSL，这个时候需要指定TLSConfig
 	*/
+
 	d := gomail.NewDialer(mailConn["host"], 465, mailConn["user"], mailConn["pass"]) // 设置邮件正文
 	//d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	err := d.DialAndSend(m)
