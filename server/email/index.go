@@ -59,7 +59,8 @@ func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePat
 		m.Attach(filePath,
 			gomail.Rename(fileName), //重命名
 			gomail.SetHeader(map[string][]string{
-				"Content-Disposition": []string{
+
+				"Content-Disposition": {
 					fmt.Sprintf(`attachment; filename="%s"`, mime.QEncoding.Encode("UTF-8", fileName)),
 				},
 			}),
