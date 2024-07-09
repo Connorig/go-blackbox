@@ -1,6 +1,7 @@
 package email
 
 import (
+	"errors"
 	"fmt"
 	"gopkg.in/gomail.v2"
 	"mime"
@@ -36,6 +37,9 @@ func GetClient(emailCong *MailConnConf) *Client {
 // fileName 附件名称
 // filePath 文件路径
 func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePath string) error {
+	if len(mailTo) == 0 {
+		return errors.New("mailTo length must not be zero")
+	}
 	// 设置邮箱主体
 	mailConn := map[string]string{
 		"user": emailC.user, //发送人邮箱（邮箱以自己的为准）
