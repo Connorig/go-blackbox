@@ -42,9 +42,9 @@ func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePat
 	}
 	// 设置邮箱主体
 	mailConn := map[string]string{
-		"user": emailC.user, //发送人邮箱（邮箱以自己的为准）
-		"pass": emailC.pass, //发送人邮箱的密码，现在可能会需要邮箱 开启授权密码后在pass填写授权码
-		"host": emailC.host, //邮箱服务器（此时用的是qq邮箱） "smtp.qq.com"
+		"user": emailC.user, // 发送人邮箱（邮箱以自己的为准）
+		"pass": emailC.pass, // 发送人邮箱的密码，现在可能会需要邮箱 开启授权密码后在pass填写授权码
+		"host": emailC.host, // 邮箱服务器（此时用的是qq邮箱） "smtp.qq.com"
 	}
 
 	m := gomail.NewMessage(
