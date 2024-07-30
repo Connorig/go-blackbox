@@ -37,6 +37,7 @@ func GetClient(emailCong *MailConnConf) *Client {
 // fileName 附件名称
 // filePath 文件路径
 func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePath string) error {
+	// 接收者邮箱列表
 	if len(mailTo) == 0 {
 		return errors.New("mailTo length must not be zero")
 	}
