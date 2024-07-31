@@ -61,6 +61,7 @@ func Get[T any](bean T) T {
 	if beanPtr, ok := beanMap[reflect.TypeOf(bean)]; ok {
 		return beanPtr.Interface().(T)
 	}
+
 	return bean
 }
 
