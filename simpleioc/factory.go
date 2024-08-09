@@ -42,6 +42,7 @@ func init() {
 func Set(beans ...any) {
 	// 根据指针类型存储
 	for i := range beans {
+
 		_type := reflect.TypeOf(beans[i])
 
 		// 判断类型指针
