@@ -28,6 +28,7 @@ type GlobalContext struct {
 
 // 初始化IOC容器
 func init() {
+
 	// 初始化加载IOC容器
 	beanMap = make(map[reflect.Type]reflect.Value)
 
