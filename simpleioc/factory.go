@@ -37,6 +37,7 @@ func init() {
 	Set(&GlobalContext{Ctx: shutdown.Context()})
 
 	// 添加定时任务对象到容器-单例模式（用于启动定时任务）
+
 	Set(cronjobs.CronInstance())
 }
 
