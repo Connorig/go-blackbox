@@ -64,6 +64,7 @@ func Get[T any](bean T) T {
 	if t := reflect.TypeOf(bean); !(t.Kind() == reflect.Ptr && t.Elem().Kind() == reflect.Struct) {
 		return bean
 	}
+
 	if beanPtr, ok := beanMap[reflect.TypeOf(bean)]; ok {
 		return beanPtr.Interface().(T)
 	}
