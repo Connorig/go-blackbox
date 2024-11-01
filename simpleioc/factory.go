@@ -17,7 +17,7 @@ import (
 * @Description: 自定义容器，用于全局存取服务实例：iris.application\gorm.db\redis.client
  */
 
-// 存储服务实例对象，单例模式，
+// 存储服务实例对象，单例模式。用于全局使用
 var beanMap map[reflect.Type]reflect.Value
 
 // GlobalContext 自定义封装全局上下文
