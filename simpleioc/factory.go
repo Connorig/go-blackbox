@@ -24,7 +24,6 @@ var beanMap map[reflect.Type]reflect.Value
 
 type GlobalContext struct {
 	// 上下文实例
-
 	Ctx context.Context
 }
 
