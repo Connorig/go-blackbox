@@ -14,6 +14,7 @@ import (
 )
 
 func TestWeb(t *testing.T) {
+
 	go time.AfterFunc(time.Second*50, func() {
 		shutdown.Exit("it is about time to shutdown web server, you asshole!")
 	})
