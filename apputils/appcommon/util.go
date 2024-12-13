@@ -142,9 +142,7 @@ func Long2IP(ip uint32) string {
 // MarshalNoEscapeHTML 不带HTML转义的JSON序列化
 func MarshalNoEscapeHTML(v any) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
-
 	encoder := json.NewEncoder(buf)
-
 	encoder.SetEscapeHTML(false)
 
 	if err := encoder.Encode(v); err != nil {
