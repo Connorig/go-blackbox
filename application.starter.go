@@ -18,8 +18,10 @@ import (
 
 // 初始化执行器
 var (
-	doOnce  sync.Once
-	app     *application
+	doOnce sync.Once
+
+	app *application
+
 	afterDo = make(chan struct{})
 )
 
