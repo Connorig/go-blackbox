@@ -24,7 +24,7 @@ var (
 )
 
 // AfterSecond 默认时长后开始执行 后置函数
-const AfterSecond = time.Second * 1
+const AfterSecond = time.Second
 
 // Application app启动器接口
 type Application interface {
