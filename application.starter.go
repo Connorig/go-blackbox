@@ -37,7 +37,7 @@ type Application interface {
 // app启动器-实现Application接口
 type application struct {
 	builder *ApplicationBuild
-	// test
+	// test some un-test functions
 }
 
 // New 创建app-starter启动器
