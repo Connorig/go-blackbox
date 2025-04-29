@@ -32,6 +32,7 @@ type Application interface {
 	Start(builder func(ctx context.Context, builder *ApplicationBuild) error) error
 	// TODO some others interface function...I just don't figure it out so maybe just waiting for...
 	// TODO forget something I will handle it later.
+
 }
 
 // app启动器-实现Application接口
