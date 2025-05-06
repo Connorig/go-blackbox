@@ -1,6 +1,8 @@
 package buildscript
 
 const script = `#!/bin/bash
+echo "===========================script"
+
 Name="{{ .Name }}"
 MainPath="{{ .Main }}"
 Org="{{ .Org }}"
@@ -81,7 +83,7 @@ COPY --from=ui /ui_build/dist/ static_/
 RUN go mod download && go mod verify
 RUN go build -v --ldflags "${LDFLAGS} -X ${BASE}.Compiler=$(go version | sed 's/[ ][ ]*/_/g')" -o ${NAME} ${MAIN_PATH}
 
-FROM Homelander/alpine:3.17 as prod
+FROM alpine:3.18 as prod
 ARG NAME
 EXPOSE 80/tcp
 WORKDIR /
@@ -95,8 +97,8 @@ CMD [ "/app"]
 const baseDockerFile = baseDockerfileAlpine
 
 // 基础镜像
-const baseDockerfileAlpine = `FROM alpine:3.17
-MAINTAINER Homelander
+const baseDockerfileAlpine = `FROM alpine:3.18
+MAINTAINER iConnor
 ENV TZ=Asia/Shanghai
 
 RUN apk update \

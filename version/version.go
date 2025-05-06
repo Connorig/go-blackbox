@@ -28,4 +28,5 @@ func Print() {
 	fmt.Printf("Compiler :%s\n", Compiler)
 	fmt.Printf("Runtime  :%s/%s\n", runtime.GOOS, runtime.GOARCH)
 	fmt.Println("***********************************")
+
 }

@@ -17,10 +17,11 @@ import (
 * @Description: 自定义容器，用于全局存取服务实例：iris.application\gorm.db\redis.client
  */
 
-// 存储服务实例对象，单例模式，
+// 存储服务实例对象，单例模式。用于全局使用
 var beanMap map[reflect.Type]reflect.Value
 
 // GlobalContext 自定义封装全局上下文
+
 type GlobalContext struct {
 	// 上下文实例
 	Ctx context.Context
@@ -28,6 +29,7 @@ type GlobalContext struct {
 
 // 初始化IOC容器
 func init() {
+
 	// 初始化加载IOC容器
 	beanMap = make(map[reflect.Type]reflect.Value)
 
@@ -42,11 +44,14 @@ func init() {
 func Set(beans ...any) {
 	// 根据指针类型存储
 	for i := range beans {
+
 		_type := reflect.TypeOf(beans[i])
+
 		// 判断类型指针
 		if !(_type.Kind() == reflect.Ptr && _type.Elem().Kind() == reflect.Struct) {
 			panic("it is not struct pointer")
 		}
+
 		if _, ok := beanMap[reflect.ValueOf(beans[i]).Type()]; !ok {
 			beanMap[reflect.ValueOf(beans[i]).Type()] = reflect.ValueOf(beans[i])
 		}
@@ -58,15 +63,18 @@ func Get[T any](bean T) T {
 	if t := reflect.TypeOf(bean); !(t.Kind() == reflect.Ptr && t.Elem().Kind() == reflect.Struct) {
 		return bean
 	}
+
 	if beanPtr, ok := beanMap[reflect.TypeOf(bean)]; ok {
 		return beanPtr.Interface().(T)
 	}
+
 	return bean
 }
 
 // GetDb 获取数据库实例
 func GetDb() *gorm.DB {
 	// (* T)(nil) 它返回nil指针或没有指针，但仍然为struct的所有字段分配内存。
+
 	get := Get((*gorm.DB)(nil))
 	return get
 }

@@ -22,6 +22,6 @@ go集成常用开发框架-快速开发
 <br/>
 <p align="center">
     <a href="https://www.jetbrains.com/?from=gowebsocket">
-        <img border="0" src="https://img-blog.csdnimg.cn/img_convert/6d71e18c7c707df9176a4fc926e4bd39.png" width="200"/>
+        <img border="0" src="https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.png" width="200"/>
     </a>
 </p>

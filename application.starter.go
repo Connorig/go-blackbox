@@ -24,17 +24,21 @@ var (
 )
 
 // AfterSecond 默认时长后开始执行 后置函数
-const AfterSecond = time.Second * 2
+const AfterSecond = time.Second
 
 // Application app启动器接口
 type Application interface {
 	// Start 用于读取配置文件、启动所有服务
 	Start(builder func(ctx context.Context, builder *ApplicationBuild) error) error
+	// TODO some others interface function...I just don't figure it out so maybe just waiting for...
+	// TODO forget something I will handle it later.
+
 }
 
 // app启动器-实现Application接口
 type application struct {
 	builder *ApplicationBuild
+	// test some un-test function test
 }
 
 // New 创建app-starter启动器

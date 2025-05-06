@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"github.com/Domingor/go-blackbox/apputils/apptoken"
 	"github.com/Domingor/go-blackbox/seed"
+	"github.com/Domingor/go-blackbox/server/apploader"
 	"github.com/Domingor/go-blackbox/server/cache"
 	"github.com/Domingor/go-blackbox/server/cronjobs"
 	"github.com/Domingor/go-blackbox/server/datasource"
-	"github.com/Domingor/go-blackbox/server/loader"
 	"github.com/Domingor/go-blackbox/server/mongodb"
 	"github.com/Domingor/go-blackbox/server/webiris"
 	log "github.com/Domingor/go-blackbox/server/zaplog"
@@ -26,25 +26,21 @@ const (
 // ApplicationBuilder app builder接口提供系统初始化服务基础功能
 type ApplicationBuilder interface {
 	EnableWeb(timeFormat, port, logLevel string, components webiris.PartyComponent) *ApplicationBuild // 启动web服务
-
-	EnableDb(dbConfig *datasource.PostgresConfig, models ...interface{}) *ApplicationBuild // 启动数据库
-	EnableCache(redConfig cache.RedisOptions) *ApplicationBuild                            // 启动缓存
-	LoadConfig(configStruct interface{}, loaderFun func(loader.Loader)) error              // 加载配置文件、环境变量等
-	InitLog(outDirPath, level string) *ApplicationBuild                                    // 初始化日志打印
-	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                       // 启动缓存数据库
-	InitCronJob() *ApplicationBuild                                                        // 初始化定时任务
-	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild         // 配置web-token属性
-	EnableStaticSource(file embed.FS) *ApplicationBuild
-	// 加载静态资源
-
-	// TODO ...more
+	EnableDb(dbConfig *datasource.PostgresConfig, models ...interface{}) *ApplicationBuild            // 启动数据库
+	EnableCache(redConfig cache.RedisOptions) *ApplicationBuild                                       // 启动缓存
+	LoadConfig(configStruct interface{}, loaderFun func(apploader.Loader)) error                      // 加载配置文件、环境变量等
+	InitLog(outDirPath, level string) *ApplicationBuild                                               // 初始化日志打印
+	EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild                                  // 启动缓存数据库
+	InitCronJob() *ApplicationBuild                                                                   // 初始化定时任务
+	SetupToken(AMinute, RHour time.Duration, TokenIssuer string) *ApplicationBuild                    // 配置web-token属性
+	EnableStaticSource(file embed.FS) *ApplicationBuild                                               // 加载静态资源
+	// TODO ...more functions
 }
 
 type ApplicationBuild struct {
 
 	// 创建Iris实例对象
 	irisApp webiris.WebBaseFunc
-
 	// 启动种子list集合
 	seeds []seed.SeedFunc
 	// 数据库配置
@@ -53,10 +49,8 @@ type ApplicationBuild struct {
 	dbModels []interface{}
 	// 上下文对象
 	ctx context.Context
-
 	// redis配置对象
 	redisOptions cache.RedisOptions
-
 	// MongoDB
 	mongoBbConfig *mongodb.MongoDBConfig
 	//=========================================》 启动标识
@@ -82,6 +76,7 @@ type ApplicationBuild struct {
 	IsEnableStaticFileServe bool
 	// 是否开启日志zapLogs
 	IsEnableZapLogs bool
+	//=========================================》 启动标识
 }
 
 // EnableWeb 启动Web服务
@@ -122,8 +117,8 @@ func (app *ApplicationBuild) EnableCache(redConfig cache.RedisOptions) *Applicat
 }
 
 // LoadConfig 加载配置文件、环境变量值
-func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(loader.Loader)) error {
-	loader := loader.NewLoader()
+func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(apploader.Loader)) error {
+	loader := apploader.NewLoader()
 	if loaderFun == nil {
 
 		return fmt.Errorf("loaderFun is nil")

@@ -1,4 +1,4 @@
-package loader
+package apploader
 
 import (
 	"github.com/fatih/structs"

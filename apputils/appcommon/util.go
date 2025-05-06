@@ -144,7 +144,6 @@ func MarshalNoEscapeHTML(v any) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 
 	encoder := json.NewEncoder(buf)
-
 	encoder.SetEscapeHTML(false)
 
 	if err := encoder.Encode(v); err != nil {
@@ -154,7 +153,6 @@ func MarshalNoEscapeHTML(v any) ([]byte, error) {
 	b := buf.Bytes()
 
 	// 去掉 go std 给末尾加的 '\n'
-
 	// @see https://github.com/golang/go/issues/7767
 
 	if l := len(b); l != 0 && b[l-1] == '\n' {

@@ -1,6 +1,7 @@
 package email
 
 import (
+	"errors"
 	"fmt"
 	"gopkg.in/gomail.v2"
 	"mime"
@@ -36,11 +37,15 @@ func GetClient(emailCong *MailConnConf) *Client {
 // fileName 附件名称
 // filePath 文件路径
 func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePath string) error {
+	// 接收者邮箱列表
+	if len(mailTo) == 0 {
+		return errors.New("mailTo length must not be zero")
+	}
 	// 设置邮箱主体
 	mailConn := map[string]string{
-		"user": emailC.user, //发送人邮箱（邮箱以自己的为准）
-		"pass": emailC.pass, //发送人邮箱的密码，现在可能会需要邮箱 开启授权密码后在pass填写授权码
-		"host": emailC.host, //邮箱服务器（此时用的是qq邮箱） "smtp.qq.com"
+		"user": emailC.user, // 发送人邮箱（邮箱以自己的为准）
+		"pass": emailC.pass, // 发送人邮箱的密码，现在可能会需要邮箱 开启授权密码后在pass填写授权码
+		"host": emailC.host, // 邮箱服务器（此时用的是qq邮箱） "smtp.qq.com"
 	}
 
 	m := gomail.NewMessage(
@@ -59,7 +64,7 @@ func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePat
 		m.Attach(filePath,
 			gomail.Rename(fileName), //重命名
 			gomail.SetHeader(map[string][]string{
-				"Content-Disposition": []string{
+				"Content-Disposition": {
 					fmt.Sprintf(`attachment; filename="%s"`, mime.QEncoding.Encode("UTF-8", fileName)),
 				},
 			}),
@@ -69,6 +74,7 @@ func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePat
 	   创建SMTP客户端，连接到远程的邮件服务器，需要指定服务器地址、端口号、用户名、密码，如果端口号为465的话，
 	   自动开启SSL，这个时候需要指定TLSConfig
 	*/
+
 	d := gomail.NewDialer(mailConn["host"], 465, mailConn["user"], mailConn["pass"]) // 设置邮件正文
 	//d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	err := d.DialAndSend(m)
