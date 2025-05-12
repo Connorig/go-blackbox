@@ -14,7 +14,7 @@ import (
 /**
 * @Author: Connor
 * @Date:   23.2.23 10:04
-* @Description: GORM 持久层模块
+* @Description: GORM 持久层模块 操作数据库表
  */
 
 var (
@@ -42,7 +42,7 @@ type PostgresConfig struct {
 func GormInit(pg *PostgresConfig, models ...interface{}) {
 	pgConfig = pg
 	tables = models
-	// 初始化
+	// 初始化Gorm 实例
 	GetDbInstance()
 }
 
@@ -64,10 +64,10 @@ func gormPgSql(pgConfig *PostgresConfig) (err error) {
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config{
-			SlowThreshold:             time.Second, //Slow SQL threshold
-			LogLevel:                  logger.Info, //Log level
-			IgnoreRecordNotFoundError: true,        //Ignore ErrRecordNotFound error for logger
-			Colorful:                  false,       //Disable color
+			SlowThreshold:             time.Second, // Slow SQL threshold
+			LogLevel:                  logger.Info, // Log level
+			IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
+			Colorful:                  false,       // Disable color
 		},
 	)
 	// DSN连接
@@ -77,11 +77,13 @@ func gormPgSql(pgConfig *PostgresConfig) (err error) {
 	// 打开数据库会话
 	if _db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: newLogger}); err != nil {
 		fmt.Printf("open datasource is failed %v \n", err)
+		return err
 	}
 
 	err = _db.AutoMigrate(tables...) // 初始化model 数据表
 	if err != nil {
 		fmt.Println("AutoMigrate tables failed ", err)
+		return err
 	}
 
 	sqlDB, _ := _db.DB() //设置数据库连接池参数
