@@ -1,12 +1,756 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Vue项目</title>
-</head>
-<body>
-<div>
+<template>
+    <div class="container">
+        <el-container style="height: 100%">
+            <!--   HEAD   -->
+            <el-header>
+                <el-row :gutter="20" class="text-css">
+                    <el-col :span="16">
+                        <el-row :gutter="20" class="text-css">
+                            <el-col :span="12">
+                                <span class="date">{{ state.week }} {{ state.date }} {{ state.time }}</span>
+                            </el-col>
+                            <el-col :span="12">
+                  <span style="height:50px;line-height:50px;font-size: 36px;font-weight: bold;">
+                    {{ state.queryForm.warehouseNo }}仓库看板
+                  </span>
+                            </el-col>
+                        </el-row>
+                        <el-row :gutter="20" style="margin-top:11px;text-align: center;">
+                            <el-col :span="12">
+                                <div style="border: black solid 1px;font-weight: bold;">
+                                    <el-row :gutter="20" style="padding:25px;">
+                                        <el-col @click="onSeachVal(10)" :span="12"><span class="block kong"></span><span
+                                                style="color: rgb(111, 173, 71);">空闲</span>
+                                        </el-col>
+                                        <el-col @click="onSeachVal(20)" :span="12"><span class="block ing"></span><span
+                                                style="color: rgb(68, 114, 196);">使用</span>
+                                        </el-col>
+                                    </el-row>
+                                    <el-row :gutter="20" style="padding:25px;">
+                                        <el-col @click="onSeachVal(30)" :span="12"><span class="block full"></span><span
+                                                style="color: rgb(255, 192, 0);">锁定</span>
+                                        </el-col>
+                                        <el-col @click="onSeachVal(40)" :span="12"><span class="block disabled"></span><span
+                                                style="color: red;">冻结</span></el-col>
+                                    </el-row>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div style="border: black solid 1px;font-weight: bold;">
+                                    <el-row :gutter="20" style="padding:25px;">
+                                        <el-col :span="4">总存储量</el-col>
+                                        <el-col :span="4">{{ state.warehouseNum }}KG</el-col>
+                                        <el-col :span="4">库位总量</el-col>
+                                        <el-col :span="4">{{ state.locationNum }}</el-col>
+                                        <el-col :span="5">库存托盘量</el-col>
+                                        <el-col :span="3">{{ state.containerNum }}托</el-col>
+                                    </el-row>
+                                    <el-row :gutter="20" style="padding:25px;">
+                                        <el-col :span="4">存储用量</el-col>
+                                        <el-col :span="4">{{ state.warehouseUseNum }}KG</el-col>
+                                        <el-col :span="4">库位用量</el-col>
+                                        <el-col :span="4">{{ state.locationUseNum }}</el-col>
+                                        <el-col :span="5">库存物品量</el-col>
+                                        <el-col :span="3">{{ state.containerMaterialNum }}桶</el-col>
+                                    </el-row>
+                                </div>
+                            </el-col>
+                            <!--                <el-col :span="8">-->
+                            <!--                  <div style="border: saddlebrown solid 1px;font-weight: bold;">-->
+                            <!--                    <el-row :gutter="20" style="padding:18px;">-->
+                            <!--                      <el-col :span="24">-->
+                            <!--                        <el-radio-group @change="onChangeRadio" v-model="state.radio">-->
+                            <!--                          <el-radio v-for="(item,index) in  state.locationTypeList" :label="item.itemId">{{-->
+                            <!--                              item.itemName-->
+                            <!--                            }}-->
+                            <!--                          </el-radio>-->
+                            <!--                        </el-radio-group>-->
+                            <!--                      </el-col>-->
+                            <!--                    </el-row>-->
+                            <!--                  </div>-->
+                            <!--                </el-col>-->
+                        </el-row>
+                    </el-col>
+                    <el-col :span="8">
+                        <div style="border: black solid 1px;font-weight: bold;">
+                            <marquee direction="up" onmouseover="stop();"
+                                     onmouseout="start();"
+                                     scrollamount="3"
+                                     style="height: 200px"
+                                     behavior="scroll"
+                            >
+                                <div v-for="item in state.materialList" :key="item" style="padding: 2px;">
+                                    <el-descriptions :column="5">
+                                        <el-descriptions-item width="120px" label="标签号">{{ item.containerno }}</el-descriptions-item>
+                                        <el-descriptions-item width="220px" label="物料规格">{{ item.skuname }}</el-descriptions-item>
+                                        <el-descriptions-item width="120px" label="件数(桶)">{{ item.totalpackages }}</el-descriptions-item>
+                                        <el-descriptions-item width="120px" label="重量(KG)">
+                                            <el-tag :type="item.isFull?'danger':''">{{ item.totalvolume }}</el-tag>
+                                        </el-descriptions-item>
+                                        <el-descriptions-item width="120px" label="最大存储(KG)">{{ item.maxinventory }}</el-descriptions-item>
+                                    </el-descriptions>
+                                </div>
+                            </marquee>
+                            <!--                <el-carousel  direction="vertical">
+                                              <el-carousel-item v-for="item in state.materialList" :key="item">
+                                                <el-descriptions :column="5" border>
+                                                  <el-descriptions-item label="标签号">{{ item.containerno }}</el-descriptions-item>
+                                                  <el-descriptions-item label="物料规格">{{ item.skuname }}</el-descriptions-item>
+                                                  <el-descriptions-item label="件数(桶)">{{ item.totalpackages }}</el-descriptions-item>
+                                                  <el-descriptions-item label="重量(KG)">{{ item.totalvolume }}</el-descriptions-item>
+                                                  <el-descriptions-item label="最大存储(KG)">{{ item.maxinventory }}</el-descriptions-item>
+                                                </el-descriptions>
+                                              </el-carousel-item>
+                                            </el-carousel>-->
+                        </div>
+                    </el-col>
+                </el-row>
 
-</div>
-</body>
-</html>
+            </el-header>
+            <!--    right 搜索   -->
+            <div>
+                <div @click="drawer=true" class="handle-button" style="top:260px; background-color:saddlebrown;">
+                    <i class="el-icon-search"/>
+                </div>
+                <div @click="refresh" class="handle-button" style="top: 320px; background-color:seagreen;">
+                    <i class="el-icon-refresh"/>
+                </div>
+            </div>
+            <el-divider/>
+            <el-main style="text-align: center;">
+                <div>
+                    <el-card class="box-card">
+                        <el-row :gutter="20" class="text-css">
+                            <el-col @click="showDialog(it.location_id)" style="padding: 5px 20px 5px 5px;"
+                                    v-for="(it,v) in state.dataList" :key="v" :span="2">
+                                <el-card :style="getStyle(it)">
+                                    <div>
+                                        <span style="font-size: 26px;font-weight: bold;">{{ it.location_no }}</span>
+                                    </div>
+                                    <!--                <template #header>
+                                                      <span>{{ it.location_no }}</span>
+                                                    </template>
+                                                    <div slot="body">
+                                                      <el-row :gutter="20" class="row-space">
+                                                        <el-col :span="12">库位类型：{{ getMapVal(it.location_type, state.locationTypeList) }}</el-col>
+                                                        <el-col :span="12">库位分区：{{ getMapVal(it.location_partition, state.partitionList) }}</el-col>
+                                                      </el-row>
+                                                      <el-row :gutter="20" class="row-space">
+                                                        <el-col :span="12">使用/存储：{{ it.container_no ? 1 : 0 }}/1</el-col>
+                                                        <el-col :span="12">托盘号：{{ it.container_no?it.container_no:'&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;' }}</el-col>
+                                                      </el-row>
+                                                      <el-row :gutter="20" class="row-space">
+                                                        <el-col :span="12">托盘容量：{{ it.total_volume?it.total_volume:'&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;' }}</el-col>
+                                                        <el-col :span="12">托盘物品数量：{{ it.amount?it.amount:'&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;' }}</el-col>
+                                                      </el-row>
+                                                    </div>-->
+                                </el-card>
+                            </el-col>
+                        </el-row>
+                    </el-card>
+                    <!--        <div style="margin-top: 10px;">
+                              <el-pagination
+                                  @size-change="changeSize"
+                                  @current-change="changeCurrent"
+                                  background
+                                  layout="prev, pager, next,"
+                                  prev-text="上一页"
+                                  next-text="下一页"
+                                  :page-count="state.totalPageNum"
+                                  :page-sizes="[10,20,30,40,50,100]"/>
+                            </div>-->
+
+                </div>
+            </el-main>
+            <el-dialog
+                    v-model="dialogVisible"
+                    title="库位信息"
+                    width="80%"
+            >
+                <div style="margin: 10px 20px 10px 20px">
+                    <el-descriptions>
+                        <el-descriptions-item label-class-name="my-label"
+                                              class-name="my-content" label="仓库编号">
+                            <el-tag>
+                                {{ state.locationDetail.locationInfo.warehouseNo }}
+                            </el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label-class-name="my-label"
+                                              class-name="my-content" label="库位编号">
+                            <el-tag>
+                                {{ state.locationDetail.locationInfo.locationNo }}
+                            </el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label-class-name="my-label"
+                                              class-name="my-content" label="库位类型">
+                            <el-tag>
+                                {{ getMapVal(state.locationDetail.locationInfo.type, state.locationTypeList) }}
+                            </el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label-class-name="my-label"
+                                              class-name="my-content" label="库位分区">
+                            <el-tag>
+                                {{ getMapVal(state.locationDetail.locationInfo.partition, state.partitionList) }}
+                            </el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label-class-name="my-label"
+                                              class-name="my-content" label="库位分组">
+                            <el-tag>
+                                {{ state.locationDetail.locationInfo.group ? state.locationDetail.locationInfo.group : "------" }}
+                            </el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label-class-name="my-label"
+                                              class-name="my-content" label="库位顺序">
+                            <el-tag>
+                                {{ state.locationDetail.locationInfo.order ? state.locationDetail.locationInfo.order : "------" }}
+                            </el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label-class-name="my-label"
+                                              class-name="my-content" label="库位所在层数">
+                            <el-tag>
+                                {{ state.locationDetail.locationInfo.layer ? state.locationDetail.locationInfo.layer : "------" }}
+                            </el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label-class-name="my-label"
+                                              class-name="my-content" label="库位描述">
+                            <el-tag>{{
+                                state.locationDetail.locationInfo.description ? state.locationDetail.locationInfo.description : "------"
+                                }}
+                            </el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label-class-name="my-label"
+                                              class-name="my-content" label="备注">
+                            <el-tag>{{
+                                state.locationDetail.locationInfo.memo ? state.locationDetail.locationInfo.memo : "------"
+                                }}
+                            </el-tag>
+                        </el-descriptions-item>
+                    </el-descriptions>
+                    <el-table :data="state.locationDetail.materialInfos" style="width: 100%">
+                        <el-table-column prop="container_no" label="托盘号"/>
+                        <el-table-column prop="spu_name" label="产品名称" width="220"/>
+                        <el-table-column prop="sku_name" label="物料名称" width="220"/>
+                        <el-table-column prop="sku_no" label="物料号"/>
+                        <el-table-column prop="batch_no" label="批次号"/>
+                        <el-table-column prop="amount" label="件数(桶)"/>
+                        <el-table-column prop="total_volume" label="重量(Kg)"/>
+                        <el-table-column prop="item_no" label="桶标签"/>
+                        <el-table-column prop="is_full" label="是否满托">
+                            <template v-slot="scope">
+                                {{ getMapVal(scope.row.is_full, state.isYes) }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="is_standard" label="是否标准托">
+                            <template v-slot="scope">
+                                {{ getMapVal(scope.row.is_standard, state.isYes) }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="is_reserved" label="是否预留">
+                            <template v-slot="scope">
+                                {{ getMapVal(scope.row.is_reserved, state.isYes) }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="MSDS文档">
+                            <el-table-column prop="eCard" label="应急短卡">
+                                <template v-slot="scope">
+                                    <el-tag
+                                            :type="scope.row.msds!=null&&scope.row.msds.eCard!=null&&scope.row.msds.eCard.eCardFile!=null?'success':'info'"
+                                            @click="openUrl(scope.row.msds!=null&&scope.row.msds.eCard!=null&&scope.row.msds.eCard.eCardFile!=null?scope.row.msds.eCard.eCardFile:'')">
+                                        应急短卡
+                                    </el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="msdsCh" label="MSDS_CH">
+                                <template v-slot="scope">
+                                    <el-tag
+                                            :type="scope.row.msds!=null&&scope.row.msds.msdsCh!=null&&scope.row.msds.msdsCh.msdsChFile!=null?'success':'info'"
+                                            @click="openUrl(scope.row.msds!=null&&scope.row.msds.msdsCh!=null&&scope.row.msds.msdsCh.msdsChFile!=null?scope.row.msds.msdsCh.msdsChFile:'')">
+                                        MSDS_CH文件
+                                    </el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="msdsEn" label="MSDS_EN">
+                                <template v-slot="scope">
+                                    <el-tag
+                                            :type="scope.row.msds!=null&&scope.row.msds.msdsEn!=null&&scope.row.msds.msdsEn.msdsEnFile!=null?'success':'info'"
+                                            @click="openUrl(scope.row.msds!=null&&scope.row.msds.msdsEn!=null&&scope.row.msds.msdsEn.msdsEnFile!=null?scope.row.msds.msdsEn.msdsEnFile:'')">
+                                        MSDS_EN文件
+                                    </el-tag>
+                                </template>
+                            </el-table-column>
+                        </el-table-column>
+                    </el-table>
+                </div>
+                <template #footer>
+              <span class="dialog-footer">
+                <el-button type="primary" @click="dialogVisible = false">关闭</el-button>
+              </span>
+                </template>
+            </el-dialog>
+            <div>
+                <el-drawer
+                        v-model="drawer"
+                        :direction="direction"
+                        :before-close="handleClose">
+                    <template #title>
+                        <h4>快速查找</h4>
+                    </template>
+                    <template #default>
+                        <div style="padding: 10px;">
+                            <el-form :model="state.queryForm" label-width="150px">
+                                <el-form-item label="所属仓库" prop="warehouseNo">
+                                    <el-select clearable filterable placeholder="请选择所属仓库" v-model="state.queryForm.warehouseNo">
+                                        <el-option v-for="item in state.warehouseList" :label="item.warehouseNo" :value="item.warehouseNo"
+                                                   :key="item.id"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="仓库类型" prop="warehouseType">
+                                    <el-select clearable filterable placeholder="请选择仓库类型" v-model="state.queryForm.warehouseType">
+                                        <el-option v-for="item in state.warehouseTypeList" :label="item.itemName" :value="item.itemId"
+                                                   :key="item.itemId"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="所属库位" prop="locationNo">
+                                    <el-select clearable filterable placeholder="请选择所属库位" v-model="state.queryForm.locationNo">
+                                        <el-option v-for="item in state.locationInfoList" :label="item.locationNo"
+                                                   :value="item.locationNo"
+                                                   :key="item.id"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="库位类型" prop="locationType">
+                                    <el-select clearable filterable placeholder="请选择库位类型" v-model="state.queryForm.locationType">
+                                        <el-option v-for="item in state.locationTypeList" :label="item.itemName" :value="item.itemId"
+                                                   :key="item.itemId"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="库位分区" prop="locationPartition">
+                                    <el-select clearable filterable placeholder="请选择库位分区" v-model="state.queryForm.locationPartition">
+                                        <el-option v-for="item in state.partitionList" :label="item.itemName" :value="item.itemId"
+                                                   :key="item.itemId"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="最大库存量(KG)<=">
+                                    <el-input-number clearable v-model="state.queryForm.maxInventory" :min="0" :max="100"/>
+                                </el-form-item>
+                                <el-form-item label="库位状态">
+                                    <el-select clearable filterable placeholder="请选择库位状态" v-model="state.queryForm.locationStatus">
+                                        <el-option v-for="item in state.locationStatusList" :label="item.itemName" :value="item.itemId"
+                                                   :key="item.itemId"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item>
+                                    <el-button type="primary" @click="onSeach">查询</el-button>
+                                </el-form-item>
+                            </el-form>
+                        </div>
+                    </template>
+                    <!--        <template #footer>
+                              <div style="flex: auto"><el-button type="primary">Primary</el-button></div>
+                            </template>-->
+                </el-drawer>
+            </div>
+        </el-container>
+    </div>
+</template>
+
+<script setup lang="ts">
+    import {onMounted, reactive, ref} from 'vue';
+    import {
+        getAllLocationListByPageApi,
+        getAllMaterialListApi,
+        getdocbydocnoApi,
+        getLocationAndContainerInfoApi
+    } from '../../api/kanban/index'
+    import {getAllLocationInfoListApi} from '../../api/locationInfo/index'
+    import {getALLWarehouseListApi} from '../../api/warehouse/index'
+    import { getGroupListApi } from '/@/api/dataDictionary/dataDictionary';
+    const drawer = ref(false)
+    const dialogVisible = ref(false)
+    const direction = ref('rtl')
+    const state = reactive({
+        dialogVisible: false,
+        time: '',
+        date: '',
+        week: '',
+        weeks: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
+        radio: 1,
+        queryForm: {
+            warehouseNo: 'A610',
+            warehouseType: null,
+            locationNo: '',
+            locationType: null,
+            locationPartition: null,
+            maxInventory: null,
+            locationStatus: null,
+            pageSize: 1000,
+            pageNum: 1,
+        },
+        totalPageNum: 0,
+        // 仓库类别字典 31
+        warehouseTypeList: [
+            {itemName: '特殊仓库', itemId: 10},
+            {itemName: '普通仓库', itemId: 20},
+        ],
+        //库位类型字典 6
+        locationTypeList: [
+            {itemId: 10, itemName: '堆垛库位'},
+            {itemId: 20, itemName: '货架库位'},
+        ],
+        //库位分区字典 7
+        partitionList: [
+            {itemId: 10, itemName: '整托库区'},
+            {itemId: 20, itemName: '零散库区'},
+            {itemId: 30, itemName: 'DMF专属库区'},
+            {itemId: 40, itemName: '饲料级产品专属库区'},
+        ],
+        dataList: [],
+        locationStatusList: [
+            {itemId: 10, itemName: '空闲'},
+            {itemId: 20, itemName: '使用'},
+            {itemId: 30, itemName: '锁定'},
+            {itemId: 40, itemName: '冻结'},
+            {itemId: 50, itemName: '锁定and冻结'},
+        ],
+        locationStatusList: [
+            {itemId: 10, itemName: '空闲'},
+            {itemId: 20, itemName: '使用'},
+            {itemId: 30, itemName: '锁定'},
+            {itemId: 40, itemName: '冻结'},
+            {itemId: 50, itemName: '锁定and冻结'},
+        ],
+        isYes: [ //5
+            {itemId: 10, itemName: '是'},
+            {itemId: 20, itemName: '否'},
+        ],
+        locationInfoList: [],
+        warehouseList: [],
+        warehouseNum: 0,
+        warehouseUseNum: 0,
+        locationNum: 0,
+        locationUseNum: 0,
+        containerNum: 0,
+        containerMaterialNum: 0,
+        materialList: [],
+        locationDetail: {
+            locationInfo: {},
+            materialInfos: [],
+        }
+    })
+
+    // 页面加载
+    onMounted(() => {
+        setInterval(updateTime, 1000);
+        getAllLocationListByPage();
+        setInterval(getAllLocationListByPage, 6000);
+        getLocationInfoList();
+        getWarehouseList();
+        getAllMaterialList();
+        setInterval(getAllMaterialList, 3000);
+        getGroupListEvt(5);//是否
+        getGroupListEvt(31); // 仓库类别字典 31
+        getGroupListEvt(32);//状态;空闲。。。
+        getGroupListEvt(6);//库位类型字典 6
+        getGroupListEvt(7);//库位分区字典 7
+    })
+
+    function getGroupListEvt (groupId) {
+        // alert('index')
+        getGroupListApi({
+            groupId: groupId,
+            locale: "zh_CN",
+        })
+            .then((res)=>{
+                // console.log(res.items)
+                if (res.code == 0){
+                    if(groupId == 5){
+                        if(res.items.length > 0){
+                            state.isYes = res.items;//是否
+                        }
+                    }
+                    if(groupId == 31){
+                        if(res.items.length > 0){
+                            state.warehouseTypeList = res.items;// 仓库类别字典 31
+                        }
+                    }
+                    if(groupId == 6){
+                        if(res.items.length > 0){
+                            state.locationTypeList = res.items;//库位类型字典 6
+                        }
+                    }
+                    if(groupId == 7){
+                        if(res.items.length > 0){
+                            state.partitionList = res.items;//库位分区字典 7
+                        }
+                    }
+                    if(groupId == 32){
+                        if(res.items.length > 0){
+                            state.locationStatusList = res.items;//状态;空闲。。。
+                        }
+                    }
+                }
+            })
+    }
+
+    //外部打开链接
+    function openUrl(url) {
+        if (url) {
+            window.open(url, '_blank') // 新窗口打开外链接
+        }
+    }
+
+    //获取list中对象key一致的value
+    function getMapVal(key, List) {
+        var value = ""
+        if (key) {
+            for (let v in List) {
+                if (List[v].itemId == key) {
+                    value = List[v].itemName
+                    break;
+                }
+            }
+        }
+        return value
+    }
+
+    //展示库位详情
+    async function showDialog(locationId) {
+        dialogVisible.value = true
+        await getLocationAndContainerInfoApi({locationId: locationId}).then(res => {
+            if (res && res.code == 200) {
+                state.locationDetail = res.item
+                // console.log("1:", state.locationDetail.materialInfos)
+            }
+        })
+        state.locationDetail.materialInfos = await getdocbydocno(state.locationDetail.materialInfos)
+
+    }
+
+    async function getdocbydocno(items) {
+        let arrys = []
+        for (let arry of items) {
+            getdocbydocnoApi({docNo: arry.sku_no}).then(res => {
+                if (res && res.code == 0) {
+                    arry.msds = res.data.jsonParams
+                } else {
+                    arry.msds = null
+                }
+            })
+            arrys.push(arry)
+        }
+        // console.log("2:", arrys)
+        return arrys
+    }
+
+    //获取
+    function getAllMaterialList() {
+        getAllMaterialListApi().then(res => {
+            if (res && res.code == 200) {
+                res.items.forEach(item => {
+                    // console.log(item.totalvolume,item.maxinventory)
+                    if (parseInt(item.totalvolume) > parseInt(item.maxinventory)) {
+                        item.isFull = true
+                    }else{
+                        item.isFull = false
+                    }
+                })
+                state.materialList = res.items
+                // console.log(state.materialList)
+            }
+        })
+    }
+
+    //重置刷新
+    function refresh() {
+        state.queryForm = {
+            // warehouseNo: '',
+            warehouseType: null,
+            locationNo: '',
+            locationType: null,
+            locationPartition: null,
+            maxInventory: null,
+            locationStatus: null,
+            pageSize: 100,
+            pageNum: 1,
+        }
+        getAllLocationListByPage();
+    }
+
+
+    function onChangeRadio(val) {
+        state.queryForm.locationType = val
+        getAllLocationListByPage()
+    }
+
+    function getWarehouseList() {
+        /*getWarehouseListApi().then(res => {
+          state.warehouseList = res.items
+        })*/
+        getALLWarehouseListApi().then(res => {
+            if (res && res.code == 200) {
+                state.warehouseList = res.items
+            }
+        })
+    }
+
+    function getLocationInfoList() {
+        /*getLocationInfoListApi().then(res => {
+          state.locationInfoList = res.items
+        })*/
+        getAllLocationInfoListApi().then(res => {
+            if (res && res.code == 200) {
+                state.locationInfoList = res.items
+            }
+        })
+    }
+
+    function onSeachVal(val) {
+        state.queryForm.locationStatus = val
+        getAllLocationListByPage()
+    }
+
+    function onSeach() {
+        getAllLocationListByPage()
+    }
+
+    function changeSize(val) {
+        state.queryForm.pageSize = val
+        getAllLocationListByPage()
+    }
+
+    function changeCurrent(val) {
+        state.queryForm.pageNum = val
+        getAllLocationListByPage()
+    }
+
+    function getAllLocationListByPage() {
+        getAllLocationListByPageApi(state.queryForm).then(res => {
+            if (res.code == 200) {
+                state.dataList = res.items;
+                state.totalPageNum = res.totalPage
+                state.warehouseNum = res.warehouseNum
+                state.warehouseUseNum = res.warehouseUseNum
+                state.locationNum = res.locationNum
+                state.locationUseNum = res.locationUseNum
+                state.containerNum = res.containerNum
+                state.containerMaterialNum = res.containerMaterialNum
+            }
+        });
+    }
+
+    //关闭
+    function handleClose(done) {
+        done();
+    }
+
+    function getStyle(item) {
+        if (item.container_no) {
+            if (item.container_status == 50) {
+                return "background-color:rgb(255, 192, 0) !important;"
+            } else if (item.container_status == 60) {
+                return "background-color:red !important;"
+            } else {
+                return "background-color:rgb(68, 114, 196) !important;"
+            }
+        } else {
+            return "background-color:rgb(111, 173, 71) !important;"
+        }
+    }
+
+    function updateTime() {
+        var cd = new Date();
+        state.time = zeroPadding(cd.getHours(), 2) + ':' + zeroPadding(cd.getMinutes(), 2) + ':' + zeroPadding(cd.getSeconds(), 2);
+        state.date = zeroPadding(cd.getFullYear(), 4) + '-' + zeroPadding(cd.getMonth() + 1, 2)
+            + '-' + zeroPadding(cd.getDate(), 2);
+        state.week = state.weeks[cd.getDay()]
+    };
+
+    function zeroPadding(num, digit) {
+        var zero = '';
+        for (var i = 0; i < digit; i++) {
+            zero += '0';
+        }
+        return (zero + num).slice(-digit);
+    }
+</script>
+
+<style scoped lang="scss">
+    .el-header {
+        height: 200px;
+    }
+
+    .el-main {
+        height: calc(100vh - 200px);
+    }
+
+    .row-space {
+        margin: 0px 0px 10px 0px;
+    }
+
+    .box-card {
+        /*margin-top: 5px;*/
+        height:  calc(100vh - 300px);
+        /*overflow-y: auto;*/
+    }
+
+    .text-css {
+        text-align: center;
+        margin: 6.5px;
+    }
+
+    .date {
+        font-size: 28px;
+        /*font-family: "Share Tech Mono", monospace;*/
+        /*color: #d21919;*/
+        /*color: #0b6987;*/
+        /*text-shadow: 0 0 2px #0aafe6, 0 0 2px rgba(10, 175, 230, 0);*/
+        height: 50px;
+        line-height: 50px;
+    }
+
+    .block {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        margin-right: 8px;
+        vertical-align: sub;
+    }
+
+    .kong {
+        background: rgb(111, 173, 71);
+    }
+
+    .full {
+        background: rgb(255, 192, 0);
+    }
+
+    .ing {
+        background: rgb(68, 114, 196);
+    }
+
+    .disabled {
+        background: red !important;
+    }
+
+    .handle-button {
+        width: 48px;
+        height: 48px;
+        position: absolute;
+        right: 0px;
+        text-align: center;
+        font-size: 24px;
+        border-radius: 6px 0 0 6px !important;
+        z-index: 0;
+        pointer-events: auto;
+        cursor: pointer;
+        color: #fff;
+        line-height: 48px;
+    }
+
+    .my-label {
+
+    }
+
+    .my-content {
+
+    }
+</style>
