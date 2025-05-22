@@ -582,9 +582,6 @@
     }
 
     function getWarehouseList() {
-        /*getWarehouseListApi().then(res => {
-          state.warehouseList = res.items
-        })*/
         getALLWarehouseListApi().then(res => {
             if (res && res.code == 200) {
                 state.warehouseList = res.items
@@ -593,9 +590,6 @@
     }
 
     function getLocationInfoList() {
-        /*getLocationInfoListApi().then(res => {
-          state.locationInfoList = res.items
-        })*/
         getAllLocationInfoListApi().then(res => {
             if (res && res.code == 200) {
                 state.locationInfoList = res.items
