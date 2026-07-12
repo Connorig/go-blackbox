@@ -123,7 +123,7 @@ func Find() {
 	c := client.Database("admin").Collection("person")
 
 	// SetSort 设置排序字段（1表示升序；-1表示降序）
-	findOptions := options.Find().SetSort(bson.D{{"level", 1}})
+	findOptions := options.Find().SetSort(bson.D{{Key: "level", Value: 1}})
 
 	findCursor, err := c.Find(ctx, bson.M{"gender": "男"}, findOptions)
 
@@ -159,7 +159,8 @@ func FindOne() {
 	// 按照level排序并跳过第一个, 且只需返回name、gender字段（SetProjection：1表示包含某些字段；0表示不包含某些字段）
 	findOneOptions := options.FindOne().
 		//SetSkip(1).
-		SetSort(bson.D{{"level", 1}}).SetProjection(bson.D{{"name", 1}, {"gender", 1}})
+		SetSort(bson.D{{Key: "level", Value: 1}}).
+		SetProjection(bson.D{{Key: "name", Value: 1}, {Key: "gender", Value: 1}})
 	singleResult := c.FindOne(ctx, bson.M{"ranking": 1}, findOneOptions)
 	err = singleResult.Decode(&result)
 	if err != nil {
@@ -184,7 +185,10 @@ func FindOneAndDelete() {
 	c := client.Database("admin").Collection("person")
 
 	// FindOneAndDelete
-	findOneAndDeleteOptions := options.FindOneAndDelete().SetProjection(bson.D{{"name", 1}, {"gender", 1}})
+	findOneAndDeleteOptions := options.FindOneAndDelete().SetProjection(bson.D{
+		{Key: "name", Value: 1},
+		{Key: "gender", Value: 1},
+	})
 	var deleteDocs bson.M
 	singleResult := c.FindOneAndDelete(ctx, bson.M{"name": "祖国人"}, findOneAndDeleteOptions)
 	err = singleResult.Decode(&deleteDocs)
