@@ -144,13 +144,13 @@ func TestGetAggregate(t *testing.T) {
 		}()
 		pipeline := mongo.Pipeline{
 			{
-				{"$match", bson.D{
-					{"items.fruit", "banana"},
+				{Key: "$match", Value: bson.D{
+					{Key: "items.fruit", Value: "banana"},
 				}},
 			},
 			{
-				{"$sort", bson.D{
-					{"date", 1},
+				{Key: "$sort", Value: bson.D{
+					{Key: "date", Value: 1},
 				}},
 			},
 		}
@@ -184,7 +184,7 @@ func TestFind(t *testing.T) {
 				t.Error(err)
 			}
 		}()
-		res, err := client.Find(ctx, "testing", bson.D{{"end", nil}})
+		res, err := client.Find(ctx, "testing", bson.D{{Key: "end", Value: nil}})
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -217,7 +217,7 @@ func TestFindOne(t *testing.T) {
 		}()
 		var result bson.M
 
-		res := client.FindOne(ctx, "testing", bson.D{{"end", nil}})
+		res := client.FindOne(ctx, "testing", bson.D{{Key: "end", Value: nil}})
 		if res == nil {
 			t.Error("Collection return empty")
 		}
@@ -245,7 +245,7 @@ func TestDeleteOne(t *testing.T) {
 				t.Error(err)
 			}
 		}()
-		err = client.DeleteOne(ctx, "testing", bson.D{{"end", nil}})
+		err = client.DeleteOne(ctx, "testing", bson.D{{Key: "end", Value: nil}})
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -285,7 +285,7 @@ func TestUpdateOne(t *testing.T) {
 				{Key: "value", Value: 3.1415926},
 			}},
 		}
-		res, err := client.UpdateOne(ctx, "testing", bson.D{{"_id", id}}, b)
+		res, err := client.UpdateOne(ctx, "testing", bson.D{{Key: "_id", Value: id}}, b)
 		if err != nil {
 			t.Error(err.Error())
 			return
