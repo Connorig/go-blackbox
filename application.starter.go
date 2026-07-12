@@ -3,170 +3,350 @@ package appbox
 import (
 	"context"
 	"errors"
-	"github.com/Domingor/go-blackbox/seed"
-	"github.com/Domingor/go-blackbox/server/cache"
-	"github.com/Domingor/go-blackbox/server/datasource"
-	"github.com/Domingor/go-blackbox/server/mongodb"
-	"github.com/Domingor/go-blackbox/server/shutdown"
-	log "github.com/Domingor/go-blackbox/server/zaplog"
-	"github.com/Domingor/go-blackbox/simpleioc"
-	"github.com/robfig/cron/v3"
-	"gorm.io/gorm"
+	"fmt"
+	stdlog "log"
 	"sync"
 	"time"
+
+	"github.com/Connorig/go-blackbox/server/cache"
+	"github.com/Connorig/go-blackbox/server/datasource"
+	"github.com/Connorig/go-blackbox/server/mongodb"
+	"github.com/Connorig/go-blackbox/server/shutdown"
+	log "github.com/Connorig/go-blackbox/server/zaplog"
+	"github.com/Connorig/go-blackbox/simpleioc"
+	"github.com/robfig/cron/v3"
+	"gorm.io/gorm"
 )
 
-// 初始化执行器
+// 应用启动器使用进程级单例，保持已有依赖项目的 New 调用行为。
 var (
-	doOnce  sync.Once
-	app     *application
-	afterDo = make(chan struct{})
+	doOnce sync.Once
+	app    *application
 )
 
-// AfterSecond 默认时长后开始执行 后置函数
+// AfterSecond 是 Web 启动结果的观察窗口，用于同步捕获端口占用等快速失败。
+// 该常量为兼容现有调用保留，后续会迁移为可配置的启动超时。
 const AfterSecond = time.Second
 
-// Application app启动器接口
+// Application 定义脚手架应用的启动入口。
 type Application interface {
-	// Start 用于读取配置文件、启动所有服务
+	// Start 执行 Builder 回调、初始化启用的组件，并等待应用退出信号。
 	Start(builder func(ctx context.Context, builder *ApplicationBuild) error) error
-	// TODO some others interface function...I just don't figure it out so maybe just waiting for...
-	// TODO forget something I will handle it later.
-
 }
 
-// app启动器-实现Application接口
+// application 保存本次进程使用的组件构建配置。
 type application struct {
-	builder *ApplicationBuild
-	// test some un-test function test
+	builder       *ApplicationBuild    // builder 保存依赖项目注册的组件与生命周期配置。
+	runtimeCancel context.CancelFunc   // runtimeCancel 负责释放 Web、Setup 和 Seed 共用的运行 Context。
+	lifecycle     applicationLifecycle // lifecycle 管理单次启动状态和已初始化资源的逆序关闭。
 }
 
-// New 创建app-starter启动器
+// New 返回进程级 Application 单例。
+// 当前版本保持历史单例语义，重复配置和可重入能力将在生命周期模块中统一优化。
 func New() Application {
-	// 单例模式-
 	doOnce.Do(func() {
-		// 创建app启动器
-		app = &application{
-			&ApplicationBuild{},
-		}
+		app = &application{builder: &ApplicationBuild{}}
 	})
 	return app
 }
 
-// Start 全局启动配置器，初始化个个服务配置信息
-func (app *application) Start(builderFun func(ctx context.Context, builder *ApplicationBuild) error) (err error) {
-
-	// 开始执行构建服务程序
-	if err = app.buildingService(builderFun); err == nil {
-
-		// 全部服务启动成功后，阻塞主线程，开始监听web端口服务:
-		// 这里会监听一个无缓存chanel，阻塞式监听消息。防止main现场结束，一旦main现场结束，web服务的协程也会结束，即服务终止。
-		shutdown.WaitExit(&shutdown.Configuration{
-
-			BeforeExit: func(s string) {
-				// 收到消息-开始执行钩子函数
-				log.SugaredLogger.Info(s)
-			},
-		})
-	}
-	return
-}
-
-// 根据build配置是否开启服务标识进行一一初始化
-func (app *application) buildingService(builderFun func(ctx context.Context, builder *ApplicationBuild) error) (err error) {
-	// 构建器必须有效！
-	if builderFun == nil {
-		err = errors.New("builderFun is not a expected function for building")
-		return
-	}
-
-	// 传入全局Context，开始执行配置信息，标记要启动的服务
-	if err = builderFun(simpleioc.GetContext().Ctx, app.builder); err != nil {
+// Start 初始化全部启用组件，并阻塞等待系统信号或组件主动退出。
+// 任一初始化步骤失败都会立即返回，避免应用以不完整状态继续运行。
+func (app *application) Start(builderFun func(ctx context.Context, builder *ApplicationBuild) error) error {
+	if err := app.lifecycle.beginStart(); err != nil {
+		stdlog.Printf("start application failed: %v", err)
 		return err
 	}
 
-	// 启动日志
+	if err := app.buildingService(builderFun); err != nil {
+		shutdownErr := app.shutdownResources()
+		return errors.Join(err, shutdownErr)
+	}
+	if err := app.lifecycle.markRunning(); err != nil {
+		log.SugaredLogger.Errorf("mark application ready failed: %v", err)
+		shutdownErr := app.shutdownResources()
+		return errors.Join(err, shutdownErr)
+	}
+
+	exitMessage := shutdown.WaitExit(&shutdown.Configuration{
+		BeforeExit: func(message string) {
+			log.SugaredLogger.Info(message)
+		},
+	})
+	log.SugaredLogger.Infof("application received exit request: %s", exitMessage)
+	return app.shutdownResources()
+}
+
+// buildingService 按 Builder 启用标记依次初始化基础组件和 Web 服务。
+// 初始化顺序保证日志先可用，数据组件先于 Seed 和 Cron 完成注册。
+func (app *application) buildingService(builderFun func(ctx context.Context, builder *ApplicationBuild) error) error {
+	if builderFun == nil {
+		err := errors.New("application builder function is nil")
+		stdlog.Printf("configure application failed: %v", err)
+		return err
+	}
+
+	if err := builderFun(simpleioc.GetContext().Ctx, app.builder); err != nil {
+		stdlog.Printf("execute application builder failed: %v", err)
+		return fmt.Errorf("execute application builder: %w", err)
+	}
+
 	if !app.builder.IsEnableZapLogs {
-		// 未配置日志，则使用默认配置
 		app.builder.InitLog(".", "debug")
 	}
 
-	// TODO others services that needed to be handled.
-	// TODO needed to be writed down here.
-
-	// 1. 数据库
 	if app.builder.IsEnableDB {
-		// 初始化数据，注册模型
-		if err = datasource.GormInit(app.builder.dbConfig, app.builder.dbModels); err != nil {
-			log.SugaredLogger.Debugf("init db service error %s", err)
+		if err := datasource.GormInit(app.builder.dbConfig, app.builder.dbModels); err != nil {
+			log.SugaredLogger.Errorf("initialize database failed: %v", err)
+			return fmt.Errorf("initialize database: %w", err)
+		}
+
+		instance, dbErr := datasource.GetDbInstance()
+		if dbErr != nil {
+			log.SugaredLogger.Errorf("get initialized database instance failed: %v", dbErr)
+			return fmt.Errorf("get initialized database instance: %w", dbErr)
+		}
+		if instance == nil {
+			err := errors.New("initialized database instance is nil")
+			log.SugaredLogger.Error(err)
 			return err
 		}
-
-		// 放入ioc
-		instance, _ := datasource.GetDbInstance()
-		//放入ioc容器
 		simpleioc.Set(instance)
+		if err := app.registerDatabaseShutdown(instance); err != nil {
+			return err
+		}
 	}
 
-	//2. cache
 	if app.builder.IsEnableCache {
-		// 初始化redis，放入容器
-		simpleioc.Set(cache.Init(simpleioc.GetContext().Ctx, app.builder.redisOptions))
+		cacheInstance := cache.Init(simpleioc.GetContext().Ctx, app.builder.redisOptions)
+		if cacheInstance == nil {
+			err := errors.New("initialize Redis cache returned nil instance")
+			log.SugaredLogger.Error(err)
+			return err
+		}
+		simpleioc.Set(cacheInstance)
 	}
-	//3. MongoDb
+
 	if app.builder.IsEnableMongoDB {
-		if client, err := mongodb.GetClient(app.builder.mongoBbConfig, simpleioc.GetContext().Ctx); err != nil {
-			log.SugaredLogger.Debugf("init mongoDb fail err %s", err)
-		} else {
-			// mongoDb客户端放入容器
-			simpleioc.Set(client)
+		client, mongoErr := mongodb.GetClient(app.builder.mongoBbConfig, simpleioc.GetContext().Ctx)
+		if mongoErr != nil {
+			log.SugaredLogger.Errorf("initialize MongoDB client failed: %v", mongoErr)
+			return fmt.Errorf("initialize MongoDB client: %w", mongoErr)
+		}
+		if client == nil {
+			err := errors.New("initialize MongoDB returned nil client")
+			log.SugaredLogger.Error(err)
+			return err
+		}
+		simpleioc.Set(client)
+		if err := app.lifecycle.registerShutdown("MongoDB", client.Disconnect); err != nil {
+			log.SugaredLogger.Errorf("register MongoDB shutdown failed: %v", err)
+			return fmt.Errorf("register MongoDB shutdown: %w", err)
 		}
 	}
 
-	// n. WebService
-	if app.builder.IsEnableWeb { // 是否开启 WebServer
-		// 开启协程监听TCP-Web端口服务
-		go func() {
-			log.SugaredLogger.Info("starting WebService...")
-			// 判断是否加载静态文件
-			if app.builder.isLoadingStaticFs {
-				if err = app.builder.irisApp.StaticSource(app.builder.StaticFs); err != nil {
-					log.SugaredLogger.Errorf("app.irisApp.StaticSource fail!")
-					return
-				}
-			}
+	// Web、Setup 和 Seed 使用派生 Context。启动后任一步骤失败时调用 cancel，
+	// 可以立即停止已经运行的 Web；正常退出时父 Context 会自动向下传播取消信号。
+	runtimeCtx, cancelRuntime := context.WithCancel(simpleioc.GetContext().Ctx)
+	keepRuntimeContext := false
+	defer func() {
+		if !keepRuntimeContext {
+			cancelRuntime()
+		}
+	}()
 
-			// 预留n秒给iris进行服务监听启动，n秒过后开始执行后置函数（定时cron任务函数等）
-			time.AfterFunc(AfterSecond, func() {
-				afterDo <- struct{}{}
-			})
-
-			// 启动web，此时会阻塞。后面的代码不会被轮到执行
-			if err = app.builder.irisApp.Run(simpleioc.GetContext().Ctx); err != nil {
-				log.SugaredLogger.Errorf("Runing WebService error %s", err)
-			}
-		}()
-		// 诺干秒后调用后置函数（定时cron任务函数等）
-		time.AfterFunc(AfterSecond, func() {
-			// 发送信道到 信道
-			afterDo <- struct{}{}
-		})
+	if err := app.startWebLifecycle(runtimeCtx); err != nil {
+		return err
 	}
 
-	// 监听 web服务启动后3秒执行后置函数（定时任务、初始化等函数调用）
-	for {
+	if err := app.registerSeedsAndStartCron(runtimeCtx); err != nil {
+		return err
+	}
+	app.runtimeCancel = cancelRuntime
+	if err := app.lifecycle.registerShutdown("runtime context", func(context.Context) error {
+		app.cancelRuntimeContext()
+		return nil
+	}); err != nil {
+		log.SugaredLogger.Errorf("register runtime context shutdown failed: %v", err)
+		return fmt.Errorf("register runtime context shutdown: %w", err)
+	}
+	if app.builder.IsRunningCronJob {
+		if err := app.lifecycle.registerShutdown("Cron", app.stopCron); err != nil {
+			log.SugaredLogger.Errorf("register Cron shutdown failed: %v", err)
+			return fmt.Errorf("register Cron shutdown: %w", err)
+		}
+	}
+	for _, hook := range app.builder.shutdownHooks {
+		if err := app.lifecycle.registerShutdown(hook.name, hook.stop); err != nil {
+			log.SugaredLogger.Errorf("register application shutdown hook failed, name=%s, error=%v", hook.name, err)
+			return fmt.Errorf("register application shutdown hook %q: %w", hook.name, err)
+		}
+	}
+	keepRuntimeContext = true
+
+	if app.builder.IsEnableWeb {
+		log.SugaredLogger.Info("WebServer is running successfully right now...")
+	} else {
+		log.SugaredLogger.Info("application services initialized without WebServer")
+	}
+	return nil
+}
+
+// registerDatabaseShutdown 获取 GORM 底层连接池并注册关闭函数。
+// 获取连接池失败会中断启动，避免数据库已启用却无法在应用退出时可靠释放。
+func (app *application) registerDatabaseShutdown(instance *gorm.DB) error {
+	sqlDB, err := instance.DB()
+	if err != nil {
+		log.SugaredLogger.Errorf("get database connection pool for shutdown failed: %v", err)
+		return fmt.Errorf("get database connection pool for shutdown: %w", err)
+	}
+	if err := app.lifecycle.registerShutdown("PostgreSQL", func(context.Context) error {
+		return sqlDB.Close()
+	}); err != nil {
+		log.SugaredLogger.Errorf("register database shutdown failed: %v", err)
+		return fmt.Errorf("register database shutdown: %w", err)
+	}
+	return nil
+}
+
+// stopCron 停止 Cron 接收新任务，并等待正在执行的任务结束或关闭 Context 超时。
+func (app *application) stopCron(ctx context.Context) error {
+	cronInstance := CronJobSingle()
+	if cronInstance == nil {
+		return errors.New("Cron instance is nil during shutdown")
+	}
+	waitCtx := cronInstance.Stop()
+	select {
+	case <-waitCtx.Done():
+		return nil
+	case <-ctx.Done():
+		return fmt.Errorf("wait for Cron jobs to stop: %w", ctx.Err())
+	}
+}
+
+// shutdownResources 执行应用已注册资源的逆序关闭并记录聚合错误。
+func (app *application) shutdownResources() error {
+	err := app.lifecycle.shutdown(context.Background(), app.builder.shutdownTimeout)
+	if err != nil {
+		log.SugaredLogger.Errorf("shutdown application resources failed: %v", err)
+	}
+	return err
+}
+
+// cancelRuntimeContext 释放 Application 持有的派生 Context。
+// 正常退出和重复清理都可以安全调用，取消函数执行后会从 Application 中移除。
+func (app *application) cancelRuntimeContext() {
+	if app.runtimeCancel == nil {
+		return
+	}
+	app.runtimeCancel()
+	app.runtimeCancel = nil
+}
+
+// startWebLifecycle 按 BeforeSetup、Web Ready、AfterSetup 的顺序执行 Web 生命周期。
+// 未启用 Web 时不会执行 BeforeSetup 和 AfterSetup，避免回调语义与 Worker 模式混淆。
+func (app *application) startWebLifecycle(ctx context.Context) error {
+	if !app.builder.IsEnableWeb {
+		return nil
+	}
+	if err := app.executeSetupFunctions(ctx, "before web startup", app.builder.beforeSetups); err != nil {
+		return err
+	}
+	if err := app.startWebService(ctx); err != nil {
+		return err
+	}
+	if err := app.executeSetupFunctions(ctx, "after web startup", app.builder.afterSetups); err != nil {
+		return err
+	}
+	return nil
+}
+
+// startWebService 配置静态资源并启动 Web 服务。
+// Run 返回得早于 AfterSecond 通常意味着监听失败；服务进入运行状态后若异常退出，
+// 会记录错误并向 shutdown 模块发送退出信号，避免进程在 Web 已不可用时继续假运行。
+func (app *application) startWebService(ctx context.Context) error {
+	if !app.builder.IsEnableWeb {
+		return nil
+	}
+	if app.builder.irisApp == nil {
+		err := errors.New("web service is enabled but iris application is nil")
+		log.SugaredLogger.Error(err)
+		return err
+	}
+
+	if app.builder.isLoadingStaticFs {
+		if err := app.builder.irisApp.StaticSource(app.builder.StaticFs); err != nil {
+			log.SugaredLogger.Errorf("configure web static source failed: %v", err)
+			return fmt.Errorf("configure web static source: %w", err)
+		}
+	}
+
+	log.SugaredLogger.Info("starting WebService...")
+	runResult := make(chan error, 1)
+	go func() {
+		runResult <- app.builder.irisApp.Run(ctx)
+	}()
+
+	// 新版 WebIris 会在路由构建完成且 Listener 创建成功后关闭 Ready Channel。
+	// 对实现了旧 WebBaseFunc 接口的自定义 Web 服务，继续使用兼容观察窗口。
+	// readyReporter 是新版 Web 实现提供的可选能力，旧实现无需强制适配。
+	type readyReporter interface {
+		Ready() <-chan struct{}
+	}
+	var ready <-chan struct{}
+	if reporter, ok := app.builder.irisApp.(readyReporter); ok {
+		ready = reporter.Ready()
+	}
+
+	if ready != nil {
 		select {
-		case <-afterDo:
-			err = afterDoSomething()
-			// 执行结束，退出for循环
-			break
+		case err := <-runResult:
+			return app.handleWebStartupError(err)
+		case <-ready:
+			app.monitorWebService(runResult)
+			return nil
+		case <-ctx.Done():
+			err := fmt.Errorf("web service startup canceled: %w", ctx.Err())
+			log.SugaredLogger.Error(err)
+			return err
 		}
-		break
 	}
 
-	// 打印输出web服务已启动
-	log.SugaredLogger.Info("WebServer is running successfully right now...")
-	return
+	// 旧 WebBaseFunc 没有 Ready 信号，只能保留短暂观察窗口兼容既有实现。
+	timer := time.NewTimer(AfterSecond)
+	defer timer.Stop()
+	select {
+	case err := <-runResult:
+		return app.handleWebStartupError(err)
+	case <-timer.C:
+		app.monitorWebService(runResult)
+		return nil
+	case <-ctx.Done():
+		err := fmt.Errorf("web service startup canceled: %w", ctx.Err())
+		log.SugaredLogger.Error(err)
+		return err
+	}
+}
+
+// handleWebStartupError 统一处理 Web 在发布 Ready 前退出的结果。
+// 即使底层错误为空，也会转换为明确错误，防止调用方误认为服务启动成功。
+func (app *application) handleWebStartupError(err error) error {
+	if err == nil {
+		err = errors.New("web service stopped before startup completed")
+	}
+	log.SugaredLogger.Errorf("start WebService failed: %v", err)
+	return fmt.Errorf("start web service: %w", err)
+}
+
+// monitorWebService 在启动完成后持续接收 Web 主循环结果。
+// 正常 Context 取消会返回 nil；非 nil 错误表示 Web 服务异常停止，需要结束应用生命周期。
+func (app *application) monitorWebService(runResult <-chan error) {
+	go func() {
+		if err := <-runResult; err != nil {
+			log.SugaredLogger.Errorf("WebService stopped unexpectedly: %v", err)
+			shutdown.Exit(fmt.Sprintf("WebService stopped unexpectedly: %v", err))
+		}
+	}()
 }
 
 // GormDb 获取操作数据库-Gorm实例
@@ -194,70 +374,40 @@ func MongoDb() *mongodb.Client {
 	return simpleioc.GetMongoDb()
 }
 
-func afterDoSomething() (err error) {
-	log.SugaredLogger.Info("executing seeds")
-	// 启动iris之后再执行seed
-	if err = seed.Seed(app.builder.seeds...); err != nil {
-		log.SugaredLogger.Debug("seed.Seed running failed,", err)
-		return
+// registerSeedsAndStartCron 执行定时任务注册回调，并在全部注册成功后启动 Cron。
+// 回调失败时 Cron 不会启动，避免只注册部分任务造成运行行为不一致。
+func (app *application) registerSeedsAndStartCron(ctx context.Context) error {
+	if err := app.executeSetupFunctions(ctx, "register cron seeds", app.builder.seeds); err != nil {
+		return err
 	}
 
-	// 执行定时任务
 	if app.builder.IsRunningCronJob {
 		CronJobSingle().Start()
 	}
-	return err
+	return nil
 }
 
-/*
+// executeSetupFunctions 按注册顺序执行生命周期回调，并向每个回调传入相同 Context。
+// Context 已取消或任一回调返回错误时立即中断，日志中的 index 用于定位失败回调。
+func (app *application) executeSetupFunctions(ctx context.Context, stage string, setupFuncs []SetupFunc) error {
+	if ctx == nil {
+		err := fmt.Errorf("%s setup context is nil", stage)
+		log.SugaredLogger.Error(err)
+		return err
+	}
 
-
-	//if builder == nil {
-	//	log.SugaredLogger.Debug("application builder is nil")
-	//	err = fmt.Errorf("application builder is nil")
-	//	return
-	//}
-	//// 全局context
-	//ctx := simpleioc.GetContext().Ctx
-	//
-	//// 服务构建初始化
-	//err = builder(ctx, app.builder)
-	//
-	//if err != nil {
-	//	log.SugaredLogger.Debug("application builder fail, please check what have happened here!")
-	//	err = fmt.Errorf("application builder fail, please check what have happened here! %s", err.Error())
-	//	return
-	//}
-	//
-	//// 启动iris之后再执行seed
-	//seedErr := seed.Seed(app.builder.seeds...)
-	//
-	//if seedErr != nil {
-	//	log.SugaredLogger.Debug("seed.Seed fail,", seedErr.Error())
-	//}
-	//
-	//// 执行定时任务
-	//if app.builder.IsRunningCronJob {
-	//	CronJobSingle().Start()
-	//}
-	//
-	//// 打印输出web服务已启动
-	//log.SugaredLogger.Info("web server is running now")
-	//
-	//if err == nil {
-	//	// 全部服务启动成功后，阻塞主线程，开始监听web端口服务
-	//	shutdown.WaitExit(&shutdown.Configuration{
-	//		BeforeExit: func(s string) {
-	//			// 收到消息-开始执行钩子函数
-	//
-	//			log.SugaredLogger.Info(s)
-	//			//if len(onTerminate) > 0 {
-	//			//	for _, terminateFunc := range onTerminate {
-	//			//		if terminateFunc != nil {
-	//			//			terminateFunc(s)
-	//			//		}
-	//			//	}
-	//			//}
-	//		},
-	//	})
-	//}*/
+	for index, setupFunc := range setupFuncs {
+		if setupFunc == nil {
+			continue
+		}
+		if err := ctx.Err(); err != nil {
+			log.SugaredLogger.Errorf("%s canceled before callback, index=%d, error=%v", stage, index, err)
+			return fmt.Errorf("%s canceled before callback %d: %w", stage, index, err)
+		}
+		if err := setupFunc(ctx); err != nil {
+			log.SugaredLogger.Errorf("%s callback failed, index=%d, error=%v", stage, index, err)
+			return fmt.Errorf("%s callback %d: %w", stage, index, err)
+		}
+	}
+	return nil
+}

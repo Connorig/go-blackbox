@@ -68,7 +68,7 @@ ARG VERSION
 ARG COMMIT
 ARG BUILD_TIME
 ARG MAIN_PATH
-ARG BASE="github.com/Domingor/go-blackbox/version"
+ARG BASE="github.com/Connorig/go-blackbox/version"
 ENV GOPROXY=https://goproxy.cn,direct
 ARG LDFLAGS=" \
     -X ${BASE}.AppName=${NAME} \

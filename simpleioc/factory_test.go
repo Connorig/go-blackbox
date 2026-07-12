@@ -2,7 +2,7 @@ package simpleioc
 
 import (
 	"fmt"
-	"github.com/Domingor/go-blackbox/server/cronjobs"
+	"github.com/Connorig/go-blackbox/server/cronjobs"
 	"testing"
 	"time"
 )

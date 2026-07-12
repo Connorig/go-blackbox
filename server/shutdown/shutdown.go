@@ -4,88 +4,87 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 )
 
+// Configuration 定义应用退出信号和收到退出请求后的通知回调。
 type Configuration struct {
-	// 退出前回调操作
+	// BeforeExit 在取消全局 Context 后同步执行，用于记录退出原因等轻量操作。
 	BeforeExit func(string)
-	// 定义要接受的系统信号
+	// Signals 指定需要监听的系统信号；为空时监听 SIGINT 和 SIGTERM。
 	Signals []os.Signal
 }
 
-/*
-系统信号
-	SIGHUP 	终端控制进程结束(终端连接断开
-	SIGINT 	用户发送INTR字符(Ctrl+C)触发
-	SIGQUIT 用户发送QUIT字符(Ctrl+/触发
-	SIGKILL 无条件结束程序(不能被捕获、阻塞或忽略
-	SIGUSR1 用户保留
-	SIGUSR2 用户保留
-	SIGPIPE 消息管道损坏(FIFO/Socket通信时，管道未打开而进行写操作)
-	SIGALRM 时钟定时信号
-	SIGTERM 结束程序(可以被捕获、阻塞或忽略
-*/
+// exitRequest 保存组件主动请求退出时提供的非敏感原因。
+type exitRequest struct {
+	message string
+}
 
-// 定义通道-接收系统信号值类型
+// defaultSignals 是每次 WaitExit 未显式配置时使用的系统信号集合。
 var defaultSignals = []os.Signal{syscall.SIGINT, syscall.SIGTERM}
 
-// 退出通道-用于系统进程退出前的回调
-var exitChan = make(chan struct{ message string })
+// exitChan 保存首个组件主动退出请求，缓冲区避免发送方在监听启动前永久阻塞。
+var exitChan = make(chan exitRequest, 1)
 
-// 全局上下文
-var ctx context.Context
-
-// context包提供上下文机制在 goroutine 之间传递 deadline、取消信号（cancellation signals）或者其他请求相关的信息
-var cancel context.CancelFunc
+// 全局 Context 兼容现有调用方，用于把首次退出请求广播给后台组件。
+var (
+	ctx        context.Context
+	cancel     context.CancelFunc
+	cancelOnce sync.Once
+)
 
 func init() {
 	ctx, cancel = context.WithCancel(context.Background())
 }
 
+// Context 返回进程级退出 Context。
+// 首次收到系统信号或 Exit 请求时该 Context 会被取消，调用方不得尝试复用已退出的进程状态。
 func Context() context.Context {
 	return ctx
 }
 
-func WaitExit(config *Configuration) {
-	// 创建系统信号通道
-	sigChan := make(chan os.Signal, 1)
+// WaitExit 阻塞等待系统信号或组件主动退出，并返回触发退出的原因。
+// 函数返回前会停止本次 signal.Notify 注册，避免重复调用累积信号订阅资源。
+func WaitExit(config *Configuration) string {
+	signalChannel := make(chan os.Signal, 1)
+	signals := configuredSignals(config)
+	signal.Notify(signalChannel, signals...)
+	defer signal.Stop(signalChannel)
 
-	if config != nil {
-		if len(config.Signals) > 0 {
-			defaultSignals = config.Signals
-		}
+	return waitExit(config, signalChannel, exitChan)
+}
+
+// configuredSignals 为单次等待复制有效信号配置，避免修改包级默认切片影响后续调用。
+func configuredSignals(config *Configuration) []os.Signal {
+	if config != nil && len(config.Signals) > 0 {
+		return append([]os.Signal(nil), config.Signals...)
 	}
-	// 监听 defaultSignals 系统默认信号，并通知 sigChan
-	signal.Notify(sigChan, defaultSignals...)
+	return append([]os.Signal(nil), defaultSignals...)
+}
 
+// waitExit 执行可测试的退出等待逻辑，系统信号和主动退出只会消费其中一个。
+func waitExit(config *Configuration, signalChannel <-chan os.Signal, requests <-chan exitRequest) string {
+	var message string
 	select {
-	// 结束自定义退出信号
-	case s := <-exitChan:
-		onExit(s.message, config)
-		// 接收系统退出信号
-	case s := <-sigChan:
-		onExit(s.String(), config)
+	case request := <-requests:
+		message = request.message
+	case receivedSignal := <-signalChannel:
+		message = receivedSignal.String()
 	}
-}
 
-// 退出context上下文时的回调
-func onExit(s string, config *Configuration) {
-
-	defer func() {
-		// 捕捉异常
-		_ = recover()
-	}()
-
-	// 结束该上下文
-	cancel()
+	cancelOnce.Do(cancel)
 	if config != nil && config.BeforeExit != nil {
-		// 结束钱执行回调
-		config.BeforeExit(s)
+		config.BeforeExit(message)
 	}
+	return message
 }
 
-// Exit 发送退出进程信号
-func Exit(msg string) {
-	exitChan <- struct{ message string }{msg}
+// Exit 请求应用结束运行。
+// 仅保留首个尚未消费的退出原因；后续重复请求直接返回，避免故障 goroutine 永久阻塞。
+func Exit(message string) {
+	select {
+	case exitChan <- exitRequest{message: message}:
+	default:
+	}
 }

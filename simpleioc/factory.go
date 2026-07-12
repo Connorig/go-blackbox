@@ -2,10 +2,10 @@ package simpleioc
 
 import (
 	"context"
-	"github.com/Domingor/go-blackbox/server/cache"
-	"github.com/Domingor/go-blackbox/server/cronjobs"
-	"github.com/Domingor/go-blackbox/server/mongodb"
-	"github.com/Domingor/go-blackbox/server/shutdown"
+	"github.com/Connorig/go-blackbox/server/cache"
+	"github.com/Connorig/go-blackbox/server/cronjobs"
+	"github.com/Connorig/go-blackbox/server/mongodb"
+	"github.com/Connorig/go-blackbox/server/shutdown"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 	"reflect"

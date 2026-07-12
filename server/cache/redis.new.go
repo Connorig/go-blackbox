@@ -2,7 +2,7 @@ package cache
 
 import (
 	"context"
-	"github.com/Domingor/go-blackbox/server/zaplog"
+	"github.com/Connorig/go-blackbox/server/zaplog"
 	"github.com/go-redis/cache/v9"
 	"github.com/redis/go-redis/v9"
 	"sync"

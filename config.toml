@@ -1,35 +1,35 @@
 name = "golang"
-version = "1.0"
+version = "v1.2.0"
 
 [web]
-listen = ":9528"
-debugLevel = "debug"
+listen = "127.0.0.1:8899"
+level = "debug"
 
 [db]
 dbName = "postgres"
-user = "ows"
-password = "thingple"
-host = "10.211.55.5"
-port = 5439
-database = "workorderdb"
+user = "postgres"
+password = ""
+host = "127.0.0.1"
+port = 5432
+database = "postgres"
 ssl = "disable" #require/verify-full/verify-ca/disable
 
 
 [redis]
-password = "123456"
-addrs = "10.211.55.5:6379"
+password = ""
+host = "127.0.0.1:6379"
 poolSize = 1
 db = 0
 
 [rabbitmq]
 queueName = "test.001.queue"
-dns = "amqp://guest:guest@10.211.55.5:5672/"
+dns = "amqp://127.0.0.1:5672/"
 
 [mongodb]
 timeout = 20
 db = "admin"
-addr = "admin:admin@10.211.55.5:27017/"
+addr = "127.0.0.1:27017"
 
-[logConfig]
-debugLevel = "debug"
-outputPath = "."
+[logConf]
+logLevel = "debug"
+outDirPath = "."

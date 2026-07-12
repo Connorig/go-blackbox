@@ -2,8 +2,8 @@ package datasource
 
 import (
 	"fmt"
-	"github.com/Domingor/go-blackbox/apputils/assert"
-	"github.com/Domingor/go-blackbox/server/zaplog"
+	"github.com/Connorig/go-blackbox/apputils/assert"
+	"github.com/Connorig/go-blackbox/server/zaplog"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

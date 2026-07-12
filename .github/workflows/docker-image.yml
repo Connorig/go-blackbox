@@ -1,21 +1,40 @@
-name: Docker Image CI
+name: Go Module Release
 
 on:
   push:
     tags:
       - "v*"
-#  push:
-#    branches: [ "main" ]
-#  pull_request:
-#    branches: [ "main" ]
+
+permissions:
+  contents: write
 
 jobs:
-
-  build:
-
+  verify-and-release:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      - name: Checkout tagged source
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.20.x"
+          cache: true
+
+      - name: Verify module path
+        run: test "$(go list -m)" = "github.com/Connorig/go-blackbox"
+
+      - name: Compile all packages without running integration tests
+        run: go test ./... -run '^$'
+
+      - name: Run isolated lifecycle tests
+        run: go test ./server/shutdown . && go test ./server/webiris -run 'TestNew|TestInit|TestRunRejects|TestStaticSource'
+
+      - name: Run vet
+        run: go vet ./...
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

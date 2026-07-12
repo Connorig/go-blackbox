@@ -3,141 +3,138 @@ package appbox
 import (
 	"context"
 	"fmt"
-	"github.com/Domingor/go-blackbox/server/apploader"
-	"github.com/Domingor/go-blackbox/server/shutdown"
-	"github.com/kataras/iris/v12"
-	context2 "github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/router"
-	"gorm.io/gorm"
+	"github.com/Connorig/go-blackbox/server/apploader"
+	"github.com/Connorig/go-blackbox/server/cache"
+	"github.com/Connorig/go-blackbox/server/datasource"
+	"github.com/Connorig/go-blackbox/server/shutdown"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/Connorig/go-blackbox/server/webiris"
+	"github.com/Connorig/go-blackbox/server/zaplog"
+	"github.com/kataras/iris/v12"
+	"gorm.io/gorm"
 )
 
+// TestWeb 验证依赖项目可以分别注册 Web 启动前、启动后和 Cron Seed 回调。
+// 该测试会启动真实 TCP Listener，因此默认跳过，仅在显式开启集成测试时执行。
 func TestWeb(t *testing.T) {
-	go time.AfterFunc(time.Second*50, func() {
-		shutdown.Exit("it is about time to shutdown web server, you asshole!")
+	if os.Getenv("GO_BLACKBOX_WEB_INTEGRATION") != "1" {
+		t.Skip("set GO_BLACKBOX_WEB_INTEGRATION=1 to run the Web integration test")
+	}
+
+	logDirectory := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(logDirectory, "zap"), 0o755); err != nil {
+		t.Fatalf("create integration test log directory failed: %v", err)
+	}
+
+	exitTimer := time.AfterFunc(500*time.Millisecond, func() {
+		shutdown.Exit("Web integration test completed")
 	})
-	err2 := New().
-		Start(func(ctx context.Context, builder *ApplicationBuild) error {
-			// 加载项目配置文件
-			if err := builder.LoadConfig(&apploader.Config, func(loader apploader.Loader) {
-				loader.SetConfigFileSearcher("config", ".")
-			}); err != nil {
-				return err
-			}
-			//dbConfig := &datasource.PostgresConfig{
-			//	UserName:     "ows",
-			//	Password:     "thingple",
-			//	Host:         "127.0.0.1",
-			//	Port:         5442,
-			//	DbName:       "test",
-			//	AliasName:    "",
-			//	SSL:          "disable",
-			//	MaxIdleConns: 20,
-			//	MaxOpenConns: 10,
-			//}
-			//redConfig := cache.RedisOptions{
-			//	Addr:     "127.0.0.1:6380",
-			//	Password: "123456",
-			//	DB:       0,
-			//}
+	t.Cleanup(func() {
+		exitTimer.Stop()
+	})
 
-			builder.
-				InitLog(".", "debug").                          // 初始化日志
-				EnableWeb(TimeFormat, ":8899", "debug", Router) // 开启webServer
-			//EnableDb(dbConfig, RegisterTables()...)  // 开启数据库操作
-			//SetSeeds(Setup).InitCronJob().           // 启动服务3s后的一些后置函数、定时任务执行
-			//EnableCache(redConfig)                   // 开启redis
-			return nil
-		})
+	err := New().Start(func(ctx context.Context, builder *ApplicationBuild) error {
 
-	t.Log(err2)
+		// 加载项目配置文件
+		if err := builder.LoadConfig(&apploader.Config, func(loader apploader.Loader) {
+			loader.SetConfigFileSearcher("config", ".")
+		}); err != nil {
+			return err
+		}
+
+		dbConfig := &datasource.PostgresConfig{
+			UserName:     apploader.Config.Db.User,
+			Password:     apploader.Config.Db.Password,
+			Host:         apploader.Config.Db.Host,
+			Port:         apploader.Config.Db.Port,
+			DbName:       apploader.Config.Db.DbName,
+			AliasName:    "",
+			SSL:          apploader.Config.Db.Ssl,
+			MaxIdleConns: 20,
+			MaxOpenConns: 10,
+		}
+		redConfig := cache.RedisOptions{
+			Addr:     apploader.Config.Redis.Host,
+			Password: apploader.Config.Redis.Password,
+			DB:       apploader.Config.Redis.Db,
+		}
+		t.Log(dbConfig, redConfig)
+		builder.
+			InitLog(logDirectory, "debug").
+			BeforeSetup(BeforeWebSetup).
+			EnableWebWithConfig(webiris.Config{
+				Address:         apploader.Config.Web.Listen,
+				TimeFormat:      TimeFormat,
+				LogLevel:        "debug",
+				ShutdownTimeout: time.Second,
+			}, Router).
+			AfterSetup(AfterWebSetup).
+			SetSeeds(RegisterCronSeeds)
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("start Web integration application failed: %v", err)
+	}
 }
 
+// User 是 GORM Model 注册示例，供依赖项目参考数据表声明方式。
 type User struct {
 	gorm.Model
 	Name string
 	Age  int
 }
 
-//func (User) TableName() string {
-//	return "user_test"
-//}
-
+// Router 注册 Web 集成测试使用的健康响应路由。
+// 写入响应失败时使用 Iris Logger 记录错误，避免测试 Handler 静默忽略异常。
 func Router(application *iris.Application) {
-	application.PartyFunc("/v1", func(p router.Party) {
-		p.Get("/one", func(c *context2.Context) {
-			_, err := c.WriteString("For those of you who are fucking busy, this is what happened last week on shameless.")
-			if err != nil {
-				return
-			}
-		})
+	application.Get("/v1/one", func(ctx iris.Context) {
+		println("s")
+		if _, err := ctx.WriteString("go-blackbox Web service is running"); err != nil {
+			application.Logger().Errorf("write integration test response failed: %v", err)
+		}
 	})
 }
 
-func RegisterTables() (tables []interface{}) {
-	tables = append(tables,
-		new(User),
-	)
-	return
+// RegisterTables 返回依赖项目需要交给 GORM AutoMigrate 的 Model 列表。
+func RegisterTables() []interface{} {
+	return []interface{}{new(User)}
 }
 
-func Setup(ctx context.Context) (err error) {
-	modules := []func(context.Context) error{
-		// 普通后置函数
-		func(ctx context.Context) error {
-			fmt.Println("hello it's a module func.")
-			return nil
-		},
-		// 定时函数，必须InitCronJob() 才会执行定时任务
-		func(ctx context.Context) error {
-			if _, err2 := CronJobSingle().AddFunc("@every 1s", func() {
-				fmt.Println("func running in 1 sec....")
-			}); err2 != nil {
-				return err2
-			}
-			return nil
-		}}
-
-	// 批量执行
-	for _, m := range modules {
-		err = m(ctx)
-		if err != nil {
-			break
-		}
+// BeforeWebSetup 展示 Web 启动前回调。
+// 该阶段适合执行配置检查和内存预热；Context 取消时必须立即返回。
+func BeforeWebSetup(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("before Web setup canceled: %w", err)
 	}
-	return
+	zaplog.SugaredLogger.Info("before Web setup completed")
+	return nil
 }
 
-//type Student struct {
-//	Field int
-//}
+// AfterWebSetup 展示 Web Ready 后回调。
+// 该阶段可以执行依赖 Web 已可监听的初始化操作。
+func AfterWebSetup(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("after Web setup canceled: %w", err)
+	}
+	zaplog.SugaredLogger.Info("after Web setup completed")
+	return nil
+}
 
-/*
-(* T)(nil) 它返回nil指针或没有指针，但仍然为struct的所有字段分配内存。
-new（T）和& T {} 完全等价：分配一个零T并返回一个指向这个分配的内存的指针。唯一的区别是，& T {} 不适用于内置类型，如 int ;你只能做 new（int）。
-*/
-//func TestNil(t *testing.T) {
-//	test1 := &Student{}
-//	test2 := new(Student)
-//	test3 := (*Student)(nil)
-//	fmt.Printf("%#v, %#v, %#v \n", test1, test2, test3) //&main.Student{Field:0}, &main.Student{Field:0}, (*main.Student)(nil)
-//
-//	fmt.Printf("%T, %T, %T \n", test1, test2, test3) // *main.Student, *main.Student, *main.Student
-//
-//	test1.Field = 1
-//	fmt.Println(test1.Field) // 1
-//
-//	test2.Field = 2
-//	fmt.Println(test2.Field) // 2
-//
-//	//test3.Field = 3 // test3分配内存，返回一个nil指针，不能使用
-//	// fmt.Println(test3.Field)
-//
-//	configType := reflect.TypeOf(test3)
-//	println(configType.String())
-//
-//	field := test3.Field
-//	t.Log(field)
-//
-//}
+// RegisterCronSeeds 注册脚手架启动后需要运行的 Cron 任务。
+// SetSeeds 会在内部调用该函数并自动启用 Cron，无需额外调用 InitCronJob。
+func RegisterCronSeeds(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("register Cron seeds canceled: %w", err)
+	}
+
+	if _, err := CronJobSingle().AddFunc("@every 1s", func() {
+		zaplog.SugaredLogger.Info("Cron seed task is running")
+	}); err != nil {
+		return fmt.Errorf("add Cron seed task: %w", err)
+	}
+	return nil
+}

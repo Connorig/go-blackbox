@@ -1,7 +1,7 @@
 package cronjobs
 
 import (
-	"github.com/Domingor/go-blackbox/server/zaplog"
+	"github.com/Connorig/go-blackbox/server/zaplog"
 	"testing"
 	"time"
 )

@@ -2,8 +2,8 @@ package seed
 
 import (
 	"context"
-	"github.com/Domingor/go-blackbox/server/zaplog"
-	"github.com/Domingor/go-blackbox/simpleioc"
+	"github.com/Connorig/go-blackbox/server/zaplog"
+	"github.com/Connorig/go-blackbox/simpleioc"
 	"go.uber.org/zap"
 )
 

@@ -1,4 +1,4 @@
-module github.com/Domingor/go-blackbox
+module github.com/Connorig/go-blackbox
 
 go 1.20
 
