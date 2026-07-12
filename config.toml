@@ -6,6 +6,7 @@ listen = "127.0.0.1:8899"
 level = "debug"
 
 [db]
+driver = "postgres"
 dbName = "postgres"
 user = "postgres"
 password = ""
@@ -13,6 +14,11 @@ host = "127.0.0.1"
 port = 5432
 database = "postgres"
 ssl = "disable" #require/verify-full/verify-ca/disable
+charset = "utf8mb4"
+timeZone = "Asia/Shanghai"
+autoMigrate = false
+maxIdleConns = 10
+maxOpenConns = 20
 
 
 [redis]

@@ -1,39 +1,55 @@
 package zaplog
 
 import (
-	zaprotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	"fmt"
 	"io"
+	stdlog "log"
+	"path/filepath"
 	"strings"
 	"time"
+
+	zaprotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	"go.uber.org/zap/zapcore"
 )
 
-//func GetWriteSyncer() (zapcore.WriteSyncer, error) {
-//	fileWriter, err := zaprotatelogs.New(
-//		path.Join(CONFIG.Director, "---%Y-%m-%d.log"),
-//		zaprotatelogs.WithLinkName(CONFIG.LinkName),
-//		zaprotatelogs.WithMaxAge(7*24*time.Hour),
-//		zaprotatelogs.WithRotationTime(24*time.Hour),
-//	)
-//	if CONFIG.LogInConsole {
-//		return zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(fileWriter)), err
-//	}
-//	return zapcore.AddSync(fileWriter), err
-//}
+// newRotatingWriteSyncer 创建指定等级的轮转文件写入器。
+// filename 只能是文件名，目录由 CONFIG.Director/zap 统一管理。
+func newRotatingWriteSyncer(filename string) (zapcore.WriteSyncer, error) {
+	baseName := strings.TrimSuffix(filepath.Base(filename), filepath.Ext(filename))
+	if baseName == "" || baseName == "." {
+		return nil, fmt.Errorf("log filename %q is invalid", filename)
+	}
+	logDirectory := filepath.Join(CONFIG.Director, "zap")
+	pattern := filepath.Join(logDirectory, baseName+"-%Y%m%d%H.log")
+	linkName := filepath.Join(logDirectory, baseName+".log")
+	maxAge := time.Duration(CONFIG.MaxAge) * time.Hour
+	rotationTime := time.Duration(CONFIG.WithRotationTime) * time.Hour
+	if maxAge <= 0 {
+		maxAge = 7 * 24 * time.Hour
+	}
+	if rotationTime <= 0 {
+		rotationTime = 24 * time.Hour
+	}
 
-// GetWriteSyncer2 创建写入文件流，根据日志级别写入不同文件中
-// debug\info\warn\error 每个级别等级限制显示所属的内容
-// info\warn\error
-// warn\error
-// error
-func GetWriteSyncer2(filename string) io.Writer {
 	hook, err := zaprotatelogs.New(
-		strings.Replace(CONFIG.Director+filename, ".log", "", -1)+"-%Y%m%d%H.log",
-		zaprotatelogs.WithLinkName(CONFIG.LinkName),  // 生成软链，指向最新日志文件
-		zaprotatelogs.WithMaxAge(7*24*time.Hour),     // clear 最小分钟为小时
-		zaprotatelogs.WithRotationTime(24*time.Hour), // rotate 最小为24小时轮询
+		pattern,
+		zaprotatelogs.WithLinkName(linkName),
+		zaprotatelogs.WithMaxAge(maxAge),
+		zaprotatelogs.WithRotationTime(rotationTime),
 	)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("create rotating log writer for %s: %w", baseName, err)
 	}
-	return hook
+	return zapcore.AddSync(hook), nil
+}
+
+// GetWriteSyncer2 保留旧版直接获取 io.Writer 的公开入口。
+// Deprecated: 新代码应由 Init 统一创建日志核心并处理初始化错误。
+func GetWriteSyncer2(filename string) io.Writer {
+	syncer, err := newRotatingWriteSyncer(filename)
+	if err != nil {
+		stdlog.Printf("create compatibility log writer failed, filename=%s, error=%v", filepath.Base(filename), err)
+		return io.Discard
+	}
+	return syncer
 }

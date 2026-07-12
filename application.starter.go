@@ -94,17 +94,28 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 	if !app.builder.IsEnableZapLogs {
 		app.builder.InitLog(".", "debug")
 	}
+	if app.builder.logInitErr != nil {
+		stdlog.Printf("initialize application logger failed: %v", app.builder.logInitErr)
+		return fmt.Errorf("initialize application logger: %w", app.builder.logInitErr)
+	}
+	if err := app.lifecycle.registerShutdown("logger", func(context.Context) error {
+		return log.Sync()
+	}); err != nil {
+		log.SugaredLogger.Errorf("register logger shutdown failed: %v", err)
+		return fmt.Errorf("register logger shutdown: %w", err)
+	}
 
 	if app.builder.IsEnableDB {
-		if err := datasource.GormInit(app.builder.dbConfig, app.builder.dbModels); err != nil {
+		var instance *gorm.DB
+		var err error
+		if app.builder.databaseConfig != nil {
+			instance, err = datasource.InitializeDatabase(simpleioc.GetContext().Ctx, app.builder.databaseConfig, app.builder.dbModels...)
+		} else {
+			instance, err = datasource.Initialize(simpleioc.GetContext().Ctx, app.builder.dbConfig, app.builder.dbModels...)
+		}
+		if err != nil {
 			log.SugaredLogger.Errorf("initialize database failed: %v", err)
 			return fmt.Errorf("initialize database: %w", err)
-		}
-
-		instance, dbErr := datasource.GetDbInstance()
-		if dbErr != nil {
-			log.SugaredLogger.Errorf("get initialized database instance failed: %v", dbErr)
-			return fmt.Errorf("get initialized database instance: %w", dbErr)
 		}
 		if instance == nil {
 			err := errors.New("initialized database instance is nil")
@@ -195,13 +206,11 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 // registerDatabaseShutdown 获取 GORM 底层连接池并注册关闭函数。
 // 获取连接池失败会中断启动，避免数据库已启用却无法在应用退出时可靠释放。
 func (app *application) registerDatabaseShutdown(instance *gorm.DB) error {
-	sqlDB, err := instance.DB()
-	if err != nil {
-		log.SugaredLogger.Errorf("get database connection pool for shutdown failed: %v", err)
-		return fmt.Errorf("get database connection pool for shutdown: %w", err)
+	if instance == nil {
+		return errors.New("register database shutdown: database instance is nil")
 	}
 	if err := app.lifecycle.registerShutdown("PostgreSQL", func(context.Context) error {
-		return sqlDB.Close()
+		return datasource.Close()
 	}); err != nil {
 		log.SugaredLogger.Errorf("register database shutdown failed: %v", err)
 		return fmt.Errorf("register database shutdown: %w", err)

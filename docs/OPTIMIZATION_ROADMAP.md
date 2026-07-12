@@ -22,9 +22,9 @@
 | --- | --- | --- | --- | --- |
 | 1 | Web / Iris | `server/webiris`、Starter | 配置校验、Ready、启动错误、优雅关闭、静态资源 | 首轮已完成 |
 | 2 | 应用生命周期 | 根包、`server/shutdown` | Start/Ready/Stop、资源逆序关闭、运行模式 | 首轮已完成 |
-| 3 | 配置加载 | `server/apploader` | 错误返回、标签统一、默认值、校验、环境变量 | 待开始 |
-| 4 | 日志 | `server/zaplog` | 目录、分级策略、结构化字段、Sync、日志脱敏 | 待开始 |
-| 5 | PostgreSQL / GORM | `server/datasource` | 配置校验、Ping、连接池、迁移策略、关闭 | 待开始 |
+| 3 | 配置加载 | `server/apploader` | 错误返回、标签统一、默认值、校验、环境变量 | 首轮已完成 |
+| 4 | 日志 | `server/zaplog` | 目录、分级策略、结构化字段、Sync、日志脱敏 | 首轮已完成 |
+| 5 | 关系数据库 / GORM | `server/datasource` | PostgreSQL、MySQL、Oracle 扩展、Ping、连接池、迁移、关闭 | 首轮已完成 |
 | 6 | Redis | `server/cache` | Ping 错误、TTL、序列化、关闭、健康检查 | 待开始 |
 | 7 | MongoDB | `server/mongodb` | Builder 开关、Ping、超时、关闭、类型化 API | 待开始 |
 | 8 | RabbitMQ | `server/rabbitmqretry/rabbitmq` | 客户端升级、确认语义、重连、重试、死信、关闭 | 待开始 |
@@ -84,9 +84,33 @@
 
 ## 3. 配置与日志
 
-配置优化点：修复配置文件错误被吞、环境变量前缀失效、字段命名不一致，增加默认值、必填校验和脱敏输出。
+配置首轮已完成：
 
-日志优化点：创建完整日志目录，明确累计或独立分级策略，增加结构化字段、Request ID、组件名和 `Sync` 关闭处理。
+- 保留 Loader 链式 API，配置阶段错误暂存并在 `LoadToStruct` 统一返回。
+- 配置文件不存在、名称为空、解析失败、目标不是结构体指针时返回带功能点的错误。
+- 环境变量前缀不再被清空，嵌套字段使用 `PREFIX_SECTION_FIELD` 格式覆盖。
+- 内置配置统一补充 `mapstructure` 和 `toml` 标签，并修正连接池字段拼写。
+- 保留 `MaxIdleCones`、`MaxOpenCones` 作为兼容字段，并同步正确字段的值。
+- 为 Web、数据库连接池、Redis 连接池和日志配置增加安全默认值。
+- 新增 `apploader.Validator`，业务配置可以在反序列化后执行必填项和范围校验。
+- 新增无网络配置文件、环境变量、默认值、错误链和目标类型测试。
+
+配置后续增强项：增加敏感字段脱敏快照、配置来源追踪、动态配置边界以及更完整的内置 MongoDB、RabbitMQ 配置模型。
+
+日志首轮已完成：
+
+- Init 创建实际写入使用的 `<日志根目录>/zap` 完整目录。
+- 轮转写入器创建失败返回错误，不再在基础库内部 panic。
+- 明确采用严格单级文件策略：debug、info、warn 分别只记录本级，error 文件记录 error 及更高等级。
+- 每个等级使用独立的轮转文件和软链接，避免共享 `latest_log` 相互覆盖。
+- 全局 Logger 在 Init 前使用 Nop 实现，避免初始化前日志调用 nil panic。
+- 新增 `WithComponent`，为日志附加结构化 component 字段。
+- 标准化 `timestamp`、`level`、`service`、`caller`、`function`、`message` 字段；时间使用带时区的 RFC3339 毫秒格式。
+- 新增 `Sync` 并处理终端不支持 fsync 的平台错误，Starter 将日志关闭注册为关闭栈的最早资源，因此退出时最后刷新。
+- 链式 `InitLog` 保持兼容，初始化错误暂存并在 Application.Start 中返回。
+- 新增目录、严格分级、结构化字段、非法配置和 Sync 错误分类测试。
+
+日志后续增强项：标准化 Request ID、Trace ID、敏感字段脱敏器、采样策略和日志写入失败指标。
 
 配置应先完成基础读取；日志完成后，后续数据库和中间件模块统一使用新的错误记录规范。
 
@@ -94,11 +118,31 @@
 
 ### PostgreSQL / GORM
 
-- 校验 nil 配置、DSN 必填项和连接池范围。
-- 初始化时执行 `PingContext`，区分打开失败、认证失败和迁移失败。
-- `AutoMigrate` 改为显式配置，生产环境默认关闭。
-- 修复 nil Model 过滤和 `db.DB()` 错误忽略。
-- 提供关闭连接池和健康检查入口。
+首轮已完成：
+
+- 新增 `Initialize(ctx, config, models...)`，外部 Context 可以取消数据库启动和 Ping。
+- 保留 `GormInit` 兼容入口，并在内部设置有上限的连接超时。
+- 校验 nil 配置、主机、用户、数据库名、端口、SSL 模式、连接池范围和超时。
+- 初始化时获取 `db.DB()` 并执行 `PingContext`，失败时关闭连接池且不注册全局实例。
+- 移除失败后永久锁死的 `sync.Once`，初始化失败后允许安全重试。
+- `AutoMigrate` 默认关闭，只有显式设置 `AutoMigrate` 或旧版 `InitDb` 时才执行。
+- nil Model 使用新切片过滤，连续 nil 不会跳过且不修改调用方切片。
+- 增加连接池默认值、最大生命周期配置、`Health(ctx)` 和幂等 `Close()`。
+- Starter 直接使用 Context 初始化，并把 datasource.Close 注册到应用逆序关闭栈。
+- 日志只记录主机、端口和数据库名，不输出密码或完整 DSN。
+
+后续增强项：支持多数据源实例、只读副本、事务辅助接口、指标采集和可注入 Dialector 集成测试。
+
+### 统一关系数据库适配
+
+- 新增 `datasource.Driver` 和 `datasource.Config`，统一连接信息、连接池、超时和迁移配置。
+- 新增 `InitializeDatabase`，不同关系数据库共享 Ping、失败清理、迁移、Health 和 Close 生命周期。
+- 新增 `ApplicationBuild.EnableDatabase`，旧 `EnableDb(PostgresConfig)` 继续兼容。
+- PostgreSQL 使用仓库已有官方 Dialector，兼容 `postgres`、`postgresql`、`pgsql` 名称。
+- MySQL/MariaDB 使用统一字段和 `MySQLDSN` 生成连接串，调用方注册所选 GORM MySQL Dialector。
+- Oracle 使用 `DriverOracle` 和 `RegisterDialector` 接入具体实现，避免基础库强制绑定 Oracle Client、CGO 或特定第三方驱动。
+- 自定义数据库同样可以通过 `RegisterDialector` 接入，工厂返回 nil 或未注册驱动会返回明确错误。
+- 日志和错误上下文只包含驱动、主机、端口和数据库名，不输出密码或完整 DSN。
 
 ### Redis
 

@@ -32,6 +32,8 @@ type ApplicationBuilder interface {
 	EnableWebWithConfig(config webiris.Config, components webiris.PartyComponent) *ApplicationBuild
 	// EnableDb 配置 PostgreSQL、GORM 和需要迁移的 Model。
 	EnableDb(dbConfig *datasource.PostgresConfig, models ...interface{}) *ApplicationBuild
+	// EnableDatabase 使用统一配置启用 PostgreSQL、MySQL 或已注册的其他关系数据库。
+	EnableDatabase(config *datasource.Config, models ...interface{}) *ApplicationBuild
 	// EnableCache 配置 Redis 缓存客户端。
 	EnableCache(redConfig cache.RedisOptions) *ApplicationBuild
 	// LoadConfig 通过调用方提供的 Loader 配置读取目标结构体。
@@ -78,8 +80,12 @@ type ApplicationBuild struct {
 	shutdownHooks []shutdownHook
 	// shutdownTimeout 是全部资源执行逆序关闭时共享的最大时长。
 	shutdownTimeout time.Duration
+	// logInitErr 保存兼容链式 InitLog 无法直接返回的初始化错误。
+	logInitErr error
 	// 数据库配置
 	dbConfig *datasource.PostgresConfig
+	// databaseConfig 保存统一关系数据库配置；非 nil 时优先于兼容 PostgreSQL 配置。
+	databaseConfig *datasource.Config
 	// 注册表模块-tables
 	dbModels []interface{}
 	// 上下文对象
@@ -152,6 +158,15 @@ func (app *ApplicationBuild) EnableDb(dbConfig *datasource.PostgresConfig, model
 	return app
 }
 
+// EnableDatabase 使用统一关系数据库配置启用 GORM 数据源。
+// PostgreSQL 已内置，MySQL、Oracle 等数据库需要在启动前通过 datasource.RegisterDialector 注册选定驱动。
+func (app *ApplicationBuild) EnableDatabase(config *datasource.Config, models ...interface{}) *ApplicationBuild {
+	app.IsEnableDB = true
+	app.databaseConfig = config
+	app.dbModels = models
+	return app
+}
+
 // EnableCache 启动缓存
 func (app *ApplicationBuild) EnableCache(redConfig cache.RedisOptions) *ApplicationBuild {
 	app.IsEnableCache = true
@@ -160,20 +175,19 @@ func (app *ApplicationBuild) EnableCache(redConfig cache.RedisOptions) *Applicat
 	return app
 }
 
-// LoadConfig 加载配置文件、环境变量值
+// LoadConfig 使用独立 Loader 加载配置文件和环境变量。
+// 配置函数或读取过程失败时返回保留错误链的错误，调用方必须终止当前启动流程。
 func (app *ApplicationBuild) LoadConfig(configStruct interface{}, loaderFun func(apploader.Loader)) error {
-	loader := apploader.NewLoader()
 	if loaderFun == nil {
-
-		return fmt.Errorf("loaderFun is nil")
+		return fmt.Errorf("configure application loader: loader function is nil")
 	}
 
-	// 加载解析配置文件属性
+	loader := apploader.NewLoader()
 	loaderFun(loader)
-
-	// 读取到的属性值赋值给配置对象
-	err := loader.LoadToStruct(configStruct)
-	return err
+	if err := loader.LoadToStruct(configStruct); err != nil {
+		return fmt.Errorf("load application configuration: %w", err)
+	}
+	return nil
 }
 
 // InitLog 初始化自定义日志
@@ -189,11 +203,7 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 		log.CONFIG.Level = level
 	}
 
-	// 初始化日志，通过 zapLog.日志对象进行调用
-
-	if err := log.Init(); err != nil {
-		fmt.Printf("Log Init() err %v\n", err)
-	}
+	app.logInitErr = log.Init()
 
 	return app
 }

@@ -3,11 +3,9 @@ module github.com/Connorig/go-blackbox
 go 1.20
 
 require (
-	github.com/fatih/structs v1.1.0
 	github.com/go-redis/cache/v9 v9.0.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/hashicorp/go-version v1.6.0
-	github.com/jeremywohl/flatten v1.0.1
 	github.com/kataras/iris/v12 v12.2.0
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/redis/go-redis/v9 v9.0.2

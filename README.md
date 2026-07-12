@@ -27,7 +27,7 @@
 | 能力 | 主要位置 | 当前接入方式 | 状态说明 |
 | --- | --- | --- | --- |
 | Iris Web 服务 | `server/webiris` | `EnableWeb` / `EnableWebWithConfig` | 已完成首轮生命周期与错误处理升级 |
-| PostgreSQL / GORM | `server/datasource` | `EnableDb` | 已接入 Builder，仅支持 PostgreSQL |
+| 关系数据库 / GORM | `server/datasource` | `EnableDb` / `EnableDatabase` | PostgreSQL 内置，MySQL/Oracle 可通过统一 Dialector 注册机制接入 |
 | Redis 缓存 | `server/cache` | `EnableCache` | 已接入 Builder，初始化逻辑待修复 |
 | MongoDB | `server/mongodb` | `EnableMongoDB` | 客户端已实现，Builder 开关待修复 |
 | Cron 定时任务 | `server/cronjobs` | `SetSeeds` / `InitCronJob` | SetSeeds 注册任务后自动启用 Cron |
@@ -96,11 +96,29 @@ Web 服务会在 Iris 路由构建完成且 TCP Listener 真正进入 Serve 阶�
 go mod download
 ```
 
-当前日志实现会写入 `<日志目录>/zap/`，启动前需要确保目录存在：
+日志初始化会自动创建 `<日志目录>/zap/`。debug、info、warn 文件只记录对应等级，error 文件记录 error 及更高等级；应用退出时会在关闭栈最后刷新日志缓冲区。
 
-```bash
-mkdir -p zap
+需要为日志增加功能模块字段时，可以使用：
+
+```go
+zaplog.WithComponent("order-worker").Infow("worker started", "queue", queueName)
 ```
+
+JSON 格式使用稳定字段名，便于 Loki、Elasticsearch 等日志平台检索：
+
+```json
+{
+  "timestamp": "2026-07-12T19:49:24.464+08:00",
+  "level": "info",
+  "service": "go-blackbox",
+  "component": "order-worker",
+  "caller": "appbox/worker.go:42",
+  "function": "example.com/project/appbox.(*Worker).Start",
+  "message": "worker started"
+}
+```
+
+`timestamp` 使用带时区的 RFC3339 毫秒格式；`caller` 用于快速定位文件和行号，`function` 用于定位包、类型和方法。生产环境建议使用 JSON，开发环境可以继续使用 console 格式。
 
 ### 2. 创建入口程序
 
@@ -173,6 +191,14 @@ if err := builder.LoadConfig(&cfg, func(loader apploader.Loader) {
 
 建议业务项目定义自己的配置结构，并使用 `mapstructure` 标签与 Viper 对齐。仓库内置的 `apploader.Configuration` 只覆盖 Web、数据库、Redis 和日志的一部分字段，尚未覆盖 RabbitMQ 与 MongoDB。
 
+启用环境变量时，嵌套字段使用 `PREFIX_SECTION_FIELD` 命名。例如：
+
+```go
+loader.SetConfigFileSearcher("config", ".").EnableEnvSearcher("BLACKBOX")
+```
+
+`BLACKBOX_WEB_LISTEN` 会覆盖 `web.listen`。业务配置可以实现 `apploader.Validator`，在反序列化完成后执行必填项和范围校验；校验错误会从 `LoadConfig` 返回并终止应用启动。
+
 `config.toml` 目前包含开发环境连接示例。使用前必须替换主机、账号和密码；生产密钥、数据库密码、SMTP 授权码等敏感信息应通过密钥管理系统或环境变量注入，不应提交到仓库。
 
 ## 组件访问
@@ -188,6 +214,60 @@ globalCtx := appbox.GlobalCtx()
 ```
 
 调用前必须确认对应组件已经启用且初始化成功。当前 IOC 容器不会为缺失实例返回结构化错误，直接使用空实例可能产生 panic，后续将改为显式依赖和错误返回。
+
+PostgreSQL 默认不会自动迁移表结构。需要迁移时必须显式配置：
+
+```go
+builder.EnableDb(&datasource.PostgresConfig{
+	Host:           "127.0.0.1",
+	Port:           5432,
+	UserName:       "postgres",
+	Password:       os.Getenv("POSTGRES_PASSWORD"),
+	DbName:         "application",
+	SSL:            "disable",
+	MaxIdleConns:   10,
+	MaxOpenConns:   20,
+	ConnectTimeout: 10 * time.Second,
+	AutoMigrate:    true,
+}, models...)
+```
+
+脚手架启动时会执行 `PingContext`，退出时自动关闭连接池。独立使用数据源包时，可以调用 `datasource.Health(ctx)` 和 `datasource.Close()`。
+
+统一关系数据库入口使用 `datasource.Config`：
+
+```go
+builder.EnableDatabase(&datasource.Config{
+	Driver:          datasource.DriverPostgreSQL,
+	Host:            "127.0.0.1",
+	Port:            5432,
+	UserName:        "postgres",
+	Password:        os.Getenv("DATABASE_PASSWORD"),
+	Database:        "application",
+	SSLMode:         "disable",
+	ConnectTimeout:  10 * time.Second,
+	MaxIdleConns:    10,
+	MaxOpenConns:    20,
+	ConnMaxLifetime: time.Hour,
+	AutoMigrate:     false,
+}, models...)
+```
+
+MySQL/MariaDB 由业务项目选择 GORM Driver 并注册，基础库负责其余生命周期：
+
+```go
+if err := datasource.RegisterDialector(datasource.DriverMySQL, func(config datasource.Config) (gorm.Dialector, error) {
+	dsn, err := datasource.MySQLDSN(config)
+	if err != nil {
+		return nil, err
+	}
+	return mysql.Open(dsn), nil
+}); err != nil {
+	return fmt.Errorf("register MySQL dialector: %w", err)
+}
+```
+
+Oracle 使用同一个 `RegisterDialector(datasource.DriverOracle, ...)` 接口注册项目选定的 Oracle GORM Driver。Oracle DSN、Wallet、Service Name 和客户端库由注册工厂负责，禁止记录完整连接串。
 
 ## 静态资源
 
