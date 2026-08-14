@@ -12,13 +12,16 @@ type AuthConfig struct {
 	// Whitelist 是无需认证的路径前缀列表（如 /health、/login）。
 	// 路径以任一前缀开头时直接放行。
 	Whitelist []string
+	// Scope 是本接口要求的权限标识（逗号分隔匹配 token 声明的 scope）。
+	// 非空时，token 声明未包含该 scope 的请求返回 403。
+	Scope string
 }
 
 // Auth 返回 JWT 认证中间件。
 // 校验 Authorization: Bearer <token> 头（使用 apptoken.VerifyToken，
 // 需先通过 apptoken.SetSecretKey 注入密钥）；认证通过后把用户身份写入
 // ctx.Values() 的 user_id / user_email，业务代码通过 UserID / UserEmail 读取。
-// 认证失败返回 401 统一响应并停止后续处理器。
+// 认证失败返回 401 统一响应；配置 Scope 时无权限返回 403 统一响应。
 // 用法：app.Use(webiris.Auth(webiris.AuthConfig{Whitelist: []string{"/health", "/login"}}))
 func Auth(config ...AuthConfig) iris.Handler {
 	authConfig := AuthConfig{}
@@ -50,10 +53,26 @@ func Auth(config ...AuthConfig) iris.Handler {
 			return
 		}
 
+		if authConfig.Scope != "" && !hasScope(claim.Scope, authConfig.Scope) {
+			Fail(ctx, iris.StatusForbidden, iris.StatusForbidden, "insufficient scope")
+			ctx.StopExecution()
+			return
+		}
+
 		ctx.Values().Set("user_id", claim.UserID)
 		ctx.Values().Set("user_email", claim.UserEmail)
 		ctx.Next()
 	}
+}
+
+// hasScope 判断逗号分隔的 scope 列表中是否包含期望值。
+func hasScope(scopeList, expected string) bool {
+	for _, scope := range strings.Split(scopeList, ",") {
+		if strings.TrimSpace(scope) == expected {
+			return true
+		}
+	}
+	return false
 }
 
 // UserID 从上下文读取认证用户 ID；未认证或缺失时返回 0。

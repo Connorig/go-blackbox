@@ -253,6 +253,24 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 	if err := app.registerSeedsAndStartCron(runtimeCtx); err != nil {
 		return err
 	}
+	// Start admin service (pprof/metrics/log-level) in parallel when enabled.
+	if app.builder.admin != nil {
+		adminReady := app.builder.admin.Ready()
+		go func() {
+			if err := app.builder.admin.Run(runtimeCtx); err != nil {
+				log.SugaredLogger.Errorf("admin service stopped: %v", err)
+			}
+		}()
+		select {
+		case <-adminReady:
+			log.SugaredLogger.Info("admin service is running")
+		case <-time.After(2 * time.Second):
+			log.SugaredLogger.Warn("admin service did not become ready within 2 seconds")
+		case <-runtimeCtx.Done():
+			return fmt.Errorf("admin service startup canceled: %w", runtimeCtx.Err())
+		}
+	}
+
 	app.runtimeCancel = cancelRuntime
 	if err := app.lifecycle.registerShutdown("runtime context", func(context.Context) error {
 		app.cancelRuntimeContext()

@@ -66,9 +66,11 @@ func SetSecretKeys(secrets ...string) error {
 }
 
 // MyClaim 是 Access Token 携带的业务声明。
+// Scope 是权限标识列表（逗号分隔），认证中间件可据此做细粒度权限校验。
 type MyClaim struct {
 	UserID    int64  `json:"userId"`
 	UserEmail string `json:"userEmail"`
+	Scope     string `json:"scope,omitempty"` // 权限标识，逗号分隔
 	jwt.RegisteredClaims
 }
 
@@ -94,8 +96,14 @@ func keyFuncFor(key []byte) jwt.Keyfunc {
 	}
 }
 
-// GenToken 颁发token access token 和 refresh token
+// GenToken 颁发token access token 和 refresh token（无权限声明）。
 func GenToken(UserID int64, Username string) (atoken, rtoken string, err error) {
+	return GenTokenWithScope(UserID, Username, "")
+}
+
+// GenTokenWithScope 颁发携带权限声明的 token。
+// scope 是逗号分隔的权限标识，认证中间件可要求匹配指定 scope。
+func GenTokenWithScope(UserID int64, Username, scope string) (atoken, rtoken string, err error) {
 	key, err := signingKey()
 	if err != nil {
 		return "", "", err
@@ -105,9 +113,10 @@ func GenToken(UserID int64, Username string) (atoken, rtoken string, err error) 
 		Issuer:    tokenIssuer,
 	}
 	at := MyClaim{
-		UserID,
-		Username,
-		rc,
+		UserID:           UserID,
+		UserEmail:        Username,
+		Scope:            scope,
+		RegisteredClaims: rc,
 	}
 	atoken, err = jwt.NewWithClaims(jwt.SigningMethodHS256, at).SignedString(key)
 	if err != nil {
@@ -173,13 +182,13 @@ func RefreshToken(atoken, rtoken string) (newAtoken, newRtoken string, err error
 	var claim MyClaim
 	err = verifyWithKeys(atoken, &claim)
 	if err == nil {
-		// access token 仍然有效，直接重新颁发
-		return GenToken(claim.UserID, claim.UserEmail)
+		// access token 仍然有效，直接重新颁发（保留权限声明）
+		return GenTokenWithScope(claim.UserID, claim.UserEmail, claim.Scope)
 	}
 	// 仅当 access token 是因为正常过期时才允许刷新
 	var validationErr *jwt.ValidationError
 	if errors.As(err, &validationErr) && validationErr.Errors&jwt.ValidationErrorExpired != 0 {
-		return GenToken(claim.UserID, claim.UserEmail)
+		return GenTokenWithScope(claim.UserID, claim.UserEmail, claim.Scope)
 	}
 	return "", "", fmt.Errorf("parse access token for refresh: %w", err)
 }

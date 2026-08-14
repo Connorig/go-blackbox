@@ -23,8 +23,9 @@ var (
 	SugaredLogger = Logger.Sugar()
 	loggerMu      sync.Mutex
 	// logWriters 保存 Init 创建的轮转日志写入器，Close 时统一释放文件句柄。
-	logWriters []io.Closer
-	writersMu  sync.Mutex
+	logWriters        []io.Closer
+	writersMu         sync.Mutex
+	consoleAtomicLevel = zap.NewAtomicLevel()
 )
 
 // Init 根据 CONFIG 创建完整日志目录和严格单级文件 Logger。
@@ -47,6 +48,7 @@ func Init() error {
 	}
 
 	minimumLevel, err := parseLevel(CONFIG.Level)
+	consoleAtomicLevel.SetLevel(minimumLevel)
 	if err != nil {
 		return err
 	}
@@ -92,6 +94,17 @@ func Sync() error {
 	if err := Logger.Sync(); err != nil && !isIgnorableSyncError(err) {
 		return fmt.Errorf("sync global logger: %w", err)
 	}
+	return nil
+}
+
+// SetLevel 运行时调整控制台输出最低日志级别（不影响文件分级）。
+// 支持值:debug/info/warn/error。
+func SetLevel(level string) error {
+	parsed, err := parseLevel(level)
+	if err != nil {
+		return err
+	}
+	consoleAtomicLevel.SetLevel(parsed)
 	return nil
 }
 
@@ -196,7 +209,7 @@ func newEncoderCore(minimumLevel zapcore.Level) (zapcore.Core, error) {
 	}
 	if CONFIG.LogInConsole {
 		consoleEnabler := zap.LevelEnablerFunc(func(entryLevel zapcore.Level) bool {
-			return entryLevel >= minimumLevel
+			return entryLevel >= consoleAtomicLevel.Level()
 		})
 		cores = append(cores, zapcore.NewCore(getEncoder(), zapcore.AddSync(os.Stdout), consoleEnabler))
 	}

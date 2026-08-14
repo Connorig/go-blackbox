@@ -15,6 +15,7 @@ import (
 	"github.com/Connorig/go-blackbox/server/datasource"
 	"github.com/Connorig/go-blackbox/server/mongodb"
 	"github.com/Connorig/go-blackbox/server/webiris"
+	"github.com/kataras/iris/v12"
 	log "github.com/Connorig/go-blackbox/server/zaplog"
 	"github.com/Connorig/go-blackbox/simpleioc"
 )
@@ -36,6 +37,10 @@ type ApplicationBuilder interface {
 	EnableDatabase(config *datasource.Config, models ...interface{}) *ApplicationBuild
 	// EnableNamedDatabase 启用与默认实例并行的具名数据库实例（多数据源场景）。
 	EnableNamedDatabase(name string, config *datasource.Config, models ...interface{}) *ApplicationBuild
+	// EnableAdmin enables the admin service (pprof/metrics/log-level), optional listen address.
+	EnableAdmin(listen ...string) *ApplicationBuild
+	// EnableAdminRoutes registers business admin routes.
+	EnableAdminRoutes(register func(app *iris.Application)) *ApplicationBuild
 	// EnableCache 配置 Redis 缓存客户端。
 	EnableCache(redConfig cache.RedisOptions) *ApplicationBuild
 	// LoadConfig 通过调用方提供的 Loader 配置读取目标结构体。
@@ -90,6 +95,8 @@ type ApplicationBuild struct {
 	databaseConfig *datasource.Config
 	// namedDatabases 保存具名数据库实例配置（多数据源）。
 	namedDatabases []namedDatabaseConfig
+	// admin is the standalone admin service; nil means disabled.
+	admin *webiris.Admin
 	// 注册表模块-tables
 	dbModels []interface{}
 	// 上下文对象
@@ -187,6 +194,30 @@ func (app *ApplicationBuild) EnableNamedDatabase(name string, config *datasource
 }
 
 // EnableCache 启动缓存
+// EnableAdmin enables the standalone admin service (default :6060) with
+// pprof diagnostics, Prometheus metrics and runtime log-level switch (POST /cl).
+func (app *ApplicationBuild) EnableAdmin(listen ...string) *ApplicationBuild {
+	config := webiris.AdminConfig{
+		EnablePprof:    true,
+		EnableMetrics:  true,
+		EnableLogLevel: true,
+	}
+	if len(listen) > 0 && listen[0] != "" {
+		config.Listen = listen[0]
+	}
+	app.admin = webiris.NewAdminWithConfig(config)
+	return app
+}
+
+// EnableAdminRoutes registers business admin routes (framework APIs take precedence).
+func (app *ApplicationBuild) EnableAdminRoutes(register func(app *iris.Application)) *ApplicationBuild {
+	if app.admin == nil {
+		app.admin = webiris.NewAdmin()
+	}
+	app.admin.RegisterRoutes(register)
+	return app
+}
+
 func (app *ApplicationBuild) EnableCache(redConfig cache.RedisOptions) *ApplicationBuild {
 	app.IsEnableCache = true
 
