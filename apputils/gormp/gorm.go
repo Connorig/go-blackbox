@@ -1,3 +1,4 @@
+// Package gormp is deprecated: use github.com/Connorig/go-blackbox/server/datasource instead.
 package gormp
 
 import (

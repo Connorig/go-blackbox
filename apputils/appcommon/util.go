@@ -1,4 +1,4 @@
-package yiigo
+package appcommon
 
 import (
 	"bytes"
@@ -253,7 +253,6 @@ func SliceRand[T any](a []T, n int) []T {
 
 	copy(ret, a)
 
-	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(count, func(i, j int) {
 		ret[i], ret[j] = ret[j], ret[i]
 	})

@@ -10,13 +10,16 @@
 - Module：`github.com/Connorig/go-blackbox`
 - 根包名：`appbox`
 - 默认分支：`main`
-- 配置方式：Viper + TOML + 环境变量
-- Web 框架：Iris v12
-- 数据库：PostgreSQL + GORM
-- 日志：Zap + file-rotatelogs
+- 配置方式：Viper + TOML + 环境变量 + 文件热更新
+- Web 框架：Iris v12（内置 RequestID/访问日志/CORS/安全头/健康探针/统一响应）
+- 数据库：PostgreSQL + GORM（统一 Dialector 注册，支持 MySQL/Oracle）
+- 日志：Zap + file-rotatelogs（严格单级文件、结构化字段、安全关闭）
+- 依赖容器：simpleioc v2（单例/多例/具名注册/生命周期钩子，Spring 式）
 - 许可证：MIT
 
 > 从 `v1.2.0` 开始，Go Module 地址统一为 `github.com/Connorig/go-blackbox`。旧的 `github.com/Domingor/go-blackbox` 引用需要更新后再执行 `go mod tidy`。
+>
+> `v1.3.0` 完成安全加固与组件升级：simpleioc v2、Redis/MongoDB/Cron/邮件/配置热更新/Web 中间件优化，详见 [v1.3.0 升级摘要](#v130-升级摘要)。
 
 项目已有较完整的组件雏形，但部分组件仍存在初始化、错误处理、测试隔离和配置一致性问题。新功能开发前请先阅读 [项目分析与升级基线](docs/PROJECT_ANALYSIS.md)。
 
@@ -26,20 +29,24 @@
 
 | 能力 | 主要位置 | 当前接入方式 | 状态说明 |
 | --- | --- | --- | --- |
-| Iris Web 服务 | `server/webiris` | `EnableWeb` / `EnableWebWithConfig` | 已完成首轮生命周期与错误处理升级 |
+| Iris Web 服务 | `server/webiris` | `EnableWeb` / `EnableWebWithConfig` | 已完成生命周期、优雅关闭与中间件体系升级 |
+| Web 中间件 | `server/webiris` | `app.Use(RequestID, AccessLog, SecurityHeaders)` / `app.Use(CORS())` | RequestID、访问日志、CORS、安全头 |
+| 健康探针 | `server/webiris` | `RegisterHealth(app, ready)` | `/health/live` 与 `/health/ready` |
+| 统一响应 | `server/webiris` | `OK(ctx, data)` / `Fail(ctx, status, code, msg)` | 业务码 + 消息 + 数据 |
 | 关系数据库 / GORM | `server/datasource` | `EnableDb` / `EnableDatabase` | PostgreSQL 内置，MySQL/Oracle 可通过统一 Dialector 注册机制接入 |
-| Redis 缓存 | `server/cache` | `EnableCache` | 已接入 Builder，初始化逻辑待修复 |
-| MongoDB | `server/mongodb` | `EnableMongoDB` | 客户端已实现，Builder 开关待修复 |
-| Cron 定时任务 | `server/cronjobs` | `SetSeeds` / `InitCronJob` | SetSeeds 注册任务后自动启用 Cron |
-| Zap 分级日志 | `server/zaplog` | `InitLog` | 已接入 Builder，日志目录需提前准备 |
+| Redis 缓存 | `server/cache` | `EnableCache` | 已修复 Ping 判断、支持重试与关闭接入，提供 Health 与默认 TTL |
+| MongoDB | `server/mongodb` | `EnableMongoDB` | 已修复开关与解码，支持凭据 URI、超时 Ping、泛型 FindTyped |
+| Cron 定时任务 | `server/cronjobs` | `SetSeeds` / `Register(name, spec, fn)` | 具名任务注册表 + panic 恢复 + 结构化日志 |
+| Zap 分级日志 | `server/zaplog` | `InitLog` | 严格单级文件、结构化字段、Close 释放句柄 |
 | Web 生命周期回调 | 根包 Builder | `BeforeSetup` / `AfterSetup` | 分别在 Web 启动前和 Ready 后执行 |
 | 静态资源服务 | `static_`、`server/webiris` | `EnableStaticSource` | 已接入 Builder |
-| 配置加载 | `server/apploader` | `LoadConfig` | 支持配置文件和环境变量，错误传递待完善 |
-| RabbitMQ 重试队列 | `server/rabbitmqretry/rabbitmq` | 独立调用 | 尚未接入 Builder |
-| JWT | `apputils/apptoken` | 独立调用 | 支持签发、验证、刷新，密钥配置待改造 |
-| RSA | `apputils/rsa` | 独立调用 | 支持密钥生成、PEM 与 Base64 处理 |
-| 邮件发送 | `server/email` | 独立调用 | 当前固定使用 SMTP 465 端口 |
-| 构建脚本生成 | `buildscript` | `Generate` | 可生成 `build.sh` 和 `Dockerfile` |
+| 配置加载 | `server/apploader` | `LoadConfig` / `Watch` | 文件/环境变量加载 + Validator 校验 + 热更新回调 |
+| 依赖注入容器 | `simpleioc` | `Register` / `GetBean` | v2：单例/多例/具名/构造注入/生命周期钩子，兼容旧 API |
+| RabbitMQ 重试队列 | `server/rabbitmqretry/rabbitmq` | 独立调用 | 已迁移 amqp091-go，修复确认语义与 panic 恢复 |
+| JWT | `apputils/apptoken` | `SetSecretKey` + `GenToken` | 密钥注入、算法白名单、签发者校验 |
+| RSA | `apputils/rsa` | 独立调用 | nil 安全，Safe 版 API 返回错误 |
+| 邮件发送 | `server/email` | 独立调用 | 端口/TLS 配置化、附件校验、超时 |
+| 构建脚本生成 | `buildscript` | `Generate` | 可生成 `build.sh` 和 `Dockerfile`（Go 1.20） |
 | 前端代码 | 独立维护 | 未接入 | `v1.2.0` 已移除不可构建的 UI 代码片段 |
 
 ## 启动流程
@@ -48,13 +55,14 @@
 
 1. 执行 Builder 回调，读取配置并标记需要启用的组件。
 2. 初始化 Zap 日志；未显式配置时使用默认日志配置。
-3. 按顺序初始化 PostgreSQL、Redis、MongoDB，并将实例写入简单 IOC 容器。
-4. 执行 `BeforeSetup` 注册的 Web 启动前回调。
-5. 在 goroutine 中启动 Iris Web 服务并等待 Ready。
-6. 执行 `AfterSetup` 注册的 Web Ready 后回调。
-7. 执行 `SetSeeds` 注册的 Cron 任务创建函数，并启动 Cron 调度器。
-8. 主 goroutine 等待 `SIGINT`、`SIGTERM` 或 `shutdown.Exit(...)`。
-9. 收到退出请求后，在统一关闭期限内按逆序停止业务关闭钩子、Cron、Web 运行 Context、MongoDB 和 PostgreSQL。
+3. 按顺序初始化 PostgreSQL、Redis（Ping 校验）、MongoDB（超时 Ping），并注册到 IOC 容器。
+4. 启动 IOC 容器（按注册顺序构造单例并执行 OnInit 钩子）。
+5. 执行 `BeforeSetup` 注册的 Web 启动前回调。
+6. 在 goroutine 中启动 Iris Web 服务并等待 Ready。
+7. 执行 `AfterSetup` 注册的 Web Ready 后回调。
+8. 执行 `SetSeeds` 注册的 Cron 任务创建函数，并启动 Cron 调度器。
+9. 主 goroutine 等待 `SIGINT`、`SIGTERM` 或 `shutdown.Exit(...)`。
+10. 收到退出请求后，在统一关闭期限内按逆序停止 IOC 容器、业务关闭钩子、Cron、Web 运行 Context、Redis、MongoDB 和 PostgreSQL。
 
 Web 服务会在 Iris 路由构建完成且 TCP Listener 真正进入 Serve 阶段后发布 Ready 信号。未启用 Web 时不会执行 BeforeSetup 和 AfterSetup；SetSeeds 不依赖 Web，可用于 Cron-only 服务。
 
@@ -70,17 +78,17 @@ Web 服务会在 Iris 路由构建完成且 TCP Listener 真正进入 Serve 阶�
 ├── buildscript/                 # Dockerfile / build.sh 模板生成器
 ├── seed/                        # 生命周期回调函数类型与兼容执行入口
 ├── server/
-│   ├── apploader/               # Viper 配置加载
+│   ├── apploader/               # Viper 配置加载 + 热更新
 │   ├── cache/                   # Redis + 本地 TinyLFU 缓存
-│   ├── cronjobs/                # Cron 调度器
+│   ├── cronjobs/                # Cron 调度器 + 具名任务注册表
 │   ├── datasource/              # PostgreSQL / GORM
-│   ├── email/                   # SMTP 邮件发送
-│   ├── mongodb/                 # MongoDB 客户端封装
+│   ├── email/                   # SMTP 邮件发送（端口/TLS 可配置）
+│   ├── mongodb/                 # MongoDB 客户端封装（泛型查询）
 │   ├── rabbitmqretry/           # RabbitMQ 消息与失败重试
 │   ├── shutdown/                # 信号监听与全局 Context
-│   ├── webiris/                 # Iris Web 服务封装
+│   ├── webiris/                 # Iris Web 服务封装 + 中间件体系
 │   └── zaplog/                  # Zap 日志和日志轮转
-├── simpleioc/                   # 基于反射的全局实例容器
+├── simpleioc/                   # Spring 式依赖容器（单例/多例/生命周期）
 ├── static_/                     # Go embed 静态资源示例
 ├── version/                     # 构建版本信息注入与输出
 └── config.toml                  # 示例配置，禁止直接用于生产环境
@@ -175,6 +183,21 @@ builder.EnableWebWithConfig(webiris.Config{
 }, registerRoutes)
 ```
 
+### 3. 中间件与健康探针
+
+```go
+builder.EnableWeb(appbox.TimeFormat, ":9528", "info", func(app *iris.Application) {
+	app.Use(webiris.RequestID, webiris.AccessLog, webiris.SecurityHeaders)
+	app.Use(webiris.CORS("https://trusted.example.com")) // 或 webiris.CORS() 允许所有
+	webiris.RegisterHealth(app, func() error {
+		return datasource.Health(context.Background()) // 就绪依赖检查
+	})
+	app.Get("/api/v1/hello", func(ctx iris.Context) {
+		webiris.OK(ctx, map[string]string{"message": "hello"})
+	})
+})
+```
+
 ## 配置加载
 
 Builder 可通过 `LoadConfig` 使用 Viper 读取配置文件：
@@ -199,6 +222,19 @@ loader.SetConfigFileSearcher("config", ".").EnableEnvSearcher("BLACKBOX")
 
 `BLACKBOX_WEB_LISTEN` 会覆盖 `web.listen`。业务配置可以实现 `apploader.Validator`，在反序列化完成后执行必填项和范围校验；校验错误会从 `LoadConfig` 返回并终止应用启动。
 
+配置文件热更新（v1.3.0 新增）：
+
+```go
+if err := loader.SetConfigFileSearcher("config", ".").LoadToStruct(&cfg); err != nil {
+	return err
+}
+if err := loader.Watch(func() {
+	// cfg 已重载；在此重建受影响的组件
+}); err != nil {
+	return err
+}
+```
+
 `config.toml` 目前包含开发环境连接示例。使用前必须替换主机、账号和密码；生产密钥、数据库密码、SMTP 授权码等敏感信息应通过密钥管理系统或环境变量注入，不应提交到仓库。
 
 ## 组件访问
@@ -213,7 +249,34 @@ cron := appbox.CronJobSingle()
 globalCtx := appbox.GlobalCtx()
 ```
 
-调用前必须确认对应组件已经启用且初始化成功。当前 IOC 容器不会为缺失实例返回结构化错误，直接使用空实例可能产生 panic，后续将改为显式依赖和错误返回。
+调用前必须确认对应组件已经启用且初始化成功。
+
+### simpleioc v2：Spring 式依赖容器
+
+v1.3.0 起 `simpleioc` 升级为线程安全、支持作用域与生命周期钩子的依赖容器，推荐使用泛型 API：
+
+```go
+// 注册：类型单例（懒加载）、具名单例、原型（多例）、直接实例
+simpleioc.Register(func() *UserService { return &UserService{Repo: repo} })
+simpleioc.RegisterNamed("primary-db", func() *gorm.DB { return primaryDB })
+simpleioc.RegisterPrototype(func() *RequestContext { return &RequestContext{} })
+simpleioc.RegisterInstance(repo)
+
+// 获取
+service, err := simpleioc.Get[UserService]()        // (*UserService, error)
+repo := simpleioc.MustGet[Repository]()             // 启动期 panic 版本
+named, err := simpleioc.GetNamed[gorm.DB]("primary-db")
+
+// 生命周期：实现 Initializer/Disposer 接口的实例自动获得 OnInit/OnDestroy
+type CacheWarmer struct{}
+func (c *CacheWarmer) OnInit(ctx context.Context) error   { return warmCache(ctx) }
+func (c *CacheWarmer) OnDestroy(ctx context.Context) error { return closePool() }
+```
+
+- 单例懒加载：首次 `GetBean` 或容器 `Start` 时构造；`Start(ctx)` 按注册顺序调用 OnInit，`Shutdown(ctx)` 逆序调用 OnDestroy（已接入应用关闭栈）。
+- 错误语义：`ErrNotFound` / `ErrDuplicate` / `ErrInvalidProvider` / `ErrCircularDependency` / `ErrContainerClosed`。
+- 多实例场景使用 `simpleioc.NewContainer()` 创建独立容器（测试隔离）。
+- 旧 API（`Set` / `Get` / `GetDb` 等）保留为兼容层，新代码请使用泛型 API。
 
 PostgreSQL 默认不会自动迁移表结构。需要迁移时必须显式配置：
 
@@ -286,28 +349,36 @@ Iris 会将嵌入文件映射到 `/`。如果同时注册根路径路由，需�
 当前测试同时包含单元测试、真实中间件集成测试和人工演示用例。以下测试依赖外部环境或会长时间阻塞：
 
 - `application.builder_test.go`：真实 Web 集成测试，默认跳过；设置 `GO_BLACKBOX_WEB_INTEGRATION=1` 后执行。
-- `server/mongodb/*_test.go`、`server/mongdbdemo/*_test.go`：连接真实 MongoDB。
-- `server/rabbitmqretry/*_test.go`：连接真实 RabbitMQ，最长等待数分钟。
-- `server/email/index_test.go`：连接真实 SMTP 并发送邮件。
-- 部分 Cron、IOC 测试包含固定 `Sleep`。
+- `server/mongodb/*_test.go`、`server/mongdbdemo/*_test.go`：连接真实 MongoDB，设置 `GO_BLACKBOX_MONGO_ADDR` 后执行。
+- `server/rabbitmqretry/*_test.go`：连接真实 RabbitMQ，设置 `GO_BLACKBOX_RABBITMQ_DNS` 后执行。
+- `server/email/index_test.go`：连接真实 SMTP，设置 `GO_BLACKBOX_SMTP_USER/PASS/HOST/TO` 后执行。
+- `server/cache/redis_test.go`：连接真实 Redis，设置 `GO_BLACKBOX_REDIS_ADDR` 后执行。
 
-因此，在完成测试分层和隔离前，不建议无条件执行 `go test ./...`。优先执行无外部依赖且可快速结束的目标测试，例如：
-
-```bash
-go test ./seed
-go test ./simpleioc -run 'TestName|TestName2'
-```
-
-后续应通过 build tag、环境开关、容器化依赖或 mock 将集成测试与单元测试分离。
+默认执行 `go test ./...` 即可完成全部单元测试与快速集成测试（未设置环境变量的集成测试自动跳过）。
 
 ## 构建与部署
 
 `buildscript.Generate(...)` 可以生成：
 
 - `build.sh`：读取 Git 标签、Commit 和构建时间，构建或推送镜像。
-- `Dockerfile`：多阶段构建 Go 服务，可选构建 UI，并通过 `ldflags` 注入版本信息。
+- `Dockerfile`：多阶段构建 Go 服务（Go 1.20），可选构建 UI，并通过 `ldflags` 注入版本信息。
 
 推送 `v*` Tag 时，GitHub Actions 会校验 Module 地址、执行全包编译检查、生命周期单元测试和 `go vet`，验证通过后自动创建 GitHub Release。当前仓库作为依赖库发布，不再要求根目录存在 Dockerfile。
+
+## v1.3.0 升级摘要
+
+本轮升级聚焦安全加固、容器能力与组件完备度：
+
+- **安全**：JWT 密钥强制注入（≥32 字节）+ HS256 算法白名单 + 签发者校验；RSA 全部解析函数 nil 安全并提供 Safe 版；移除仓库内真实邮箱凭据；MongoDB 支持凭据 URI（URL 编码）。
+- **simpleioc v2**：单例/原型作用域、具名注册、构造注入、OnInit/OnDestroy 生命周期钩子、循环依赖检测、并发安全、Reset 测试隔离；旧 API 兼容。
+- **Redis**：修复 Ping 判断、失败可重试、Close/Health、默认 TTL。
+- **MongoDB**：修复 Builder 开关与解码 bug、启动期超时 Ping、泛型 `FindTyped`。
+- **Cron**：具名任务注册表 `Register/List/Remove` + panic 恢复 + 结构化日志。
+- **邮件**：端口/TLS 配置化（465/587）、附件校验、未配置明确报错。
+- **配置**：`Watch` 文件热更新（重载 + 校验 + 回调）。
+- **Web**：RequestID / AccessLog / CORS / SecurityHeaders 中间件、`/health/live` 与 `/health/ready` 探针、统一响应 `OK/Fail`。
+- **RabbitMQ**：迁移到维护中的 amqp091-go，修复单条确认语义、panic 恢复与信道关闭。
+- **工程化**：测试全量隔离（环境变量门控）、移除固定 Sleep、go.mod tidy、buildscript Go 版本对齐、version JSON 输出、appcommon 包名对齐。
 
 ## 开发约定
 

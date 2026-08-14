@@ -62,7 +62,7 @@ WORKDIR /ui_build
 ADD ui .
 RUN npm install && npm run build
 
-{{end}}FROM golang:1.18 as build
+{{end}}FROM golang:1.20 as build
 ARG NAME
 ARG VERSION
 ARG COMMIT
