@@ -138,14 +138,17 @@ func TestApplyPoolConfigUsesValidatedValues(t *testing.T) {
 
 // TestGetDbInstanceReturnsExplicitErrorBeforeInitialization 验证缺失全局实例时不会返回无错误 nil。
 func TestGetDbInstanceReturnsExplicitErrorBeforeInitialization(t *testing.T) {
-	databaseMu.Lock()
-	previousDatabase := database
-	database = nil
-	databaseMu.Unlock()
+	instancesMu.Lock()
+	previousDefault := defaultInstance
+	previousInstances := instances
+	defaultInstance = nil
+	instances = map[string]*Instance{}
+	instancesMu.Unlock()
 	t.Cleanup(func() {
-		databaseMu.Lock()
-		database = previousDatabase
-		databaseMu.Unlock()
+		instancesMu.Lock()
+		defaultInstance = previousDefault
+		instances = previousInstances
+		instancesMu.Unlock()
 	})
 
 	instance, err := GetDbInstance()

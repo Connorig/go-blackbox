@@ -34,6 +34,8 @@ type ApplicationBuilder interface {
 	EnableDb(dbConfig *datasource.PostgresConfig, models ...interface{}) *ApplicationBuild
 	// EnableDatabase 使用统一配置启用 PostgreSQL、MySQL 或已注册的其他关系数据库。
 	EnableDatabase(config *datasource.Config, models ...interface{}) *ApplicationBuild
+	// EnableNamedDatabase 启用与默认实例并行的具名数据库实例（多数据源场景）。
+	EnableNamedDatabase(name string, config *datasource.Config, models ...interface{}) *ApplicationBuild
 	// EnableCache 配置 Redis 缓存客户端。
 	EnableCache(redConfig cache.RedisOptions) *ApplicationBuild
 	// LoadConfig 通过调用方提供的 Loader 配置读取目标结构体。
@@ -86,6 +88,8 @@ type ApplicationBuild struct {
 	dbConfig *datasource.PostgresConfig
 	// databaseConfig 保存统一关系数据库配置；非 nil 时优先于兼容 PostgreSQL 配置。
 	databaseConfig *datasource.Config
+	// namedDatabases 保存具名数据库实例配置（多数据源）。
+	namedDatabases []namedDatabaseConfig
 	// 注册表模块-tables
 	dbModels []interface{}
 	// 上下文对象
@@ -164,6 +168,21 @@ func (app *ApplicationBuild) EnableDatabase(config *datasource.Config, models ..
 	app.IsEnableDB = true
 	app.databaseConfig = config
 	app.dbModels = models
+	return app
+}
+
+// namedDatabaseConfig 描述一个具名数据库实例。
+type namedDatabaseConfig struct {
+	name   string
+	config *datasource.Config
+	models []interface{}
+}
+
+// EnableNamedDatabase 启用与默认实例并行的具名数据库实例。
+// 实例会在启动期注册到 IOC 容器（名称 database:<name>），并独立接入关闭栈；
+// 依赖方通过 datasource.GetNamed(name) 获取。
+func (app *ApplicationBuild) EnableNamedDatabase(name string, config *datasource.Config, models ...interface{}) *ApplicationBuild {
+	app.namedDatabases = append(app.namedDatabases, namedDatabaseConfig{name: name, config: config, models: models})
 	return app
 }
 

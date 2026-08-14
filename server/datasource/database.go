@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Connorig/go-blackbox/server/zaplog"
+	"github.com/glebarez/sqlite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -27,6 +27,8 @@ const (
 	DriverMySQL Driver = "mysql"
 	// DriverOracle 预留 Oracle 标识，调用方需要注册符合运行环境的 Oracle Dialector。
 	DriverOracle Driver = "oracle"
+	// DriverSQLite 使用纯 Go SQLite 驱动（无 CGO），适合测试与轻量部署。
+	DriverSQLite Driver = "sqlite"
 )
 
 // DialectorFactory 根据统一配置创建 GORM Dialector。
@@ -37,7 +39,7 @@ type DialectorFactory func(config Config) (gorm.Dialector, error)
 type Config struct {
 	// Driver 选择已注册的关系数据库驱动。
 	Driver Driver
-	// DSN 允许高级场景直接提供驱动连接串；禁止写入日志。
+	// DSN 允许高级场景直接提供驱动连接串（SQLite 为文件路径）；禁止写入日志。
 	DSN string
 	// UserName 是数据库用户名。
 	UserName string
@@ -71,8 +73,8 @@ var (
 	dialectorMu sync.RWMutex
 	dialectors  = map[Driver]DialectorFactory{
 		DriverPostgreSQL: newPostgreSQLDialector,
+		DriverSQLite:     newSQLiteDialector,
 	}
-	databaseDriver Driver
 )
 
 // RegisterDialector 注册或替换自定义关系数据库 Dialector。
@@ -91,69 +93,14 @@ func RegisterDialector(driver Driver, factory DialectorFactory) error {
 	return nil
 }
 
-// InitializeDatabase 使用统一配置初始化已注册的关系数据库。
-// 成功后实例可通过 GetDbInstance 获取，并由 Health 和 Close 统一管理。
+// InitializeDatabase 使用统一配置初始化默认关系数据库实例。
+// 兼容入口：新代码建议使用 New / NewNamed 获得带生命周期的 Instance。
 func InitializeDatabase(ctx context.Context, config *Config, models ...interface{}) (*gorm.DB, error) {
-	if ctx == nil {
-		return nil, errors.New("initialize database: context is nil")
-	}
-	normalizedConfig, err := normalizeDatabaseConfig(config)
+	instance, err := New(ctx, config, models...)
 	if err != nil {
 		return nil, err
 	}
-	if err := ctx.Err(); err != nil {
-		return nil, fmt.Errorf("initialize %s database canceled before connection: %w", normalizedConfig.Driver, err)
-	}
-
-	databaseMu.Lock()
-	defer databaseMu.Unlock()
-	if database != nil {
-		if databaseDriver != normalizedConfig.Driver {
-			return nil, fmt.Errorf("database already initialized with driver %q", databaseDriver)
-		}
-		return database, nil
-	}
-
-	dialector, err := createDialector(normalizedConfig)
-	if err != nil {
-		return nil, err
-	}
-	initializedDatabase, err := gorm.Open(dialector, defaultGormConfig())
-	if err != nil {
-		return nil, fmt.Errorf("open %s database host=%s port=%d database=%s: %w", normalizedConfig.Driver, normalizedConfig.Host, normalizedConfig.Port, normalizedConfig.Database, err)
-	}
-	sqlDatabase, err := initializedDatabase.DB()
-	if err != nil {
-		return nil, fmt.Errorf("get %s connection pool: %w", normalizedConfig.Driver, err)
-	}
-	closeOnFailure := true
-	defer func() {
-		if closeOnFailure {
-			if closeErr := sqlDatabase.Close(); closeErr != nil {
-				zaplog.WithComponent("datasource").Errorw("close failed database initialization", "driver", normalizedConfig.Driver, "error", closeErr)
-			}
-		}
-	}()
-
-	applyUnifiedPoolConfig(sqlDatabase, normalizedConfig)
-	pingCtx, cancelPing := context.WithTimeout(ctx, normalizedConfig.ConnectTimeout)
-	defer cancelPing()
-	if err := sqlDatabase.PingContext(pingCtx); err != nil {
-		return nil, fmt.Errorf("ping %s database host=%s port=%d database=%s: %w", normalizedConfig.Driver, normalizedConfig.Host, normalizedConfig.Port, normalizedConfig.Database, err)
-	}
-
-	models = filterModels(models)
-	if normalizedConfig.AutoMigrate && len(models) > 0 {
-		if err := initializedDatabase.WithContext(ctx).AutoMigrate(models...); err != nil {
-			return nil, fmt.Errorf("auto migrate %s database models: %w", normalizedConfig.Driver, err)
-		}
-	}
-
-	database = initializedDatabase
-	databaseDriver = normalizedConfig.Driver
-	closeOnFailure = false
-	zaplog.WithComponent("datasource").Infow("database initialized", "driver", normalizedConfig.Driver, "host", normalizedConfig.Host, "port", normalizedConfig.Port, "database", normalizedConfig.Database)
-	return database, nil
+	return instance.DB(), nil
 }
 
 // normalizeDatabaseConfig 复制统一配置、补齐默认值并执行公共校验。
@@ -197,6 +144,7 @@ func normalizeDatabaseConfig(config *Config) (Config, error) {
 }
 
 // validateDatabaseConfig 校验统一连接池字段和内置驱动必填项。
+// SQLite 只需要 DSN（文件路径），不要求主机、账号与端口。
 func validateDatabaseConfig(config Config) error {
 	if config.Driver == "" {
 		return errors.New("database driver is empty")
@@ -206,6 +154,12 @@ func validateDatabaseConfig(config Config) error {
 	}
 	if config.ConnMaxLifetime < 0 || config.ConnectTimeout <= 0 {
 		return fmt.Errorf("database duration configuration is invalid: connection_lifetime=%s connect_timeout=%s", config.ConnMaxLifetime, config.ConnectTimeout)
+	}
+	if config.Driver == DriverSQLite {
+		if strings.TrimSpace(config.DSN) == "" {
+			return errors.New("SQLite database requires DSN (file path)")
+		}
+		return nil
 	}
 	if strings.TrimSpace(config.DSN) != "" {
 		return nil
@@ -249,8 +203,17 @@ func newPostgreSQLDialector(config Config) (gorm.Dialector, error) {
 	if timeoutSeconds < 1 {
 		timeoutSeconds = 1
 	}
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s connect_timeout=%d", config.Host, config.UserName, config.Password, config.Database, config.Port, config.SSLMode, config.TimeZone, timeoutSeconds)
+	dsn := fmt.Sprintf("host=%s user=%s password=*** dbname=%s port=%d sslmode=%s TimeZone=%s connect_timeout=%d", config.Host, config.UserName, config.Database, config.Port, config.SSLMode, config.TimeZone, timeoutSeconds)
 	return postgres.Open(dsn), nil
+}
+
+// newSQLiteDialector 创建纯 Go SQLite Dialector（无 CGO）。
+// DSN 是数据库文件路径，例如 :memory: 或 /data/app.db。
+func newSQLiteDialector(config Config) (gorm.Dialector, error) {
+	if strings.TrimSpace(config.DSN) == "" {
+		return nil, errors.New("SQLite dialector: DSN (file path) is required")
+	}
+	return sqlite.Open(config.DSN), nil
 }
 
 // MySQLDSN 根据统一配置生成不记录到日志的 MySQL DSN。
@@ -314,6 +277,8 @@ func normalizeDriver(driver Driver) Driver {
 		return DriverMySQL
 	case "oracle", "oci", "godror":
 		return DriverOracle
+	case "sqlite", "sqlite3":
+		return DriverSQLite
 	default:
 		return Driver(strings.ToLower(strings.TrimSpace(string(driver))))
 	}

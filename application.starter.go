@@ -105,29 +105,42 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 		return fmt.Errorf("register logger shutdown: %w", err)
 	}
 
-	if app.builder.IsEnableDB {
-		var instance *gorm.DB
+		if app.builder.IsEnableDB {
+		var dbInstance *datasource.Instance
 		var err error
 		if app.builder.databaseConfig != nil {
-			instance, err = datasource.InitializeDatabase(simpleioc.GetContext().Ctx, app.builder.databaseConfig, app.builder.dbModels...)
+			dbInstance, err = datasource.New(simpleioc.GetContext().Ctx, app.builder.databaseConfig, app.builder.dbModels...)
 		} else {
-			instance, err = datasource.Initialize(simpleioc.GetContext().Ctx, app.builder.dbConfig, app.builder.dbModels...)
+			if _, initErr := datasource.Initialize(simpleioc.GetContext().Ctx, app.builder.dbConfig, app.builder.dbModels...); initErr != nil {
+				err = initErr
+			} else {
+				dbInstance, err = datasource.Get()
+			}
 		}
 		if err != nil {
 			log.SugaredLogger.Errorf("initialize database failed: %v", err)
 			return fmt.Errorf("initialize database: %w", err)
 		}
-		if instance == nil {
+		if dbInstance == nil {
 			err := errors.New("initialized database instance is nil")
 			log.SugaredLogger.Error(err)
 			return err
 		}
-		if err := simpleioc.RegisterInstance(instance); err != nil {
-			log.SugaredLogger.Errorf("register database instance failed: %v", err)
-			return fmt.Errorf("register database instance: %w", err)
+		// Register container entries: Instance (typed) + GORM (legacy GormDb()).
+		if regErr := simpleioc.RegisterInstance(dbInstance); regErr != nil {
+			log.SugaredLogger.Errorf("register database instance failed: %v", regErr)
+			return fmt.Errorf("register database instance: %w", regErr)
 		}
-		if err := app.registerDatabaseShutdown(instance); err != nil {
-			return err
+		if regErr := simpleioc.RegisterInstance(dbInstance.DB()); regErr != nil {
+			log.SugaredLogger.Errorf("register gorm instance failed: %v", regErr)
+			return fmt.Errorf("register gorm instance: %w", regErr)
+		}
+		hookName := "database:" + string(dbInstance.Driver())
+		if err := app.lifecycle.registerShutdown(hookName, func(context.Context) error {
+			return dbInstance.Close()
+		}); err != nil {
+			log.SugaredLogger.Errorf("register database shutdown failed: %v", err)
+			return fmt.Errorf("register database shutdown: %w", err)
 		}
 	}
 
@@ -197,11 +210,35 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 	// 可以立即停止已经运行的 Web；正常退出时父 Context 会自动向下传播取消信号。
 	runtimeCtx, cancelRuntime := context.WithCancel(simpleioc.GetContext().Ctx)
 	keepRuntimeContext := false
+	
 	defer func() {
 		if !keepRuntimeContext {
 			cancelRuntime()
 		}
 	}()
+	// Named database instances run in parallel with the default instance.
+	for _, named := range app.builder.namedDatabases {
+		namedInstance, namedErr := datasource.NewNamed(simpleioc.GetContext().Ctx, named.name, named.config, named.models...)
+		if namedErr != nil {
+			log.SugaredLogger.Errorf("initialize named database %q failed: %v", named.name, namedErr)
+			return fmt.Errorf("initialize named database %q: %w", named.name, namedErr)
+		}
+		if regErr := simpleioc.RegisterNamed("database:"+named.name, func() *datasource.Instance {
+			return namedInstance
+		}); regErr != nil {
+			log.SugaredLogger.Errorf("register named database %q failed: %v", named.name, regErr)
+			return fmt.Errorf("register named database %q: %w", named.name, regErr)
+		}
+		namedName := named.name
+		if err := app.lifecycle.registerShutdown("database:"+named.name, func(context.Context) error {
+			return namedInstance.Close()
+		}); err != nil {
+			log.SugaredLogger.Errorf("register named database %q shutdown failed: %v", namedName, err)
+			return fmt.Errorf("register named database %q shutdown: %w", namedName, err)
+		}
+	}
+
+
 
 	// Start IOC container: construct registered singletons and run OnInit hooks.
 	if err := simpleioc.Start(runtimeCtx); err != nil {
@@ -253,20 +290,6 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 	return nil
 }
 
-// registerDatabaseShutdown 获取 GORM 底层连接池并注册关闭函数。
-// 获取连接池失败会中断启动，避免数据库已启用却无法在应用退出时可靠释放。
-func (app *application) registerDatabaseShutdown(instance *gorm.DB) error {
-	if instance == nil {
-		return errors.New("register database shutdown: database instance is nil")
-	}
-	if err := app.lifecycle.registerShutdown("PostgreSQL", func(context.Context) error {
-		return datasource.Close()
-	}); err != nil {
-		log.SugaredLogger.Errorf("register database shutdown failed: %v", err)
-		return fmt.Errorf("register database shutdown: %w", err)
-	}
-	return nil
-}
 
 // stopCron 停止 Cron 接收新任务，并等待正在执行的任务结束或关闭 Context 超时。
 func (app *application) stopCron(ctx context.Context) error {
