@@ -21,6 +21,31 @@ type Configuration struct {
 	LogConf logConf `mapstructure:"logConf" toml:"logConf"`
 }
 
+// Redact 输出不含密码的配置快照，供日志与诊断使用。
+func (c Configuration) Redact() map[string]interface{} {
+	return map[string]interface{}{
+		"name":    c.Name,
+		"version": c.Version,
+		"web":     c.Web,
+		"db": map[string]interface{}{
+			"driver":      c.Db.Driver,
+			"host":        c.Db.Host,
+			"port":        c.Db.Port,
+			"database":    c.Db.DbName,
+			"user":        c.Db.User,
+			"password":    "***",
+			"ssl":         c.Db.Ssl,
+			"autoMigrate": c.Db.AutoMigrate,
+		},
+		"redis": map[string]interface{}{
+			"host":     c.Redis.Host,
+			"db":       c.Redis.Db,
+			"password": "***",
+		},
+		"logConf": c.LogConf,
+	}
+}
+
 // web 定义 Iris Web 服务的监听地址和日志级别。
 type web struct {
 	// Listen 是包含主机和端口的监听地址。

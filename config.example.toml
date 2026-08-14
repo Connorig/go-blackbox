@@ -1,0 +1,43 @@
+# go-blackbox 配置示例
+# 复制为 config.toml 后填写真实值;生产环境敏感信息通过环境变量注入,
+# 禁止把真实凭据提交到仓库。
+name = "golang"
+version = "v1.4.0"
+
+[web]
+listen = "127.0.0.1:8899"
+level = "debug"
+
+[db]
+driver = "postgres"
+dbName = "postgres"
+user = "postgres"
+password = "" # 建议使用环境变量 DATABASE_PASSWORD 注入
+host = "127.0.0.1"
+port = 5432
+database = "postgres"
+ssl = "disable" #require/verify-full/verify-ca/disable
+charset = "utf8mb4"
+timeZone = "Asia/Shanghai"
+autoMigrate = false
+maxIdleConns = 10
+maxOpenConns = 20
+
+[redis]
+password = "" # 建议使用环境变量 REDIS_PASSWORD 注入
+host = "127.0.0.1:6379"
+poolSize = 1
+db = 0
+
+[rabbitmq]
+queueName = "test.001.queue"
+dns = "amqp://127.0.0.1:5672/"
+
+[mongodb]
+timeout = 20
+db = "admin"
+addr = "127.0.0.1:27017"
+
+[logConf]
+logLevel = "debug"
+outDirPath = "."
