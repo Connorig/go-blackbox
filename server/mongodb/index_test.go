@@ -2,296 +2,185 @@ package mongodb
 
 import (
 	"context"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+	"os"
 	"testing"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var cong = MongoDBConfig{
-	Timeout: 10,
-	DB:      "admin",
-	Addr:    "admin:admin@10.211.55.5:27017/",
+// testMongoConfig 返回集成测试使用的 MongoDB 配置。
+// 未设置 GO_BLACKBOX_MONGO_ADDR 时跳过测试，禁止在仓库中硬编码任何地址或凭据。
+func testMongoConfig(t *testing.T) *MongoDBConfig {
+	t.Helper()
+	addr := os.Getenv("GO_BLACKBOX_MONGO_ADDR")
+	if addr == "" {
+		t.Skip("MongoDB integration test requires GO_BLACKBOX_MONGO_ADDR environment variable")
+	}
+	database := os.Getenv("GO_BLACKBOX_MONGO_DB")
+	if database == "" {
+		database = "admin"
+	}
+	return &MongoDBConfig{
+		Timeout: 10,
+		DB:      database,
+		Addr:    addr,
+	}
+}
+
+// testClient 建立带超时的测试客户端，并在测试结束时断开连接。
+func testClient(t *testing.T) (*Client, context.Context, context.CancelFunc) {
+	t.Helper()
+	config := testMongoConfig(t)
+	ctx, cancel := context.WithTimeout(context.Background(), config.Timeout*time.Second)
+	client, err := GetClient(config, ctx)
+	if err != nil {
+		cancel()
+		t.Fatalf("connect MongoDB failed: %v", err)
+	}
+	if client == nil {
+		cancel()
+		t.Fatal("MongoDB client is nil")
+	}
+	t.Cleanup(func() {
+		disconnectCtx, disconnectCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer disconnectCancel()
+		if err := client.Disconnect(disconnectCtx); err != nil {
+			t.Errorf("disconnect MongoDB failed: %v", err)
+		}
+	})
+	return client, ctx, cancel
 }
 
 func TestGetClient(t *testing.T) {
-
-	//addr := "travis:test@127.0.0.1:27017/mongo_test"
-
-	ctx, cancel := context.WithTimeout(context.Background(), cong.Timeout*time.Second)
-
+	client, _, cancel := testClient(t)
 	defer cancel()
-	t.Run("test mongodb getClient", func(t *testing.T) {
-		client, err := GetClient(&cong, ctx)
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		if client == nil {
-			t.Error("mongodb clinet is nil")
-		}
-		defer func() {
-			if err = client.Disconnect(ctx); err != nil {
-				t.Error(err)
-			}
-		}()
-	})
+
+	if client.mc == nil {
+		t.Fatal("underlying mongo client is nil")
+	}
 }
 
 func TestPing(t *testing.T) {
-
-	ctx, cancel := context.WithTimeout(context.Background(), cong.Timeout*time.Second)
-
+	client, ctx, cancel := testClient(t)
 	defer cancel()
-	t.Run("test mongodb ping", func(t *testing.T) {
-		client, err := GetClient(&cong, ctx)
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		if client == nil {
-			t.Error("mongodb clinet is nil")
-		}
-		defer func() {
-			if err = client.Disconnect(ctx); err != nil {
-				t.Error(err)
-			}
-		}()
-		err = client.Ping(ctx)
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-	})
+
+	if err := client.Ping(ctx); err != nil {
+		t.Fatalf("ping MongoDB failed: %v", err)
+	}
 }
 
 func TestInsertOne(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), cong.Timeout*time.Second)
-
+	client, ctx, cancel := testClient(t)
 	defer cancel()
-	t.Run("test mongodb InsertOne", func(t *testing.T) {
-		client, err := GetClient(&cong, ctx)
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		if client == nil {
-			t.Error("mongodb clinet is nil")
-		}
-		defer func() {
-			if err = client.Disconnect(ctx); err != nil {
-				t.Error(err)
-			}
-		}()
-		res, err := client.InsertOne(ctx, "testing", bson.D{
-			{Key: "name", Value: "pi"},
-			{Key: "value", Value: 3.14159},
-		})
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		if res == "travis:test@127.0.0.1:27017/mongo_test" {
-			t.Error("inserted id is empty")
-		}
+
+	res, err := client.InsertOne(ctx, "testing", bson.D{
+		{Key: "name", Value: "pi"},
+		{Key: "value", Value: 3.14159},
 	})
+	if err != nil {
+		t.Fatalf("insert document failed: %v", err)
+	}
+	if res == nil {
+		t.Fatal("inserted id is nil")
+	}
 }
 
 func TestGetCollection(t *testing.T) {
-
-	ctx, cancel := context.WithTimeout(context.Background(), cong.Timeout*time.Second)
-
+	client, _, cancel := testClient(t)
 	defer cancel()
-	t.Run("test mongodb GetCollection", func(t *testing.T) {
-		client, err := GetClient(&cong, ctx)
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		if client == nil {
-			t.Error("mongodb clinet is nil")
-		}
-		defer func() {
-			if err = client.Disconnect(ctx); err != nil {
-				t.Error(err)
-			}
-		}()
-		res := client.getCollection("testing")
-		if res == nil {
-			t.Error("Collection return empty")
-		}
-	})
+
+	res := client.getCollection("testing")
+	if res == nil {
+		t.Fatal("collection is nil")
+	}
 }
 
 func TestGetAggregate(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), cong.Timeout*time.Second)
-
+	client, ctx, cancel := testClient(t)
 	defer cancel()
-	t.Run("test mongodb Aggregate", func(t *testing.T) {
-		client, err := GetClient(&cong, ctx)
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		if client == nil {
-			t.Error("mongodb clinet is nil")
-			return
-		}
-		defer func() {
-			if err = client.Disconnect(ctx); err != nil {
-				t.Error(err)
-			}
-		}()
-		pipeline := mongo.Pipeline{
-			{
-				{Key: "$match", Value: bson.D{
-					{Key: "items.fruit", Value: "banana"},
-				}},
-			},
-			{
-				{Key: "$sort", Value: bson.D{
-					{Key: "date", Value: 1},
-				}},
-			},
-		}
-		res, err := client.Aggregate(ctx, "testing", pipeline)
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		if res == nil {
-			t.Error("Collection return empty")
-		}
-	})
+
+	pipeline := mongo.Pipeline{
+		{
+			{Key: "$match", Value: bson.D{
+				{Key: "items.fruit", Value: "banana"},
+			}},
+		},
+		{
+			{Key: "$sort", Value: bson.D{
+				{Key: "date", Value: 1},
+			}},
+		},
+	}
+	res, err := client.Aggregate(ctx, "testing", pipeline)
+	if err != nil {
+		t.Fatalf("aggregate failed: %v", err)
+	}
+	if res == nil {
+		t.Fatal("aggregate result is nil")
+	}
 }
 
 func TestFind(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), cong.Timeout*time.Second)
-
+	client, ctx, cancel := testClient(t)
 	defer cancel()
-	t.Run("test mongodb Find", func(t *testing.T) {
-		client, err := GetClient(&cong, ctx)
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		if client == nil {
-			t.Error("mongodb clinet is nil")
-			return
-		}
-		defer func() {
-			if err = client.Disconnect(ctx); err != nil {
-				t.Error(err)
-			}
-		}()
-		res, err := client.Find(ctx, "testing", bson.D{{Key: "end", Value: nil}})
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		if res == nil {
-			t.Error("Collection return empty")
-		}
-		t.Log(res)
-	})
+
+	res, err := client.Find(ctx, "testing", bson.D{{Key: "end", Value: nil}})
+	if err != nil {
+		t.Fatalf("find failed: %v", err)
+	}
+	if res == nil {
+		t.Fatal("find result is nil")
+	}
+	t.Log(res)
 }
 
 func TestFindOne(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), cong.Timeout*time.Second)
-
+	client, ctx, cancel := testClient(t)
 	defer cancel()
-	t.Run("test mongodb FindOne", func(t *testing.T) {
-		client, err := GetClient(&cong, ctx)
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		if client == nil {
-			t.Error("mongodb clinet is nil")
-			return
-		}
-		defer func() {
-			if err = client.Disconnect(ctx); err != nil {
-				t.Error(err)
-			}
-		}()
-		var result bson.M
 
-		res := client.FindOne(ctx, "testing", bson.D{{Key: "end", Value: nil}})
-		if res == nil {
-			t.Error("Collection return empty")
-		}
-		res.Decode(&result)
-		t.Log(result)
-	})
+	var result bson.M
+	res := client.FindOne(ctx, "testing", bson.D{{Key: "end", Value: nil}})
+	if res == nil {
+		t.Fatal("find one result is nil")
+	}
+	if err := res.Decode(&result); err != nil {
+		t.Fatalf("decode find one result failed: %v", err)
+	}
+	t.Log(result)
 }
 
 func TestDeleteOne(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), cong.Timeout*time.Second)
-
+	client, ctx, cancel := testClient(t)
 	defer cancel()
-	t.Run("test mongodb DeleteOne", func(t *testing.T) {
-		client, err := GetClient(&cong, ctx)
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		if client == nil {
-			t.Error("mongodb clinet is nil")
-			return
-		}
-		defer func() {
-			if err = client.Disconnect(ctx); err != nil {
-				t.Error(err)
-			}
-		}()
-		err = client.DeleteOne(ctx, "testing", bson.D{{Key: "end", Value: nil}})
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-	})
+
+	if err := client.DeleteOne(ctx, "testing", bson.D{{Key: "end", Value: nil}}); err != nil {
+		t.Fatalf("delete one failed: %v", err)
+	}
 }
 
 func TestUpdateOne(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), cong.Timeout*time.Second)
-
+	client, ctx, cancel := testClient(t)
 	defer cancel()
-	t.Run("test mongodb UpdateOne", func(t *testing.T) {
-		client, err := GetClient(&cong, ctx)
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		if client == nil {
-			t.Error("mongodb clinet is nil")
-			return
-		}
-		defer func() {
-			if err = client.Disconnect(ctx); err != nil {
-				t.Error(err)
-			}
-		}()
-		id, err := client.InsertOne(ctx, "testing", bson.D{
-			{Key: "name", Value: "pi"}, {Key: "value", Value: 3.14159},
-		})
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		b := bson.D{
-			{Key: "$set", Value: bson.D{
-				{Key: "name", Value: "pi"},
-				{Key: "value", Value: 3.1415926},
-			}},
-		}
-		res, err := client.UpdateOne(ctx, "testing", bson.D{{Key: "_id", Value: id}}, b)
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		if res == nil {
-			t.Error("Collection return empty")
-		}
+
+	id, err := client.InsertOne(ctx, "testing", bson.D{
+		{Key: "name", Value: "pi"}, {Key: "value", Value: 3.14159},
 	})
+	if err != nil {
+		t.Fatalf("insert document failed: %v", err)
+	}
+	b := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "name", Value: "pi"},
+			{Key: "value", Value: 3.1415926},
+		}},
+	}
+	res, err := client.UpdateOne(ctx, "testing", bson.D{{Key: "_id", Value: id}}, b)
+	if err != nil {
+		t.Fatalf("update one failed: %v", err)
+	}
+	if res == nil {
+		t.Fatal("update result is nil")
+	}
 }

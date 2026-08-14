@@ -6,43 +6,51 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"errors"
+	"fmt"
 	"log"
 )
 
 const BITS = 2048 // 密钥长度 1024,2048
 
 // GenerateRSAKey 生成 RSA 密钥对
+// 生成失败时返回 nil,nil，调用方必须检查后再使用。
 func GenerateRSAKey() (*rsa.PrivateKey, *rsa.PublicKey) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, BITS)
 	if err != nil {
 		log.Printf("生成RSA密钥对失败 %s", err)
+		return nil, nil
 	}
 	return privateKey, &privateKey.PublicKey
 }
 
 // DecodingByPrivateKey 私钥解密
+// privateKey 为 Base64 编码的 PEM 私钥；密钥格式或解密失败都会返回错误。
 func DecodingByPrivateKey(privateKey string, result []byte) (decodeStr []byte, err error) {
 	// base64解码密钥
 	decodeString, err1 := Base64DecodeString(privateKey)
 	if err1 != nil {
-		log.Printf("base decoding error %s", err1.Error())
+		return nil, fmt.Errorf("base64 decode private key: %w", err1)
 	}
 	// 通过pem加载密钥
-	loadPrivateKey := LoadPrivateKey(decodeString)
+	loadPrivateKey, err := LoadPrivateKeySafe(decodeString)
+	if err != nil {
+		return nil, err
+	}
 	// rsa 解码
 	decodeStr, err = rsa.DecryptPKCS1v15(rand.Reader, loadPrivateKey, result)
 	if err != nil {
-		log.Printf("encoding error %s", err.Error())
+		return nil, fmt.Errorf("rsa decrypt: %w", err)
 	}
-	return
+	return decodeStr, nil
 }
 
 // ExportPublicKeyAsPEM 将 RSA 公钥导出为 PEM 格式
 func ExportPublicKeyAsPEM(publicKey *rsa.PublicKey) []byte {
 	pubBytes, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
-
-		log.Printf("将 RSA 公钥导出为 PEM 格式失败")
+		log.Printf("将 RSA 公钥导出为 PEM 格式失败: %v", err)
+		return nil
 	}
 	pubPEM := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: pubBytes})
 	return pubPEM
@@ -52,53 +60,76 @@ func ExportPublicKeyAsPEM(publicKey *rsa.PublicKey) []byte {
 func ExportPrivateKeyAsPEM(privateKey *rsa.PrivateKey) []byte {
 	privBytes := x509.MarshalPKCS1PrivateKey(privateKey)
 	privPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: privBytes})
-
 	return privPEM
 }
 
-// LoadPrivateKey 加载 RSA 私钥
+// LoadPrivateKey 加载 RSA 私钥；解析失败时返回 nil 并记录日志，不再 panic。
+// 新代码建议使用 LoadPrivateKeySafe 获取具体错误。
 func LoadPrivateKey(privPEM []byte) *rsa.PrivateKey {
+	privateKey, err := LoadPrivateKeySafe(privPEM)
+	if err != nil {
+		log.Printf("加载 RSA 私钥失败: %v", err)
+		return nil
+	}
+	return privateKey
+}
+
+// LoadPrivateKeySafe 加载 RSA 私钥并返回解析错误。
+func LoadPrivateKeySafe(privPEM []byte) (*rsa.PrivateKey, error) {
 	block, _ := pem.Decode(privPEM)
 	if block == nil {
-		//panic("failed to parse PEM block containing the key")
-
-		log.Printf("解析 PEM block 私钥失败")
+		return nil, errors.New("解析 PEM block 私钥失败")
 	}
-	privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		log.Printf("ParsePKCS1PrivateKey 私钥失败")
+		return nil, fmt.Errorf("解析 PKCS1 私钥失败: %w", err)
 	}
-	return privKey
+	return privateKey, nil
 }
 
-// LoadPublicKey 加载 RSA 公钥
+// LoadPublicKey 加载 RSA 公钥；解析失败时返回 nil 并记录日志，不再 panic。
+// 新代码建议使用 LoadPublicKeySafe 获取具体错误。
 func LoadPublicKey(pubPEM []byte) *rsa.PublicKey {
+	publicKey, err := LoadPublicKeySafe(pubPEM)
+	if err != nil {
+		log.Printf("加载 RSA 公钥失败: %v", err)
+		return nil
+	}
+	return publicKey
+}
+
+// LoadPublicKeySafe 加载 RSA 公钥并返回解析错误。
+func LoadPublicKeySafe(pubPEM []byte) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode(pubPEM)
 	if block == nil {
-		//panic("failed to parse PEM block containing the key")
-		log.Printf("解析 PEM block 公钥失败")
+		return nil, errors.New("解析 PEM block 公钥失败")
 	}
-	pubKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+	publicKey, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		log.Printf("解析 ParsePKIXPublicKey 公钥失败")
+		return nil, fmt.Errorf("解析 PKIX 公钥失败: %w", err)
 	}
-	return pubKey.(*rsa.PublicKey)
+	rsaKey, ok := publicKey.(*rsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("PEM 公钥不是 RSA 类型: %T", publicKey)
+	}
+	return rsaKey, nil
 }
 
-// GetPublicKeyFromPriKey 通过密钥获取公钥
+// GetPublicKeyFromPriKey 通过密钥获取公钥；私钥无效时返回 nil。
 func GetPublicKeyFromPriKey(privKey []byte) *rsa.PublicKey {
 	privateKey := LoadPrivateKey(privKey)
+	if privateKey == nil {
+		return nil
+	}
 	return &privateKey.PublicKey
 }
 
 // Base64EncodeString BASE64编码
 func Base64EncodeString(pubPEM []byte) (basePubKey string) {
-	basePubKey = base64.StdEncoding.EncodeToString([]byte(pubPEM))
-	return
+	return base64.StdEncoding.EncodeToString(pubPEM)
 }
 
 // Base64DecodeString BASE64解码
 func Base64DecodeString(encode string) (pubKey []byte, err error) {
-	pubKey, err = base64.StdEncoding.DecodeString(encode)
-	return
+	return base64.StdEncoding.DecodeString(encode)
 }

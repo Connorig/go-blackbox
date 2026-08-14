@@ -1,9 +1,9 @@
 package cronjobs
 
 import (
-	"github.com/Connorig/go-blackbox/server/zaplog"
 	"testing"
-	"time"
+
+	"github.com/Connorig/go-blackbox/server/zaplog"
 )
 
 type Jobs struct {
@@ -14,34 +14,18 @@ func (j Jobs) Run() {
 	zaplog.Logger.Info("job is now running....")
 }
 
+// TestCronInstance 验证 Cron 单例与一次性任务注册。
+// 不启动调度器、不固定 Sleep，避免测试依赖真实时间。
 func TestCronInstance(t *testing.T) {
 	instance := CronInstance()
-	t.Run("Test cron instance init", func(t *testing.T) {
-		//if instance == nil {
-		//	t.Error("Cron Instance init fail.")
-		//}
-		//instance1 := CronInstance()
-		//if instance != instance1 {
-		//	t.Error("Cron Instance is change.")
-		//}
 
-		// 使用对象调用定时任务
-		jobs := Jobs{}
-		//err := DoOnce(jobs)
-		//t.Error(err)
+	jobs := Jobs{}
+	if err := DoOnce(jobs); err != nil {
+		t.Fatalf("register one-time job failed: %v", err)
+	}
 
-		//CronInstance().AddJob("@every 3s", jobs)
-
-		// 添加func调用定时任务
-		//CronInstance().AddFunc("@every 1s", func() {
-		//	//t.Log("func running in 1 sec")
-		//	fmt.Println("func running in 1 sec....")
-		//})
-
-		DoOnce(jobs)
-	})
-
-	// 必须调用start方法
-	instance.Start()
-	time.Sleep(time.Second * 10)
+	entries := instance.Entries()
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 cron entry after DoOnce, got %d", len(entries))
+	}
 }

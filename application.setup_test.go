@@ -149,6 +149,10 @@ func TestBuildingServiceCancelsWebWhenAfterSetupFails(t *testing.T) {
 		}},
 	}}
 
+	if err := application.lifecycle.beginStart(); err != nil {
+		t.Fatalf("begin application start failed: %v", err)
+	}
+
 	err := application.buildingService(func(context.Context, *ApplicationBuild) error {
 		return nil
 	})

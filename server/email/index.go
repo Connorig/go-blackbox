@@ -3,66 +3,69 @@ package email
 import (
 	"errors"
 	"fmt"
-	"gopkg.in/gomail.v2"
 	"mime"
+	"os"
+
+	"gopkg.in/gomail.v2"
 )
 
-/**
-* @Author: Connor
-* @Date:   23.3.31 16:25
-* @Description: 发送邮件工具类
- */
+// 默认 SMTP 端口与附件大小上限。
+const (
+	DefaultSMTPPort = 465 // 465 使用 SSL；587 使用 STARTTLS
+	// MaxAttachmentSize 是附件大小上限（25MB）。
+	MaxAttachmentSize = 25 * 1024 * 1024
+)
 
+// Client 封装 SMTP 发送配置。
 type Client struct {
-	user  string //发送人邮箱（邮箱以自己的为准）
-	pass  string //发送人邮箱的密码，现在可能会需要邮箱 开启授权密码后在pass填写授权码 jkgolslkqlnsdiid
-	host  string //邮箱服务器（此时用的是qq邮箱）
-	alias string // 邮箱发送别名
+	user  string
+	pass  string
+	host  string
+	alias string
+	port  int
 }
 
-// GetClient 获取邮件客户端
+// GetClient 根据配置创建邮件客户端；nil 配置返回空客户端（SendMail 会报错）。
 func GetClient(emailCong *MailConnConf) *Client {
-	c := &Client{
+	if emailCong == nil {
+		return &Client{}
+	}
+	port := emailCong.Port
+	if port <= 0 {
+		port = DefaultSMTPPort
+	}
+	return &Client{
 		user:  emailCong.User,
 		pass:  emailCong.Pass,
 		host:  emailCong.Host,
 		alias: emailCong.Alias,
+		port:  port,
 	}
-	return c
 }
 
-// SendMail 发送邮件
-// mailTo 支持多人发送
-// subject 信息主体
-// fileName 附件名称
-// filePath 文件路径
+// SendMail 发送邮件。
+// mailTo 支持多人发送；subject 为标题；body 为 HTML 正文。
+// fileName 与 filePath 同时非空时附带附件（存在性、大小与目录校验）。
 func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePath string) error {
-	// 接收者邮箱列表
+	if emailC == nil || emailC.host == "" || emailC.user == "" {
+		return errors.New("mail client is not configured (host and user are required)")
+	}
 	if len(mailTo) == 0 {
 		return errors.New("mailTo length must not be zero")
 	}
-	// 设置邮箱主体
-	mailConn := map[string]string{
-		"user": emailC.user, // 发送人邮箱（邮箱以自己的为准）
-		"pass": emailC.pass, // 发送人邮箱的密码，现在可能会需要邮箱 开启授权密码后在pass填写授权码
-		"host": emailC.host, // 邮箱服务器（此时用的是qq邮箱） "smtp.qq.com"
+	if err := emailC.validateAttachment(fileName, filePath); err != nil {
+		return err
 	}
 
-	m := gomail.NewMessage(
-		//发送文本时设置编码，防止乱码。 如果txt文本设置了之后还是乱码，那可以将原txt文本在保存时
-		//就选择utf-8格式保存
-		gomail.SetEncoding(gomail.Base64),
-	)
-	m.SetHeader("From", m.FormatAddress(mailConn["user"], emailC.alias)) // 添加别名
-	m.SetHeader("To", mailTo...)                                         // 发送给用户(可以多个)
-	m.SetHeader("Subject", subject)                                      // 设置邮件主题
-	m.SetBody("text/html", body)                                         // 设置邮件正文
+	m := gomail.NewMessage(gomail.SetEncoding(gomail.Base64))
+	m.SetHeader("From", m.FormatAddress(emailC.user, emailC.alias))
+	m.SetHeader("To", mailTo...)
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", body)
 
-	//一个文件（加入发送一个 txt 文件）：/tmp/foo.txt，需要将这个文件以邮件附件的方式进行发送，同时指定附件名为：附件.txt
-	//同时解决了文件名乱码问题
 	if len(fileName) > 0 && len(filePath) > 0 {
 		m.Attach(filePath,
-			gomail.Rename(fileName), //重命名
+			gomail.Rename(fileName),
 			gomail.SetHeader(map[string][]string{
 				"Content-Disposition": {
 					fmt.Sprintf(`attachment; filename="%s"`, mime.QEncoding.Encode("UTF-8", fileName)),
@@ -70,13 +73,34 @@ func (emailC *Client) SendMail(mailTo []string, subject, body, fileName, filePat
 			}),
 		)
 	}
-	/*
-	   创建SMTP客户端，连接到远程的邮件服务器，需要指定服务器地址、端口号、用户名、密码，如果端口号为465的话，
-	   自动开启SSL，这个时候需要指定TLSConfig
-	*/
 
-	d := gomail.NewDialer(mailConn["host"], 465, mailConn["user"], mailConn["pass"]) // 设置邮件正文
-	//d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
-	err := d.DialAndSend(m)
-	return err
+	// 端口 465 自动启用 SSL；其他端口（如 587）使用 STARTTLS。
+	// gomail 内置 10 秒连接超时。
+	d := gomail.NewDialer(emailC.host, emailC.port, emailC.user, emailC.pass)
+	d.SSL = emailC.port == 465
+	if err := d.DialAndSend(m); err != nil {
+		return fmt.Errorf("send mail via %s:%d: %w", emailC.host, emailC.port, err)
+	}
+	return nil
+}
+
+// validateAttachment 校验附件参数、存在性与大小。
+func (emailC *Client) validateAttachment(fileName, filePath string) error {
+	if fileName == "" && filePath == "" {
+		return nil
+	}
+	if fileName == "" || filePath == "" {
+		return errors.New("attachment requires both fileName and filePath")
+	}
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return fmt.Errorf("attachment %q: %w", filePath, err)
+	}
+	if info.IsDir() {
+		return fmt.Errorf("attachment %q is a directory", filePath)
+	}
+	if info.Size() > MaxAttachmentSize {
+		return fmt.Errorf("attachment %q exceeds max size %d bytes", filePath, MaxAttachmentSize)
+	}
+	return nil
 }

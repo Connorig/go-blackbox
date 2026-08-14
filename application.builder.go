@@ -211,8 +211,8 @@ func (app *ApplicationBuild) InitLog(outDirPath, level string) *ApplicationBuild
 // EnableMongoDB 配置MongoDB客户端
 func (app *ApplicationBuild) EnableMongoDB(dbConfig *mongodb.MongoDBConfig) *ApplicationBuild {
 	if dbConfig != nil {
-
-		app.IsEnableDB = true
+		// 只应启用 MongoDB 组件开关，不能误触发关系数据库分支（历史 bug）。
+		app.IsEnableMongoDB = true
 		app.mongoBbConfig = dbConfig
 	}
 	return app
@@ -224,7 +224,9 @@ func (app *ApplicationBuild) InitCronJob() *ApplicationBuild {
 	app.IsRunningCronJob = true
 
 	// 定时任务客户端放入容器
-	simpleioc.Set(cronjobs.CronInstance())
+	if err := simpleioc.RegisterInstance(cronjobs.CronInstance()); err != nil {
+			// 閲嶅娉ㄥ唽淇濇寔鍏煎锛氱洿鎺ュ拷鐣r
+		}
 
 	return app
 }

@@ -153,7 +153,7 @@ func useTestLogConfig(t *testing.T, level string) func() {
 	Logger = zap.NewNop()
 	SugaredLogger = Logger.Sugar()
 	return func() {
-		if err := Sync(); err != nil {
+		if err := Close(); err != nil {
 			t.Errorf("sync logger during cleanup failed: %v", err)
 		}
 		CONFIG = oldConfig

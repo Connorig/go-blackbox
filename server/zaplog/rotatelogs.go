@@ -40,6 +40,7 @@ func newRotatingWriteSyncer(filename string) (zapcore.WriteSyncer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create rotating log writer for %s: %w", baseName, err)
 	}
+	registerLogWriter(hook)
 	return zapcore.AddSync(hook), nil
 }
 

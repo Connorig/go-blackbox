@@ -3,6 +3,8 @@ package zaplog
 import (
 	"errors"
 	"fmt"
+	"io"
+	stdlog "log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,6 +22,9 @@ var (
 	// SugaredLogger 是兼容现有 printf 风格调用的全局 Logger。
 	SugaredLogger = Logger.Sugar()
 	loggerMu      sync.Mutex
+	// logWriters 保存 Init 创建的轮转日志写入器，Close 时统一释放文件句柄。
+	logWriters []io.Closer
+	writersMu  sync.Mutex
 )
 
 // Init 根据 CONFIG 创建完整日志目录和严格单级文件 Logger。
@@ -30,6 +35,11 @@ func Init() error {
 
 	if err := validateConfig(CONFIG); err != nil {
 		return err
+	}
+	// 先关闭上一次初始化遗留的轮转文件（在创建新写入器之前），
+	// 避免旧句柄在 Windows 上持续占用日志文件；新写入器由 Close 统一释放。
+	if writerErrs := closeWriters(); len(writerErrs) > 0 {
+		stdlog.Printf("close previous log writers failed: %v", errors.Join(writerErrs...))
 	}
 	logDirectory := filepath.Join(CONFIG.Director, "zap")
 	if err := os.MkdirAll(logDirectory, 0o755); err != nil {
@@ -83,6 +93,48 @@ func Sync() error {
 		return fmt.Errorf("sync global logger: %w", err)
 	}
 	return nil
+}
+
+// Close 刷新日志缓冲区并关闭全部轮转日志文件，释放底层文件句柄。
+// 该函数幂等；关闭后再次调用 Init 会创建新的写入器。多个关闭错误会聚合返回。
+func Close() error {
+	loggerMu.Lock()
+	defer loggerMu.Unlock()
+
+	var closeErrors []error
+	if Logger != nil {
+		if err := Logger.Sync(); err != nil && !isIgnorableSyncError(err) {
+			closeErrors = append(closeErrors, fmt.Errorf("sync global logger: %w", err))
+		}
+	}
+	return errors.Join(append(closeErrors, closeWriters()...)...)
+}
+
+// closeWriters 关闭并清空已注册的轮转日志写入器。
+// 该函数不获取 loggerMu，允许 Init 在持有日志锁时安全调用。
+func closeWriters() []error {
+	writersMu.Lock()
+	writers := logWriters
+	logWriters = nil
+	writersMu.Unlock()
+
+	var closeErrors []error
+	for _, writer := range writers {
+		if err := writer.Close(); err != nil {
+			closeErrors = append(closeErrors, fmt.Errorf("close rotating log writer: %w", err))
+		}
+	}
+	return closeErrors
+}
+
+// registerLogWriter 记录成功创建的轮转日志写入器，供 Close 统一释放。
+func registerLogWriter(closer io.Closer) {
+	if closer == nil {
+		return
+	}
+	writersMu.Lock()
+	defer writersMu.Unlock()
+	logWriters = append(logWriters, closer)
 }
 
 // validateConfig 校验日志目录、格式和轮转时间边界。

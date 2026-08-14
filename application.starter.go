@@ -99,7 +99,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 		return fmt.Errorf("initialize application logger: %w", app.builder.logInitErr)
 	}
 	if err := app.lifecycle.registerShutdown("logger", func(context.Context) error {
-		return log.Sync()
+		return log.Close()
 	}); err != nil {
 		log.SugaredLogger.Errorf("register logger shutdown failed: %v", err)
 		return fmt.Errorf("register logger shutdown: %w", err)
@@ -122,23 +122,44 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			log.SugaredLogger.Error(err)
 			return err
 		}
-		simpleioc.Set(instance)
+		if err := simpleioc.RegisterInstance(instance); err != nil {
+			log.SugaredLogger.Errorf("register database instance failed: %v", err)
+			return fmt.Errorf("register database instance: %w", err)
+		}
 		if err := app.registerDatabaseShutdown(instance); err != nil {
 			return err
 		}
 	}
 
 	if app.builder.IsEnableCache {
-		cacheInstance := cache.Init(simpleioc.GetContext().Ctx, app.builder.redisOptions)
+		cacheInstance, cacheErr := cache.Init(simpleioc.GetContext().Ctx, app.builder.redisOptions)
+		if cacheErr != nil {
+			log.SugaredLogger.Errorf("initialize Redis cache failed: %v", cacheErr)
+			return fmt.Errorf("initialize Redis cache: %w", cacheErr)
+		}
 		if cacheInstance == nil {
 			err := errors.New("initialize Redis cache returned nil instance")
 			log.SugaredLogger.Error(err)
 			return err
 		}
-		simpleioc.Set(cacheInstance)
+		if err := simpleioc.RegisterInstance(cacheInstance); err != nil {
+			log.SugaredLogger.Errorf("register Redis instance failed: %v", err)
+			return fmt.Errorf("register Redis instance: %w", err)
+		}
+		if err := app.lifecycle.registerShutdown("Redis", func(context.Context) error {
+			return cacheInstance.Close()
+		}); err != nil {
+			log.SugaredLogger.Errorf("register Redis shutdown failed: %v", err)
+			return fmt.Errorf("register Redis shutdown: %w", err)
+		}
 	}
 
 	if app.builder.IsEnableMongoDB {
+		if app.builder.mongoBbConfig == nil {
+			err := errors.New("enable MongoDB requires non-nil MongoDB config")
+			log.SugaredLogger.Error(err)
+			return err
+		}
 		client, mongoErr := mongodb.GetClient(app.builder.mongoBbConfig, simpleioc.GetContext().Ctx)
 		if mongoErr != nil {
 			log.SugaredLogger.Errorf("initialize MongoDB client failed: %v", mongoErr)
@@ -149,7 +170,23 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			log.SugaredLogger.Error(err)
 			return err
 		}
-		simpleioc.Set(client)
+		// Use configured timeout for connectivity check; fail fast and close client.
+		pingTimeout := app.builder.mongoBbConfig.Timeout * time.Second
+		if pingTimeout <= 0 {
+			pingTimeout = 10 * time.Second
+		}
+		pingCtx, pingCancel := context.WithTimeout(simpleioc.GetContext().Ctx, pingTimeout)
+		pingErr := client.Ping(pingCtx)
+		pingCancel()
+		if pingErr != nil {
+			_ = client.Disconnect(context.Background())
+			log.SugaredLogger.Errorf("ping MongoDB failed: %v", pingErr)
+			return fmt.Errorf("ping MongoDB: %w", pingErr)
+		}
+		if err := simpleioc.RegisterInstance(client); err != nil {
+			log.SugaredLogger.Errorf("register MongoDB instance failed: %v", err)
+			return fmt.Errorf("register MongoDB instance: %w", err)
+		}
 		if err := app.lifecycle.registerShutdown("MongoDB", client.Disconnect); err != nil {
 			log.SugaredLogger.Errorf("register MongoDB shutdown failed: %v", err)
 			return fmt.Errorf("register MongoDB shutdown: %w", err)
@@ -165,6 +202,12 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			cancelRuntime()
 		}
 	}()
+
+	// Start IOC container: construct registered singletons and run OnInit hooks.
+	if err := simpleioc.Start(runtimeCtx); err != nil {
+		log.SugaredLogger.Errorf("start IOC container failed: %v", err)
+		return fmt.Errorf("start IOC container: %w", err)
+	}
 
 	if err := app.startWebLifecycle(runtimeCtx); err != nil {
 		return err
@@ -192,6 +235,13 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			log.SugaredLogger.Errorf("register application shutdown hook failed, name=%s, error=%v", hook.name, err)
 			return fmt.Errorf("register application shutdown hook %q: %w", hook.name, err)
 		}
+	}
+	// IOC container must shut down before business resources, register last.
+	if err := app.lifecycle.registerShutdown("IOC container", func(ctx context.Context) error {
+		return simpleioc.Shutdown(ctx)
+	}); err != nil {
+		log.SugaredLogger.Errorf("register IOC container shutdown failed: %v", err)
+		return fmt.Errorf("register IOC container shutdown: %w", err)
 	}
 	keepRuntimeContext = true
 
