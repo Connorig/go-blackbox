@@ -22,6 +22,9 @@ func RequestID(ctx iris.Context) {
 	}
 	ctx.Header(RequestIDHeader, requestID)
 	ctx.Values().Set("request_id", requestID)
+	// 注入标准 context，供 zaplog.FromContext 读取并附加 request_id 字段。
+	req := ctx.Request().WithContext(zaplog.WithRequestID(ctx.Request().Context(), requestID))
+	ctx.ResetRequest(req)
 	ctx.Next()
 }
 
