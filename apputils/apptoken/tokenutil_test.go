@@ -10,6 +10,10 @@ import (
 
 // TestGenTokenRequiresSecret 验证未注入密钥时签发会返回明确错误，拒绝使用弱默认密钥。
 func TestGenTokenRequiresSecret(t *testing.T) {
+	previous := secretKeys
+	secretKeys = nil
+	t.Cleanup(func() { secretKeys = previous })
+
 	if _, _, err := GenToken(1, "user@example.com"); err != ErrSecretNotConfigured {
 		t.Fatalf("expected ErrSecretNotConfigured, got: %v", err)
 	}
@@ -41,7 +45,7 @@ func TestGenAndVerifyRoundTrip(t *testing.T) {
 	if claim.UserID != userID || claim.UserEmail != userEmail {
 		t.Fatalf("unexpected claims: %+v", claim)
 	}
-	if _, err := jwt.Parse(refreshToken, keyFunc); err != nil {
+	if _, err := jwt.Parse(refreshToken, keyFuncFor(secretKeys[0])); err != nil {
 		t.Fatalf("refresh token must be parseable: %v", err)
 	}
 }
@@ -79,7 +83,7 @@ func TestVerifyRejectsWrongIssuer(t *testing.T) {
 			Issuer:    "evil-issuer",
 		},
 	}
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claim).SignedString(secretKey)
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claim).SignedString(secretKeys[0])
 	if err != nil {
 		t.Fatalf("sign token failed: %v", err)
 	}

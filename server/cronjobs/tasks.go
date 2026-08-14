@@ -106,3 +106,45 @@ func executeTask(name string, function TaskFunc) {
 	zaplog.WithComponent("cron").Infow("cron task completed",
 		"task", name, "duration", time.Since(start).String())
 }
+
+// runningTasks 记录正在执行的单例任务，防止并发重入。
+var runningTasks sync.Map
+
+// RegisterSingleton 注册具名单例任务：同一任务在执行期间不允许再次触发。
+// 适用场景：定时任务执行时间可能超过调度间隔的任务（如批量同步）。
+func RegisterSingleton(name, spec string, function TaskFunc) (cron.EntryID, error) {
+	if strings.TrimSpace(name) == "" {
+		return 0, errors.New("cron singleton task name is empty")
+	}
+	if strings.TrimSpace(spec) == "" {
+		return 0, fmt.Errorf("cron singleton task %q spec is empty", name)
+	}
+	if function == nil {
+		return 0, fmt.Errorf("cron singleton task %q function is nil", name)
+	}
+
+	taskMu.Lock()
+	defer taskMu.Unlock()
+	if _, exists := tasks[name]; exists {
+		return 0, fmt.Errorf("cron task %q already registered", name)
+	}
+
+	entryID, err := CronInstance().AddFunc(spec, singletonGuard(name, function))
+	if err != nil {
+		return 0, fmt.Errorf("add cron singleton task %q: %w", name, err)
+	}
+	tasks[name] = &Task{Name: name, Spec: spec, EntryID: entryID, AddedAt: time.Now()}
+	return entryID, nil
+}
+
+// singletonGuard 包装任务函数：上一轮未结束时跳过本轮触发。
+func singletonGuard(name string, function TaskFunc) func() {
+	return func() {
+		if _, loaded := runningTasks.LoadOrStore(name, struct{}{}); loaded {
+			zaplog.WithComponent("cron").Infow("cron singleton task skipped, previous run still active", "task", name)
+			return
+		}
+		defer runningTasks.Delete(name)
+		executeTask(name, function)
+	}
+}
