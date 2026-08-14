@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
 	"strconv"
 	"time"
@@ -66,7 +66,9 @@ func (r *RabbitMQ) MqConnect() (err error) {
 
 // CloseMqConnect 关闭mq链接
 func (r *RabbitMQ) CloseMqConnect() (err error) {
-
+	if r == nil || r.connection == nil {
+		return nil
+	}
 	err = r.connection.Close()
 	if err != nil {
 		fmt.Printf("关闭mq链接失败  :%s \n", err)
@@ -87,23 +89,27 @@ func (r *RabbitMQ) MqOpenChannel() (err error) {
 
 // CloseMqChannel 关闭rabbitMQ信道
 func (r *RabbitMQ) CloseMqChannel() (err error) {
-	r.Channel.Close()
+	if r == nil || r.Channel == nil {
+		return nil
+	}
+	err = r.Channel.Close()
 	if err != nil {
-		fmt.Printf("关闭mq链接失败  :%s \n", err)
+		fmt.Printf("关闭mq信道失败  :%s \n", err)
 	}
 	return err
 }
 
-// Send 生产者发送消息
+// SendMsg 生产者发送消息
 func (mq *RabbitMQ) SendMsg(body interface{}) (err error) {
 	err = mq.MqOpenChannel()
 	ch := mq.Channel
 	if err != nil {
 		log.Printf("Channel err  :%s \n", err)
+		return err
 	}
 
 	defer func() {
-		_ = mq.Channel.Close()
+		_ = mq.CloseMqChannel()
 	}()
 	if mq.ExchangeName != "" {
 		if mq.ExchangeType == "" {
@@ -112,6 +118,7 @@ func (mq *RabbitMQ) SendMsg(body interface{}) (err error) {
 		err = ch.ExchangeDeclare(mq.ExchangeName, mq.ExchangeType, true, false, false, false, nil)
 		if err != nil {
 			log.Printf("ExchangeDeclare err  :%s \n", err)
+			return err
 		}
 	}
 
@@ -119,12 +126,14 @@ func (mq *RabbitMQ) SendMsg(body interface{}) (err error) {
 	_, err = ch.QueueDeclare(mq.QueueName, true, false, false, false, nil)
 	if err != nil {
 		log.Printf("QueueDeclare err :%s \n", err)
+		return err
 	}
 	// 绑定任务
 	if mq.RoutingKey != "" && mq.ExchangeName != "" {
 		err = ch.QueueBind(mq.QueueName, mq.RoutingKey, mq.ExchangeName, false, nil)
 		if err != nil {
 			log.Printf("QueueBind err :%s \n", err)
+			return err
 		}
 	}
 
@@ -132,7 +141,7 @@ func (mq *RabbitMQ) SendMsg(body interface{}) (err error) {
 	bs, err := json.Marshal(body)
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 	log.Println("submit:" + string(bs))
 
@@ -168,8 +177,9 @@ func (mq *RabbitMQ) listenReceiver(receiver Receiver) {
 	ch := mq.Channel
 	if err != nil {
 		log.Printf("Channel err  :%s \n", err)
+		return
 	}
-	defer mq.Channel.Close()
+	defer mq.CloseMqChannel()
 	if mq.ExchangeName != "" {
 		if mq.ExchangeType == "" {
 			mq.ExchangeType = "direct"
@@ -177,6 +187,7 @@ func (mq *RabbitMQ) listenReceiver(receiver Receiver) {
 		err = ch.ExchangeDeclare(mq.ExchangeName, mq.ExchangeType, true, false, false, false, nil)
 		if err != nil {
 			log.Printf("ExchangeDeclare err  :%s \n", err)
+			return
 		}
 	}
 
@@ -184,6 +195,7 @@ func (mq *RabbitMQ) listenReceiver(receiver Receiver) {
 	_, err = ch.QueueDeclare(mq.QueueName, true, false, false, false, nil)
 	if err != nil {
 		log.Printf("QueueDeclare err :%s \n", err)
+		return
 	}
 
 	// 绑定任务
@@ -191,28 +203,34 @@ func (mq *RabbitMQ) listenReceiver(receiver Receiver) {
 		err = ch.QueueBind(mq.QueueName, mq.RoutingKey, mq.ExchangeName, false, nil)
 		if err != nil {
 			log.Printf("QueueBind err :%s \n", err)
+			return
 		}
 	}
 
 	// 获取消费通道,确保rabbitMQ一个一个发送消息
 	err = ch.Qos(1, 0, false)
+	if err != nil {
+		log.Printf("Qos err :%s \n", err)
+		return
+	}
 	msgList, err := ch.Consume(mq.QueueName, "", false, false, false, false, nil)
 	if err != nil {
 		log.Printf("Consume err :%s \n", err)
+		return
 	}
 	for msg := range msgList {
-		retry_nums, ok := msg.Headers["retry_nums"].(int32)
+		retryNums, ok := msg.Headers["retry_nums"].(int32)
 		if !ok {
-			retry_nums = int32(0)
+			retryNums = int32(0)
 		}
 		// 处理数据
 		err := receiver.Consumer(msg.Body)
 		if err != nil {
 			//消息处理失败 进入延时尝试机制
-			if retry_nums < 3 {
+			if retryNums < 3 {
 				fmt.Println(string(msg.Body))
 				fmt.Printf("消息处理失败 消息开始进入尝试  ttl延时队列 \n")
-				retryMsg(msg.Body, retry_nums, QueueExchange{
+				retryMsg(msg.Body, retryNums, QueueExchange{
 					mq.QueueName,
 					mq.RoutingKey,
 					mq.ExchangeName,
@@ -224,13 +242,14 @@ func (mq *RabbitMQ) listenReceiver(receiver Receiver) {
 				fmt.Printf("消息处理3次后还是失败了 入库db 钉钉告警 \n")
 				receiver.FailAction(err, msg.Body)
 			}
-			err = msg.Ack(true)
+			// 单条确认：multiple=false，避免误确认其他未处理消息
+			err = msg.Ack(false)
 			if err != nil {
 				fmt.Printf("确认消息未完成异常:%s \n", err)
 			}
 		} else {
-			// 确认消息,必须为false
-			err = msg.Ack(true)
+			// 确认消息,必须为false(单条确认)
+			err = msg.Ack(false)
 
 			if err != nil {
 				fmt.Printf("消息消费ack失败 err :%s \n", err)
@@ -246,8 +265,9 @@ func (mq *RabbitMQ) SendDelayMsg(body string, ttl int64) (err error) {
 	ch := mq.Channel
 	if err != nil {
 		log.Printf("Channel err  :%s \n", err)
+		return err
 	}
-	defer mq.Channel.Close()
+	defer mq.CloseMqChannel()
 
 	if mq.ExchangeName != "" {
 		if mq.ExchangeType == "" {
@@ -255,7 +275,7 @@ func (mq *RabbitMQ) SendDelayMsg(body string, ttl int64) (err error) {
 		}
 		err = ch.ExchangeDeclare(mq.ExchangeName, mq.ExchangeType, true, false, false, false, nil)
 		if err != nil {
-			return
+			return err
 		}
 	}
 
@@ -276,13 +296,13 @@ func (mq *RabbitMQ) SendDelayMsg(body string, ttl int64) (err error) {
 	routingKey := fmt.Sprintf("%s_delay_%s", mq.QueueName, ttlstring)
 	_, err = ch.QueueDeclare(queueName, true, false, false, false, table)
 	if err != nil {
-		return
+		return err
 	}
 	// 绑定任务
 	if routingKey != "" && mq.ExchangeName != "" {
 		err = ch.QueueBind(queueName, routingKey, mq.ExchangeName, false, nil)
 		if err != nil {
-			return
+			return err
 		}
 	}
 
@@ -316,10 +336,9 @@ func (mq *RabbitMQ) SendDelayMsg(body string, ttl int64) (err error) {
 			Headers:     header,
 		})
 	if err != nil {
-		return
-
+		return err
 	}
-	return
+	return nil
 }
 
 // SendRetryMsg 发送重试消息
@@ -328,8 +347,9 @@ func (mq *RabbitMQ) SendRetryMsg(body string, retry_nums int32, args ...string) 
 	ch := mq.Channel
 	if err != nil {
 		log.Printf("Channel err  :%s \n", err)
+		return
 	}
-	defer mq.Channel.Close()
+	defer mq.CloseMqChannel()
 
 	if mq.ExchangeName != "" {
 		if mq.ExchangeType == "" {
@@ -338,6 +358,7 @@ func (mq *RabbitMQ) SendRetryMsg(body string, retry_nums int32, args ...string) 
 		err = ch.ExchangeDeclare(mq.ExchangeName, mq.ExchangeType, true, false, false, false, nil)
 		if err != nil {
 			log.Printf("ExchangeDeclare err  :%s \n", err)
+			return
 		}
 	}
 
@@ -363,12 +384,14 @@ func (mq *RabbitMQ) SendRetryMsg(body string, retry_nums int32, args ...string) 
 	_, err = ch.QueueDeclare(mq.QueueName, true, false, false, false, table)
 	if err != nil {
 		log.Printf("QueueDeclare err :%s \n", err)
+		return
 	}
 	// 绑定任务
 	if mq.RoutingKey != "" && mq.ExchangeName != "" {
 		err = ch.QueueBind(mq.QueueName, mq.RoutingKey, mq.ExchangeName, false, nil)
 		if err != nil {
 			log.Printf("QueueBind err :%s \n", err)
+			return
 		}
 	}
 
@@ -455,8 +478,9 @@ func ReceiveMsg(queueExchange QueueExchange, receiver Receiver, otherParams ...i
 		maxTryConnTimeFromMinute = otherParams[1]
 	}
 
-	maxTryConnNums = maxTryConnTimeFromMinute * 10 * maxTryConnTimeFromMinute //rbmq链接失败后最大尝试次数
-	maxTryConnTime := time.Duration(InitialTimeout)                           //rbmq链接失败后多久尝试一次
+	// 每分钟最多 6 次重试，乘以分钟数得到上限
+	maxTryConnNums = maxTryConnTimeFromMinute * 6
+	maxTryConnTime := time.Duration(InitialTimeout) //rbmq链接失败后多久尝试一次
 	mq := NewMq(queueExchange)
 	//链接rabbitMQ
 	err = mq.MqConnect()
@@ -466,7 +490,7 @@ func ReceiveMsg(queueExchange QueueExchange, receiver Receiver, otherParams ...i
 
 	defer func() {
 		if panicErr := recover(); panicErr != nil {
-			fmt.Println(recover())
+			fmt.Printf("recovered panic: %v\n", panicErr)
 			err = errors.New(fmt.Sprintf("%s", panicErr))
 		}
 	}()

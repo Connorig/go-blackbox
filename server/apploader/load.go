@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
@@ -18,6 +19,9 @@ type Loader interface {
 	SetConfigFileSearcher(configName string, searchPath ...string) Loader
 	// EnableEnvSearcher 开启环境变量覆盖；非空前缀会生成 PREFIX_SECTION_FIELD 格式的变量名。
 	EnableEnvSearcher(envPrefix string) Loader
+	// Watch 监听配置文件变更，重载成功（含业务校验）后同步调用 handler。
+	// 必须在 LoadToStruct 之后调用；仅支持文件源的变更监听。
+	Watch(handler func()) error
 }
 
 // Validator 可由业务配置结构实现，用于在反序列化完成后执行必填项和取值范围校验。
@@ -32,6 +36,7 @@ type loader struct {
 	vConf            *viper.Viper
 	envSearchEnable  bool
 	configurationErr error
+	watchTarget      interface{} // watchTarget 是 Watch 重载时反序列化的目标结构体
 }
 
 // NewLoader 创建互不共享状态的配置加载器。
@@ -90,6 +95,38 @@ func (lo *loader) EnableEnvSearcher(envPrefix string) Loader {
 	return lo
 }
 
+// Watch 监听配置文件变更并重载到 LoadToStruct 使用的同一目标结构体。
+// 重载成功（含业务 Validator 校验）后同步调用 handler。
+// 必须在 LoadToStruct 成功之后调用；监听启动失败会立即返回错误。
+func (lo *loader) Watch(handler func()) error {
+	if lo == nil || lo.vConf == nil {
+		return errors.New("config loader is nil")
+	}
+	if lo.watchTarget == nil {
+		return errors.New("watch requires LoadToStruct called first")
+	}
+	if handler == nil {
+		return errors.New("watch handler is nil")
+	}
+
+	lo.vConf.WatchConfig()
+	lo.vConf.OnConfigChange(func(in fsnotify.Event) {
+		if err := lo.vConf.Unmarshal(lo.watchTarget); err != nil {
+			lo.appendConfigurationError(fmt.Errorf("reload configuration on change: %w", err))
+			return
+		}
+		normalizeBuiltInConfiguration(lo.watchTarget)
+		if validator, ok := lo.watchTarget.(Validator); ok {
+			if err := validator.Validate(); err != nil {
+				lo.appendConfigurationError(fmt.Errorf("validate configuration on change: %w", err))
+				return
+			}
+		}
+		handler()
+	})
+	return nil
+}
+
 // LoadToStruct 校验目标、准备环境变量绑定并反序列化配置。
 // 文件读取、环境变量绑定和反序列化错误会聚合返回，避免启动时使用半有效配置。
 func (lo *loader) LoadToStruct(config interface{}) error {
@@ -121,6 +158,7 @@ func (lo *loader) LoadToStruct(config interface{}) error {
 			return fmt.Errorf("validate application configuration: %w", err)
 		}
 	}
+	lo.watchTarget = config
 	return nil
 }
 
