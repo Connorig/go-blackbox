@@ -1,0 +1,22 @@
+// Package testmycat 测试表模块路由(二级分组示例,与 sg-mes 模块 Router 同构)。
+package testmycat
+
+import (
+	"github.com/kataras/iris/v12"
+
+	"{{.ModulePath}}/internal/handler"
+	"{{.ModulePath}}/internal/repository"
+	"{{.ModulePath}}/internal/service"
+)
+
+// Router 注册模块路由(挂载在 /api/test-mycat 下)。
+func Router(p iris.Party) {
+	repo := repository.NewTestMycatRepository()
+	svc := service.NewTestMycatService(repo)
+
+	p.Get("/", handler.ListTestMycat(svc))
+	p.Get("/{id:int64}", handler.GetTestMycat(svc))
+	p.Post("/", handler.CreateTestMycat(svc))
+	p.Put("/{id:int64}", handler.UpdateTestMycat(svc))
+	p.Delete("/{id:int64}", handler.DeleteTestMycat(svc))
+}

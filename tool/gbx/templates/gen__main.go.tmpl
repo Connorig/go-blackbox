@@ -60,11 +60,11 @@ func main() {
 
 			// 认证中间件(健康/登录/文档放行)
 			app.Use(webiris.Auth(webiris.AuthConfig{
-				Whitelist: []string{"/health", "/api/v1/login", "/docs"},
+				Whitelist: []string{"/health", "/api/auth/login", "/docs"},
 			}))
 
 			// 业务路由:一行挂载(分组定义见 internal/router)
-			webiris.RegisterRoutes(app, router.All())
+			router.Route(app)
 
 			// 接口文档页面
 			apidoc.Register(app, "/docs", apidoc.Config{Title: "{{.ProjectName}}", Version: "v1.0.0"})
