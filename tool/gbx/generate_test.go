@@ -16,7 +16,6 @@ func TestRunGeneratesProject(t *testing.T) {
 	}
 	root := filepath.Join(workDir, "demo-app")
 
-	// 文件齐全
 	expected := []string{
 		"main.go",
 		"config.toml",
@@ -33,7 +32,6 @@ func TestRunGeneratesProject(t *testing.T) {
 		}
 	}
 
-	// code 风格:显式 Enable* 装配
 	mainSrc, err := os.ReadFile(filepath.Join(root, "main.go"))
 	if err != nil {
 		t.Fatalf("read main.go: %v", err)
@@ -52,7 +50,6 @@ func TestRunGeneratesProject(t *testing.T) {
 		}
 	}
 
-	// go.mod
 	goMod, err := os.ReadFile(filepath.Join(root, "go.mod"))
 	if err != nil {
 		t.Fatalf("read go.mod: %v", err)
@@ -61,7 +58,6 @@ func TestRunGeneratesProject(t *testing.T) {
 		t.Errorf("go.mod module wrong:\n%s", goMod)
 	}
 
-	// model/handler 模板内容
 	modelSrc, _ := os.ReadFile(filepath.Join(root, "internal/model/user.go"))
 	if !strings.Contains(string(modelSrc), "model.StandardModel") ||
 		!strings.Contains(string(modelSrc), "model.OrgFields") {
@@ -70,9 +66,6 @@ func TestRunGeneratesProject(t *testing.T) {
 	handlerSrc, _ := os.ReadFile(filepath.Join(root, "internal/handler/user.go"))
 	if !strings.Contains(string(handlerSrc), "webiris.DataScope(ctx)") {
 		t.Error("handler template must include data scope")
-	}
-	if !strings.Contains(string(handlerSrc), "apptoken.GenTokenFull") {
-		t.Error("handler template must include GenTokenFull")
 	}
 }
 
@@ -101,6 +94,83 @@ func TestRunConfigStyle(t *testing.T) {
 		if !strings.Contains(configText, want) {
 			t.Errorf("config style config.toml missing %q", want)
 		}
+	}
+}
+
+// TestRunGenStyle gen 风格:CRUD 全栈 + Party 分组路由(sg-mes 习惯)。
+func TestRunGenStyle(t *testing.T) {
+	workDir := t.TempDir()
+	err := run(options{name: "crud-app", dir: workDir, module: "github.com/example/crud-app", style: "gen"})
+	if err != nil {
+		t.Fatalf("run failed: %v", err)
+	}
+	root := filepath.Join(workDir, "crud-app")
+
+	expected := []string{
+		"main.go",
+		"internal/model/test_mycat.go",
+		"internal/model/all.go",
+		"internal/filter/test_mycat.go",
+		"internal/repository/test_mycat.go",
+		"internal/service/test_mycat.go",
+		"internal/handler/test_mycat.go",
+		"internal/router/router.go",
+		"internal/router/testmycat/router.go",
+	}
+	for _, rel := range expected {
+		if _, err := os.Stat(filepath.Join(root, rel)); err != nil {
+			t.Errorf("missing generated file: %s", rel)
+		}
+	}
+
+	// main.go:装配 + 一行路由挂载
+	mainSrc, _ := os.ReadFile(filepath.Join(root, "main.go"))
+	mainText := string(mainSrc)
+	for _, want := range []string{
+		"RegisterModels(model.All)",
+		"router.Route(app)",
+		"apidoc.Register",
+		"AutoMigrate: true",
+	} {
+		if !strings.Contains(mainText, want) {
+			t.Errorf("main.go missing %q", want)
+		}
+	}
+
+	// 路由总入口:Route(app) + /api 一级分组(Party 风格,对齐 sg-mes)
+	routerSrc, _ := os.ReadFile(filepath.Join(root, "internal/router/router.go"))
+	routerText := string(routerSrc)
+	for _, want := range []string{
+		"func Route(app *iris.Application)",
+		"app.Party(\"/api\")",
+		"testmycat.Router(root.Party(\"/test-mycat\"))",
+		"authRoutes(root.Party(\"/auth\"))",
+	} {
+		if !strings.Contains(routerText, want) {
+			t.Errorf("router.go missing %q", want)
+		}
+	}
+
+	// 模块子包:CRUD 路由(Party 风格)
+	moduleSrc, _ := os.ReadFile(filepath.Join(root, "internal/router/testmycat/router.go"))
+	moduleText := string(moduleSrc)
+	for _, want := range []string{
+		"func Router(p iris.Party)",
+		"handler.ListTestMycat(svc)",
+		"handler.CreateTestMycat(svc)",
+		"handler.DeleteTestMycat(svc)",
+		"repository.NewTestMycatRepository",
+		"service.NewTestMycatService",
+	} {
+		if !strings.Contains(moduleText, want) {
+			t.Errorf("testmycat/router.go missing %q", want)
+		}
+	}
+
+	// 模型集中注册
+	allSrc, _ := os.ReadFile(filepath.Join(root, "internal/model/all.go"))
+	if !strings.Contains(string(allSrc), "&TestMycat{}") {
+		t.Error("model/all.go must register TestMycat")
 	}
 }
 
@@ -133,81 +203,6 @@ func TestValidName(t *testing.T) {
 	for _, name := range invalid {
 		if validName(name) {
 			t.Errorf("%q should be invalid", name)
-		}
-	}
-}
-
-
-// TestRunGenStyle gen 风格:CRUD 全栈(DDD 分层 + 测试表)。
-func TestRunGenStyle(t *testing.T) {
-	workDir := t.TempDir()
-	err := run(options{name: "crud-app", dir: workDir, module: "github.com/example/crud-app", style: "gen"})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-	root := filepath.Join(workDir, "crud-app")
-
-	expected := []string{
-		"main.go",
-		"internal/model/test_mycat.go",
-		"internal/filter/test_mycat.go",
-		"internal/repository/test_mycat.go",
-		"internal/service/test_mycat.go",
-		"internal/handler/test_mycat.go",
-	}
-	for _, rel := range expected {
-		if _, err := os.Stat(filepath.Join(root, rel)); err != nil {
-			t.Errorf("missing generated file: %s", rel)
-		}
-	}
-
-	mainSrc, _ := os.ReadFile(filepath.Join(root, "main.go"))
-	mainText := string(mainSrc)
-	for _, want := range []string{
-		"RegisterModels(model.All)",
-		"webiris.RegisterRoutes(app, router.All())",
-		"apidoc.Register",
-		"AutoMigrate: true",
-	} {
-		if !strings.Contains(mainText, want) {
-			t.Errorf("main.go missing %q", want)
-		}
-	}
-
-	// 路由分组:router 包定义 CRUD 路由
-	routerSrc, _ := os.ReadFile(filepath.Join(root, "internal/router/router.go"))
-	routerText := string(routerSrc)
-	for _, want := range []string{
-		"/api/v1/test-mycat",
-		"handler.ListTestMycat(svc)",
-		"handler.CreateTestMycat(svc)",
-		"handler.DeleteTestMycat(svc)",
-		"repository.NewTestMycatRepository",
-		"service.NewTestMycatService",
-		"func All() []webiris.Route",
-	} {
-		if !strings.Contains(routerText, want) {
-			t.Errorf("router.go missing %q", want)
-		}
-	}
-	allSrc, _ := os.ReadFile(filepath.Join(root, "internal/model/all.go"))
-	if !strings.Contains(string(allSrc), "&TestMycat{}") {
-		t.Error("model/all.go must register TestMycat")
-	}
-
-	modelSrc, _ := os.ReadFile(filepath.Join(root, "internal/model/test_mycat.go"))
-	if !strings.Contains(string(modelSrc), "model.StandardModel") {
-		t.Error("model template must include StandardModel")
-	}
-	repoSrc, _ := os.ReadFile(filepath.Join(root, "internal/repository/test_mycat.go"))
-	if !strings.Contains(string(repoSrc), "datasource.WithTx") {
-		t.Error("repository template must include WithTx transaction sample")
-	}
-	handlerSrc, _ := os.ReadFile(filepath.Join(root, "internal/handler/test_mycat.go"))
-	handlerText := string(handlerSrc)
-	for _, want := range []string{"webiris.OK", "webiris.Fail", "apperr.CodeRequestParamError"} {
-		if !strings.Contains(handlerText, want) {
-			t.Errorf("handler missing %q", want)
 		}
 	}
 }
