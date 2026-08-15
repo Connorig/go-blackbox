@@ -24,3 +24,6 @@ Dockerfile
 /zap
 latest_log
 /vendor/**
+*.db
+*.db-journal
+*.log
