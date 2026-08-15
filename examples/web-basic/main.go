@@ -1,4 +1,4 @@
-// examples/web-basic 展示 go-blackbox v1.4 的核心能力：
+﻿// examples/web-basic 展示 go-blackbox v1.4 的核心能力：
 // Web + 中间件体系 + JWT 认证(scope) + 健康探针 + 统一响应 +
 // Admin 管理服务(pprof/metrics/日志级别) + SQLite 数据库 + 版本化迁移 + 优雅关闭。
 //
@@ -38,22 +38,22 @@ func main() {
 			AutoMigrate: false,
 		})
 
-		// 3. 版本化迁移
-		dbInstance, err := datasource.Get()
-		if err != nil {
-			return fmt.Errorf("get default database: %w", err)
-		}
-		migrator := datasource.NewMigrator(dbInstance,
-			datasource.Migration{
-				Name: "20260815_create_users",
-				Up: func(db *gorm.DB) error {
-					return db.AutoMigrate(&User{})
+		// 3. 版本化迁移(数据库初始化后、Web 启动前执行)
+		builder.BeforeSetup(func(ctx context.Context) error {
+			dbInstance, err := datasource.Get()
+			if err != nil {
+				return fmt.Errorf("get default database: %w", err)
+			}
+			migrator := datasource.NewMigrator(dbInstance,
+				datasource.Migration{
+					Name: "20260815_create_users",
+					Up: func(db *gorm.DB) error {
+						return db.AutoMigrate(&User{})
+					},
 				},
-			},
-		)
-		if err := migrator.Migrate(ctx); err != nil {
-			return fmt.Errorf("run migrations: %w", err)
-		}
+			)
+			return migrator.Migrate(ctx)
+		})
 
 		// 4. JWT 密钥(生产环境从配置/密钥管理系统注入)
 		if err := apptoken.SetSecretKey("0123456789abcdef0123456789abcdef"); err != nil {

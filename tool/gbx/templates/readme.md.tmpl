@@ -1,0 +1,48 @@
+﻿# {{.ProjectName}}
+
+由 go-blackbox 脚手架生成的企业级 Go Web 应用骨架。
+
+## 快速开始
+
+```bash
+go mod tidy
+go run .
+```
+
+| 入口 | 地址 |
+|---|---|
+| 业务服务 | http://localhost:{{.Port}} |
+| 健康检查 | http://localhost:{{.Port}}/health/live(存活)/ /health/ready(就绪) |
+| 监控页面 | http://localhost:{{.Port}}/monitor |
+| Admin 服务 | http://localhost:{{.AdminPort}} |
+| 登录接口 | POST /api/v1/login(返回 JWT,携带 scope + 组织身份) |
+
+## 已内置能力
+
+- **安全基线中间件**:限流(100 QPS)/请求体上限 1MB/请求超时 10s/SQL 注入拦截
+- **JWT 认证**:登录签发 token(scope + orgID/deptID),`/api/v1/me` 演示认证与数据权限读取
+- **统一响应与错误码**:`{"code":"00000","message":"ok","data":...}`(阿里手册 A/B/C 错误码)
+- **数据库**:SQLite 演示实例 + 版本化迁移 + StandardModel(阿里建表规范)
+- **数据权限**:登录 token 携带组织身份,示例 handler 演示 `Scopes(scope.Condition())` 隔离
+- **监控**:服务器资源监控页(内存/CPU/磁盘/负载,5s 刷新)
+- **Admin**:pprof + Prometheus metrics + 运行时日志级别切换
+- **优雅关闭**:信号处理 + 存量请求排空
+
+## 目录结构(泰山版分层)
+
+```
+{{.ProjectName}}/
+├── main.go                 # 应用装配(中间件/路由/组件)
+├── internal/
+│   ├── model/              # 业务模型(StandardModel)
+│   └── handler/            # 业务处理(统一响应 + 错误码)
+├── go.mod
+└── README.md
+```
+
+## 修改指南
+
+- 端口:`main.go` 中 `EnableWeb(appbox.TimeFormat, ":{{.Port}}", ...)` 与 `EnableAdmin(":{{.AdminPort}}")`
+- JWT 密钥:生产环境替换 `apptoken.SetSecretKey` 为密钥管理注入
+- 数据库:`datasource.DriverSQLite` 切换为 PostgreSQL(参考 docs/DATABASE_STANDARDS.md)
+- 新业务表:在 `internal/model` 定义结构(嵌入 `model.StandardModel`),注册进迁移列表

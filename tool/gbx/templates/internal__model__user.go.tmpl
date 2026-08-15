@@ -1,0 +1,25 @@
+// Package model 业务模型层(泰山版规范:阿里建表字段 + 命名规范)。
+package model
+
+import (
+	"github.com/Connorig/go-blackbox/framework/database/model"
+)
+
+// User 用户表示例:
+//   - StandardModel:自增主键 + gmt_create/gmt_modified/is_deleted 自动维护
+//   - OrgFields:组织/部门字段(数据权限隔离基础)
+//   - 需要雪花 ID 时嵌入 model.SnowflakeModel;需要 UUID 时嵌入 model.StringIDModel
+type User struct {
+	model.StandardModel
+	model.OrgFields
+
+	Username string `gorm:"column:username;size:64;uniqueIndex:uk_username"` // 用户名(唯一)
+	Email    string `gorm:"column:email;size:128"`                            // 邮箱
+	Password string `gorm:"column:password;size:128"`                         // 密码(建议 bcrypt 存储)
+	Status   int    `gorm:"column:status;default:1"`                          // 状态:1 启用 / 0 禁用
+}
+
+// TableName 表名(默认 user 复数 users,显式指定保持稳定)。
+func (User) TableName() string {
+	return "user"
+}

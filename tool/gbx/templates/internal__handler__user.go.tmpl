@@ -1,0 +1,61 @@
+// Package handler 业务处理层:统一响应 + 手册错误码 + 数据权限。
+package handler
+
+import (
+	appbox "github.com/Connorig/go-blackbox"
+	"github.com/Connorig/go-blackbox/component/auth/token"
+	apperr "github.com/Connorig/go-blackbox/component/error"
+	"github.com/Connorig/go-blackbox/framework/web"
+	"{{.ModulePath}}/internal/model"
+	"github.com/kataras/iris/v12"
+)
+
+// Login 登录:校验通过后签发 token(scope + 组织身份)。
+// 演示用固定账号,生产环境对接用户表 + 密码校验(bcrypt)。
+func Login(ctx iris.Context) {
+	var request struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := ctx.ReadJSON(&request); err != nil {
+		webiris.Fail(ctx, 400, apperr.CodeJSONParseFailed, "invalid json body")
+		return
+	}
+	if request.Username == "" || request.Password == "" {
+		webiris.Fail(ctx, 400, apperr.CodeRequiredParamEmpty, "username and password are required")
+		return
+	}
+	// TODO: 校验用户 + 密码;从用户表读取 orgID/deptID
+	access, refresh, err := apptoken.GenTokenFull(1, request.Username, "user:read,user:write", 101, 10101)
+	if err != nil {
+		webiris.Fail(ctx, 500, apperr.CodeSystemError, "generate token failed")
+		return
+	}
+	webiris.OK(ctx, map[string]string{"access_token": access, "refresh_token": refresh})
+}
+
+// Me 当前用户信息(认证中间件注入的身份 + 数据权限范围)。
+func Me(ctx iris.Context) {
+	webiris.OK(ctx, map[string]interface{}{
+		"id":    webiris.UserID(ctx),
+		"email": webiris.UserEmail(ctx),
+		"scope": webiris.DataScope(ctx), // OrgID/DeptID,用于数据隔离
+	})
+}
+
+// ListUsers 用户列表(数据权限:只返回本组织/部门数据)。
+// 数据库实例在请求时从容器获取(启动期数据库初始化完成后注册)。
+func ListUsers(ctx iris.Context) {
+	db := appbox.GormDb()
+	if db == nil {
+		webiris.Fail(ctx, 500, apperr.CodeSystemError, "database not ready")
+		return
+	}
+	scope := webiris.DataScope(ctx)
+	var users []model.User
+	if err := db.WithContext(ctx.Request().Context()).Scopes(scope.Condition()).Find(&users).Error; err != nil {
+		webiris.RespondError(ctx, err)
+		return
+	}
+	webiris.OK(ctx, users)
+}
