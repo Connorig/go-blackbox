@@ -13,6 +13,7 @@ import (
 
 	appbox "github.com/Connorig/go-blackbox"
 	"github.com/Connorig/go-blackbox/component/auth/token"
+	apperr "github.com/Connorig/go-blackbox/component/error"
 	"github.com/Connorig/go-blackbox/framework/database"
 	"github.com/Connorig/go-blackbox/framework/web"
 	"github.com/kataras/iris/v12"
@@ -71,7 +72,7 @@ func main() {
 			app.Post("/api/v1/login", func(ctx iris.Context) {
 				access, refresh, err := apptoken.GenTokenWithScope(42, "demo@example.com", "user:read")
 				if err != nil {
-					webiris.Fail(ctx, 500, 500, "generate token failed")
+					webiris.Fail(ctx, 500, apperr.CodeSystemError, "generate token failed")
 					return
 				}
 				webiris.OK(ctx, map[string]string{"access_token": access, "refresh_token": refresh})

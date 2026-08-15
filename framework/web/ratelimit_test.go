@@ -19,7 +19,7 @@ func TestLimitGlobalRejectsOverBurst(t *testing.T) {
 	e.GET("/limited").Expect().Status(200).Body().IsEqual("ok")
 	e.GET("/limited").Expect().Status(200)
 	e.GET("/limited").Expect().Status(429).
-		JSON().Object().ValueEqual("code", 429).ValueEqual("message", "too many requests")
+		JSON().Object().ValueEqual("code", "B0210").ValueEqual("message", "too many requests")
 }
 
 // TestLimitPerKeyIsIndependent 验证按维度限流时不同 key 互不影响。

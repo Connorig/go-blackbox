@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Connorig/go-blackbox/framework/log"
+	apperr "github.com/Connorig/go-blackbox/component/error"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/core/host"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -160,11 +161,11 @@ func (a *Admin) registerBuiltinRoutes() {
 				Level string `json:"level"`
 			}
 			if err := ctx.ReadJSON(&request); err != nil {
-				Fail(ctx, http.StatusBadRequest, http.StatusBadRequest, "invalid body, expected {\"level\":\"debug\"}")
+				Fail(ctx, http.StatusBadRequest, apperr.CodeJSONParseFailed, "invalid body, expected {\"level\":\"debug\"}")
 				return
 			}
 			if err := zaplog.SetLevel(request.Level); err != nil {
-				Fail(ctx, http.StatusBadRequest, http.StatusBadRequest, err.Error())
+				Fail(ctx, http.StatusBadRequest, apperr.CodeParamFormatMismatch, err.Error())
 				return
 			}
 			OK(ctx, map[string]string{"level": request.Level})

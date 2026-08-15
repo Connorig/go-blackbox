@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/Connorig/go-blackbox/component/auth/token"
+	apperr "github.com/Connorig/go-blackbox/component/error"
 	"github.com/kataras/iris/v12"
 )
 
@@ -40,7 +41,7 @@ func Auth(config ...AuthConfig) iris.Handler {
 		const bearerPrefix = "Bearer "
 		header := ctx.GetHeader("Authorization")
 		if !strings.HasPrefix(header, bearerPrefix) {
-			Fail(ctx, iris.StatusUnauthorized, iris.StatusUnauthorized, "missing or malformed authorization header")
+			Fail(ctx, iris.StatusUnauthorized, apperr.CodeAccessUnauthorized, "missing or malformed authorization header")
 			ctx.StopExecution()
 			return
 		}
@@ -48,13 +49,13 @@ func Auth(config ...AuthConfig) iris.Handler {
 		token := strings.TrimPrefix(header, bearerPrefix)
 		claim, err := apptoken.VerifyToken(token)
 		if err != nil {
-			Fail(ctx, iris.StatusUnauthorized, iris.StatusUnauthorized, "invalid or expired token")
+			Fail(ctx, iris.StatusUnauthorized, apperr.CodeUserLoginExpired, "invalid or expired token")
 			ctx.StopExecution()
 			return
 		}
 
 		if authConfig.Scope != "" && !hasScope(claim.Scope, authConfig.Scope) {
-			Fail(ctx, iris.StatusForbidden, iris.StatusForbidden, "insufficient scope")
+			Fail(ctx, iris.StatusForbidden, apperr.CodeAPINoPermission, "insufficient scope")
 			ctx.StopExecution()
 			return
 		}

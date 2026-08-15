@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	apperr "github.com/Connorig/go-blackbox/component/error"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
 )
@@ -101,18 +102,18 @@ func TestUnifiedResponse(t *testing.T) {
 		OK(ctx, map[string]string{"key": "value"})
 	})
 	app.Get("/fail", func(ctx iris.Context) {
-		Fail(ctx, 400, 1001, "bad request")
+		Fail(ctx, 400, apperr.CodeRequestParamError, "bad request")
 	})
 
 	e := httptest.New(t, app)
 	e.GET("/ok").Expect().Status(200).
 		JSON().Object().
-		ValueEqual("code", 0).
+		ValueEqual("code", "00000").
 		ValueEqual("message", "ok").
 		Value("data").Object().ValueEqual("key", "value")
 
 	e.GET("/fail").Expect().Status(400).
 		JSON().Object().
-		ValueEqual("code", 1001).
+		ValueEqual("code", "A0400").
 		ValueEqual("message", "bad request")
 }

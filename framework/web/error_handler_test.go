@@ -2,7 +2,6 @@ package webiris
 
 import (
 	"errors"
-	"net/http"
 	"testing"
 
 	"github.com/Connorig/go-blackbox/component/error"
@@ -20,23 +19,23 @@ func TestErrorHandlerRecoversPanic(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/panic").Expect().Status(500).
-		JSON().Object().ValueEqual("code", 500).ValueEqual("message", "internal server error")
+		JSON().Object().ValueEqual("code", "B0001").ValueEqual("message", "internal server error")
 }
 
 // TestRespondErrorWithAppError 验证业务错误按自身状态码输出。
 func TestRespondErrorWithAppError(t *testing.T) {
 	app := iris.New()
 	app.Get("/not-found", func(ctx iris.Context) {
-		RespondError(ctx, apperr.New(http.StatusNotFound, 40401, "order not found"))
+		RespondError(ctx, apperr.New(apperr.CodeTableNotExists, "order not found"))
 	})
 	app.Get("/ok", func(ctx iris.Context) {
 		RespondError(ctx, nil)
 	})
 
 	e := httptest.New(t, app)
-	e.GET("/not-found").Expect().Status(404).
-		JSON().Object().ValueEqual("code", 40401).ValueEqual("message", "order not found")
-	e.GET("/ok").Expect().Status(200).JSON().Object().ValueEqual("code", 0)
+	e.GET("/not-found").Expect().Status(500).
+		JSON().Object().ValueEqual("code", "C0311").ValueEqual("message", "order not found")
+	e.GET("/ok").Expect().Status(200).JSON().Object().ValueEqual("code", "00000")
 }
 
 // TestRespondErrorWithUnknownError 验证未知错误转换为 500。
@@ -48,7 +47,7 @@ func TestRespondErrorWithUnknownError(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/boom").Expect().Status(500).
-		JSON().Object().ValueEqual("code", 500)
+		JSON().Object().ValueEqual("code", "B0001")
 }
 
 // TestRegisterPprof 验证 pprof 诊断端点可用。

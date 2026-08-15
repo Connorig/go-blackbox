@@ -3,6 +3,7 @@ package webiris
 import (
 	"sync"
 
+	apperr "github.com/Connorig/go-blackbox/component/error"
 	"github.com/kataras/iris/v12"
 	"golang.org/x/time/rate"
 )
@@ -45,7 +46,7 @@ func Limit(ratePerSecond float64, burst int, keyFunc func(ctx iris.Context) stri
 		}
 
 		if !limiter.Allow() {
-			Fail(ctx, iris.StatusTooManyRequests, iris.StatusTooManyRequests, "too many requests")
+			Fail(ctx, iris.StatusTooManyRequests, apperr.CodeSystemRateLimited, "too many requests")
 			ctx.StopExecution()
 			return
 		}

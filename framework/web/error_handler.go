@@ -19,7 +19,7 @@ func ErrorHandler(ctx iris.Context) {
 				"method", ctx.Method(), "path", ctx.Path(),
 				"panic", recovered, "request_id", ctx.Values().GetString("request_id"))
 			if !ctx.IsStopped() {
-				Fail(ctx, http.StatusInternalServerError, int(apperr.CodeInternal), "internal server error")
+				Fail(ctx, http.StatusInternalServerError, apperr.CodeSystemError, "internal server error")
 			}
 		}
 	}()
@@ -37,10 +37,10 @@ func RespondError(ctx iris.Context, err error) {
 	if appError.Cause != nil {
 		zaplog.WithComponent("web").Errorw("request failed",
 			"method", ctx.Method(), "path", ctx.Path(),
-			"code", int(appError.Code), "error", appError.Cause,
+			"code", appError.Code, "error", appError.Cause,
 			"request_id", ctx.Values().GetString("request_id"))
 	}
-	Fail(ctx, appError.HTTPStatus, int(appError.Code), appError.Message)
+	Fail(ctx, appError.HTTPStatus, appError.Code, appError.Message)
 }
 
 // RegisterPprof 注册 /debug/pprof 诊断端点(heap、goroutine、profile、trace 等)。

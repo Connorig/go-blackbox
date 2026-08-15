@@ -24,7 +24,7 @@ func TestAuthRejectsMissingHeader(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/protected").Expect().Status(401).
-		JSON().Object().ValueEqual("code", 401)
+		JSON().Object().ValueEqual("code", "A0301")
 }
 
 // TestAuthRejectsInvalidToken 验证无效 token 返回 401。
