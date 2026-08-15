@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"embed"
@@ -38,12 +38,21 @@ func styleTemplates(style string) []string {
 			continue
 		}
 		name := entry.Name()
-		if strings.HasPrefix(name, prefix) ||
-			(!strings.HasPrefix(name, "code__") && !strings.HasPrefix(name, "config__")) {
+		if strings.HasPrefix(name, prefix) || !hasStylePrefix(name) {
 			result = append(result, name)
 		}
 	}
 	return result
+}
+
+// hasStylePrefix 判断模板是否属于某风格专属(code__/config__/gen__)。
+func hasStylePrefix(name string) bool {
+	for _, prefix := range []string{"code__", "config__", "gen__"} {
+		if strings.HasPrefix(name, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 // run 执行生成。
@@ -58,8 +67,8 @@ func run(opts options) error {
 	if style == "" {
 		style = "code"
 	}
-	if style != "code" && style != "config" {
-		return fmt.Errorf("invalid style %q: must be 'code' or 'config'", style)
+	if style != "code" && style != "config" && style != "gen" {
+		return fmt.Errorf("invalid style %q: must be 'code', 'config' or 'gen'", style)
 	}
 	module := opts.module
 	if module == "" {
@@ -85,7 +94,7 @@ func run(opts options) error {
 	for _, sourceName := range templates {
 		// 去掉 <style>__ 前缀,其余 __ 替换为路径分隔符
 		destRel := sourceName
-		for _, prefix := range []string{"code__", "config__"} {
+		for _, prefix := range []string{"code__", "config__", "gen__"} {
 			if strings.HasPrefix(destRel, prefix) {
 				destRel = strings.TrimPrefix(destRel, prefix)
 				break
@@ -115,6 +124,9 @@ func run(opts options) error {
 func styleDescription(style string) string {
 	if style == "config" {
 		return "配置驱动:config.toml [modules] 开关模块"
+	}
+	if style == "gen" {
+		return "CRUD 全栈:测试表 test_mycat 完整增删改查(DDD 分层)"
 	}
 	return "代码式显式装配:builder.Enable* 链"
 }

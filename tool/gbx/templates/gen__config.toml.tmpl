@@ -1,0 +1,22 @@
+# {{.ProjectName}} 项目配置(gen 风格:可运行 CRUD 全栈)
+
+[web]
+port = ":{{.Port}}"
+level = "info"
+
+[db]
+driver = "sqlite"
+dsn = "./{{.ProjectName}}.db"
+auto_migrate = false
+max_idle_conns = 10
+max_open_conns = 20
+
+[jwt]
+secret = "0123456789abcdef0123456789abcdef"
+
+[log]
+out_dir = "."
+level = "info"
+
+[business]
+demo_field = "hello"

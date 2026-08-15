@@ -1,0 +1,28 @@
+// Package model 数据模型层:test_mycat 测试表。
+// 基础字段(主键/创建时间/修改时间/逻辑删除)由 StandardModel 提供(阿里建表规范),
+// 业务字段在此追加。
+package model
+
+import (
+	"github.com/Connorig/go-blackbox/framework/database/model"
+)
+
+// TestMycat 测试表模型(演示 CRUD 与基础字段)。
+// 表结构自动生成:id / gmt_create / gmt_modified / is_deleted + 下方业务字段。
+type TestMycat struct {
+	model.StandardModel // 基础字段:ID(int64 自增)/ GmtCreate / GmtModified / IsDeleted
+	// model.OrgFields  // 🔓 可选:组织/部门字段(数据权限隔离),打开注释并迁移即可
+
+	Name   string `gorm:"column:name;size:64;index"`             // 名称(演示查询过滤)
+	Status int    `gorm:"column:status;default:1"`               // 状态:1 启用 / 0 禁用
+	Remark string `gorm:"column:remark;size:255"`                // 备注
+
+	// 🔓 可选:切换 ID 策略
+	// 雪花 ID:model.StandardModel 换成 model.SnowflakeModel(自动生成雪花主键)
+	// UUID:  换成 model.StringIDModel(自动生成 UUID 字符串主键)
+}
+
+// TableName 表名(显式指定,保持稳定)。
+func (TestMycat) TableName() string {
+	return "test_mycat"
+}

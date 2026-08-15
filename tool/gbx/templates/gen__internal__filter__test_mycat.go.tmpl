@@ -1,0 +1,35 @@
+// Package filter 查询过滤层(DDD 的查询条件对象)。
+package filter
+
+// TestMycatFilter test_mycat 查询过滤条件。
+type TestMycatFilter struct {
+	// Keyword 名称模糊匹配(可选)。
+	Keyword string
+	// Status 状态精确匹配;非 0 时生效。
+	Status int
+	// OrgID/DeptID 数据权限(由 service 从认证上下文注入,业务无需手动设置)。
+	OrgID  int64
+	DeptID int64
+	// Page/PageSize 分页(Page 从 1 开始;PageSize 默认 20,上限 100)。
+	Page     int
+	PageSize int
+}
+
+// Offset 计算分页偏移。
+func (f *TestMycatFilter) Offset() int {
+	if f.Page <= 1 {
+		return 0
+	}
+	return (f.Page - 1) * f.Limit()
+}
+
+// Limit 计算分页大小。
+func (f *TestMycatFilter) Limit() int {
+	if f.PageSize <= 0 {
+		return 20
+	}
+	if f.PageSize > 100 {
+		return 100
+	}
+	return f.PageSize
+}

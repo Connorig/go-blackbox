@@ -1,0 +1,128 @@
+// Package repository 数据访问层(DDD):GORM 操作封装 + 事务示范。
+package repository
+
+import (
+	"context"
+
+	apperr "github.com/Connorig/go-blackbox/component/error"
+	"github.com/Connorig/go-blackbox/framework/database"
+	"gorm.io/gorm"
+
+	"{{.ModulePath}}/internal/filter"
+	"{{.ModulePath}}/internal/model"
+)
+
+// TestMycatRepository 测试表数据访问接口(依赖抽象,便于测试替换)。
+type TestMycatRepository interface {
+	// Create 创建记录(事务内执行)。
+	Create(ctx context.Context, record *model.TestMycat) error
+	// Update 更新记录(事务内执行)。
+	Update(ctx context.Context, record *model.TestMycat) error
+	// Delete 逻辑删除(软删除,is_deleted=1)。
+	Delete(ctx context.Context, id int64) error
+	// GetByID 按主键查询(不存在返回 nil,nil)。
+	GetByID(ctx context.Context, id int64) (*model.TestMycat, error)
+	// List 按过滤条件分页查询。
+	List(ctx context.Context, f filter.TestMycatFilter) ([]model.TestMycat, int64, error)
+}
+
+// testMycatRepository 实现。
+type testMycatRepository struct{}
+
+// NewTestMycatRepository 创建仓储。
+func NewTestMycatRepository() TestMycatRepository {
+	return &testMycatRepository{}
+}
+
+// db 获取数据库实例(请求时从容器取,启动期数据库已注册)。
+func (r *testMycatRepository) db(ctx context.Context) (*gorm.DB, error) {
+	instance, err := datasource.Get()
+	if err != nil {
+		return nil, err
+	}
+	return instance.DB().WithContext(ctx), nil
+}
+
+// Create 创建记录。
+// 事务示范:写操作放入 WithTx,自动 Begin/Commit/Rollback(panic 也回滚),
+// 后续加多个写操作时直接在同一 tx 内执行即可。
+func (r *testMycatRepository) Create(ctx context.Context, record *model.TestMycat) error {
+	return datasource.WithTx(ctx, func(tx *gorm.DB) error {
+		// 如需在事务里再查/再写,都用 tx:
+		// if err := tx.Where("name = ?", record.Name).First(&exist).Error; ...
+		return tx.Create(record).Error
+	})
+}
+
+// Update 更新记录。
+func (r *testMycatRepository) Update(ctx context.Context, record *model.TestMycat) error {
+	return datasource.WithTx(ctx, func(tx *gorm.DB) error {
+		return tx.Updates(record).Error
+	})
+}
+
+// Delete 逻辑删除(StandardModel 的 IsDeleted 与 GORM 软删除配合)。
+func (r *testMycatRepository) Delete(ctx context.Context, id int64) error {
+	db, err := r.db(ctx)
+	if err != nil {
+		return err
+	}
+	// 真实删除用 Unscoped().Delete;默认走逻辑删除
+	result := db.Delete(&model.TestMycat{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return apperr.New(apperr.CodeRequestParamError, "record not found")
+	}
+	return nil
+}
+
+// GetByID 按主键查询。
+func (r *testMycatRepository) GetByID(ctx context.Context, id int64) (*model.TestMycat, error) {
+	db, err := r.db(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var record model.TestMycat
+	if err := db.First(&record, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &record, nil
+}
+
+// List 分页 + 条件查询。
+func (r *testMycatRepository) List(ctx context.Context, f filter.TestMycatFilter) ([]model.TestMycat, int64, error) {
+	db, err := r.db(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	query := db.Model(&model.TestMycat{})
+	if f.Keyword != "" {
+		query = query.Where("name LIKE ?", "%"+f.Keyword+"%")
+	}
+	if f.Status != 0 {
+		query = query.Where("status = ?", f.Status)
+	}
+	// 🔓 数据权限(与 model.OrgFields 配套,启用时打开):
+	// 按组织/部门隔离查询
+	// if f.OrgID != 0 {
+	// 	query = query.Where("org_id = ?", f.OrgID)
+	// }
+	// if f.DeptID != 0 {
+	// 	query = query.Where("dept_id = ?", f.DeptID)
+	// }
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var records []model.TestMycat
+	if err := query.Order("id DESC").Limit(f.Limit()).Offset(f.Offset()).Find(&records).Error; err != nil {
+		return nil, 0, err
+	}
+	return records, total, nil
+}

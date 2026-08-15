@@ -1,0 +1,132 @@
+// Package handler API 层(DDD):参数绑定 + 统一响应 + 手册错误码。
+// 业务逻辑一律下沉到 service,handler 保持薄。
+package handler
+
+import (
+	apperr "github.com/Connorig/go-blackbox/component/error"
+	"github.com/Connorig/go-blackbox/framework/web"
+	"github.com/kataras/iris/v12"
+
+	"{{.ModulePath}}/internal/filter"
+	"{{.ModulePath}}/internal/model"
+	"{{.ModulePath}}/internal/service"
+)
+
+// listRequest 列表查询参数。
+type listRequest struct {
+	Keyword  string `url:"keyword"`
+	Status   int    `url:"status"`
+	Page     int    `url:"page"`
+	PageSize int    `url:"page_size"`
+}
+
+// ListTestMycat GET /api/v1/test-mycat 分页列表。
+// 返回:{code, message, data:{list, total, page, page_size}}
+func ListTestMycat(svc service.TestMycatService) iris.Handler {
+	return func(ctx iris.Context) {
+		var request listRequest
+		if err := ctx.ReadQuery(&request); err != nil {
+			webiris.Fail(ctx, 400, apperr.CodeRequestParamError, "invalid query params")
+			return
+		}
+		f := filter.TestMycatFilter{
+			Keyword:  request.Keyword,
+			Status:   request.Status,
+			Page:     request.Page,
+			PageSize: request.PageSize,
+		}
+		// 🔓 数据权限(与 model.OrgFields 配套,启用时打开):
+		// 从认证上下文注入组织范围,查询自动按组织隔离
+		// scope := webiris.DataScope(ctx)
+		// f.OrgID = scope.OrgID
+		// f.DeptID = scope.DeptID
+
+		list, total, err := svc.List(ctx.Request().Context(), f)
+		if err != nil {
+			webiris.RespondError(ctx, err)
+			return
+		}
+		webiris.OK(ctx, map[string]interface{}{
+			"list":      list,
+			"total":     total,
+			"page":      f.Page,
+			"page_size": f.Limit(),
+		})
+	}
+}
+
+// GetTestMycat GET /api/v1/test-mycat/{id} 详情。
+func GetTestMycat(svc service.TestMycatService) iris.Handler {
+	return func(ctx iris.Context) {
+		id := ctx.Params().GetInt64Default("id", 0)
+		if id <= 0 {
+			webiris.Fail(ctx, 400, apperr.CodeRequestParamError, "invalid id")
+			return
+		}
+		record, err := svc.Get(ctx.Request().Context(), id)
+		if err != nil {
+			webiris.RespondError(ctx, err)
+			return
+		}
+		if record == nil {
+			webiris.Fail(ctx, 404, apperr.CodeRequestParamError, "record not found")
+			return
+		}
+		webiris.OK(ctx, record)
+	}
+}
+
+// CreateTestMycat POST /api/v1/test-mycat 创建。
+func CreateTestMycat(svc service.TestMycatService) iris.Handler {
+	return func(ctx iris.Context) {
+		var record model.TestMycat
+		if err := ctx.ReadJSON(&record); err != nil {
+			webiris.Fail(ctx, 400, apperr.CodeJSONParseFailed, "invalid json body")
+			return
+		}
+		created, err := svc.Create(ctx.Request().Context(), &record)
+		if err != nil {
+			webiris.RespondError(ctx, err)
+			return
+		}
+		webiris.OK(ctx, created)
+	}
+}
+
+// UpdateTestMycat PUT /api/v1/test-mycat/{id} 更新。
+func UpdateTestMycat(svc service.TestMycatService) iris.Handler {
+	return func(ctx iris.Context) {
+		id := ctx.Params().GetInt64Default("id", 0)
+		if id <= 0 {
+			webiris.Fail(ctx, 400, apperr.CodeRequestParamError, "invalid id")
+			return
+		}
+		var record model.TestMycat
+		if err := ctx.ReadJSON(&record); err != nil {
+			webiris.Fail(ctx, 400, apperr.CodeJSONParseFailed, "invalid json body")
+			return
+		}
+		record.ID = id
+		if err := svc.Update(ctx.Request().Context(), &record); err != nil {
+			webiris.RespondError(ctx, err)
+			return
+		}
+		webiris.OK(ctx, map[string]interface{}{"id": id, "updated": true})
+	}
+}
+
+// DeleteTestMycat DELETE /api/v1/test-mycat/{id} 删除(逻辑删除)。
+func DeleteTestMycat(svc service.TestMycatService) iris.Handler {
+	return func(ctx iris.Context) {
+		id := ctx.Params().GetInt64Default("id", 0)
+		if id <= 0 {
+			webiris.Fail(ctx, 400, apperr.CodeRequestParamError, "invalid id")
+			return
+		}
+		if err := svc.Delete(ctx.Request().Context(), id); err != nil {
+			webiris.RespondError(ctx, err)
+			return
+		}
+		webiris.OK(ctx, map[string]interface{}{"id": id, "deleted": true})
+	}
+}

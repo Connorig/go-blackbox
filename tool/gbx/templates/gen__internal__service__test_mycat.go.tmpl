@@ -1,0 +1,90 @@
+// Package service 业务层(DDD):接口 + 实现 + 切面示例。
+// 业务规则、校验、事务编排都在这一层;上层(handler)只做参数绑定与响应。
+package service
+
+import (
+	"context"
+	"errors"
+
+	"{{.ModulePath}}/internal/filter"
+	"{{.ModulePath}}/internal/model"
+	"{{.ModulePath}}/internal/repository"
+)
+
+// 业务错误(示例;生产建议用 apperr 手册码)。
+var (
+	errNameRequired = func() error { return errors.New("name is required") }
+	errIDRequired   = func() error { return errors.New("id is required") }
+	errNotFound     = func() error { return errors.New("record not found") }
+)
+
+// TestMycatService 业务接口(调用方只依赖接口,便于替换/测试)。
+type TestMycatService interface {
+	Create(ctx context.Context, record *model.TestMycat) (*model.TestMycat, error)
+	Update(ctx context.Context, record *model.TestMycat) error
+	Delete(ctx context.Context, id int64) error
+	Get(ctx context.Context, id int64) (*model.TestMycat, error)
+	List(ctx context.Context, f filter.TestMycatFilter) ([]model.TestMycat, int64, error)
+}
+
+// testMycatService 实现。
+type testMycatService struct {
+	repo repository.TestMycatRepository
+}
+
+// NewTestMycatService 创建业务服务。
+// 🔓 AOP 接入示例(打开后所有方法自动带日志/耗时切面):
+//
+//	return &testMycatService{repo: repo}, nil
+//
+// 更完整的方式是定义代理 + aop.Proxy(见 docs/README AOP 章节):
+//	proxy := &testMycatServiceProxy{inner: impl, aop: aop.NewProxy(impl, LogAspect{}, AuthAspect{})}
+func NewTestMycatService(repo repository.TestMycatRepository) TestMycatService {
+	return &testMycatService{repo: repo}
+}
+
+// Create 创建。
+func (s *testMycatService) Create(ctx context.Context, record *model.TestMycat) (*model.TestMycat, error) {
+	// 业务校验(示例)
+	if record.Name == "" {
+		return nil, errNameRequired()
+	}
+	if record.Status == 0 {
+		record.Status = 1
+	}
+	if err := s.repo.Create(ctx, record); err != nil {
+		return nil, err
+	}
+	return record, nil
+}
+
+// Update 更新。
+func (s *testMycatService) Update(ctx context.Context, record *model.TestMycat) error {
+	if record.ID == 0 {
+		return errIDRequired()
+	}
+	// 防越权:校验记录归属(数据权限)
+	exist, err := s.repo.GetByID(ctx, record.ID)
+	if err != nil {
+		return err
+	}
+	if exist == nil {
+		return errNotFound()
+	}
+	return s.repo.Update(ctx, record)
+}
+
+// Delete 删除。
+func (s *testMycatService) Delete(ctx context.Context, id int64) error {
+	return s.repo.Delete(ctx, id)
+}
+
+// Get 详情。
+func (s *testMycatService) Get(ctx context.Context, id int64) (*model.TestMycat, error) {
+	return s.repo.GetByID(ctx, id)
+}
+
+// List 列表(分页)。
+func (s *testMycatService) List(ctx context.Context, f filter.TestMycatFilter) ([]model.TestMycat, int64, error) {
+	return s.repo.List(ctx, f)
+}

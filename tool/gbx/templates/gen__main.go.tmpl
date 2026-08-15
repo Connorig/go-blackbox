@@ -1,0 +1,141 @@
+// {{.ProjectName}} 由 go-blackbox 脚手架生成(gen 风格:可运行 CRUD 全栈)。
+// 分层:model(模型)/ filter(过滤)/ repository(数据访问)/ service(业务)/ handler(API)。
+// 业务端口 :{{.Port}},Admin 端口 :{{.AdminPort}}。
+//
+// 已内置:
+//   - 测试表 test_mycat 的完整 CRUD(GET 列表/GET 详情/POST 创建/PUT 更新/DELETE 删除)
+//   - 安全基线(限流/请求体上限/超时/SQL 注入拦截)+ JWT 认证 + 数据权限 + 监控 + Admin
+//   - 版本化迁移(自动建表)+ 事务示范(WithTx)
+//
+// 高级功能(默认注释,按需打开):见下方标注的「🔓 可选」块。
+package main
+
+import (
+	"context"
+	"log"
+	"time"
+
+	appbox "github.com/Connorig/go-blackbox"
+	"github.com/Connorig/go-blackbox/component/auth/token"
+	"github.com/Connorig/go-blackbox/framework/database"
+	"github.com/Connorig/go-blackbox/framework/web"
+	"github.com/kataras/iris/v12"
+	"gorm.io/gorm"
+
+	"{{.ModulePath}}/internal/handler"
+	"{{.ModulePath}}/internal/model"
+	"{{.ModulePath}}/internal/repository"
+	"{{.ModulePath}}/internal/service"
+)
+
+func main() {
+	err := appbox.New().Start(func(ctx context.Context, builder *appbox.ApplicationBuild) error {
+		// 日志
+		builder.InitLog(".", "info")
+
+		// JWT 密钥(生产从配置/密钥管理注入)
+		if err := apptoken.SetSecretKey("0123456789abcdef0123456789abcdef"); err != nil {
+			return err
+		}
+
+		// 数据库(SQLite 演示;生产切 PostgreSQL)
+		builder.EnableDatabase(&datasource.Config{
+			Driver:      datasource.DriverSQLite,
+			DSN:         "./{{.ProjectName}}.db",
+			AutoMigrate: false,
+		})
+
+		// 版本化迁移:自动创建 test_mycat 表(数据库就绪后、Web 启动前)
+		builder.BeforeSetup(func(ctx context.Context) error {
+			dbInstance, err := datasource.Get()
+			if err != nil {
+				return err
+			}
+			migrator := datasource.NewMigrator(dbInstance,
+				datasource.Migration{
+					Name: "20260815_create_test_mycat",
+					Up: func(db *gorm.DB) error {
+						return db.AutoMigrate(&model.TestMycat{})
+					},
+					Down: func(db *gorm.DB) error {
+						return db.Migrator().DropTable(&model.TestMycat{})
+					},
+				},
+			)
+			return migrator.Migrate(ctx)
+		})
+
+		// 装配业务层(Repository → Service)
+		repo := repository.NewTestMycatRepository()
+		svc := service.NewTestMycatService(repo)
+
+		// Web 服务
+		builder.EnableWeb(appbox.TimeFormat, ":{{.Port}}", "info", func(app *iris.Application) {
+			// 安全基线
+			app.Use(webiris.ErrorHandler, webiris.RequestID, webiris.AccessLog, webiris.SecurityHeaders)
+			app.Use(webiris.Limit(100, 200, nil))
+			app.Use(webiris.BodyLimit(1 << 20))
+			app.Use(webiris.Timeout(10 * time.Second))
+			app.Use(webiris.SQLGuard())
+
+			// 健康探针
+			webiris.RegisterHealth(app, func() error {
+				return datasource.Health(ctx)
+			})
+
+			// 登录(签发带组织身份的 token)
+			app.Post("/api/v1/login", func(ctx iris.Context) {
+				access, refresh, err := apptoken.GenTokenFull(1, "dev@example.com", "user:read,user:write", 101, 10101)
+				if err != nil {
+					webiris.Fail(ctx, 500, "B0001", "generate token failed")
+					return
+				}
+				webiris.OK(ctx, map[string]string{"access_token": access, "refresh_token": refresh})
+			})
+
+			// 认证中间件(健康/登录/监控放行)
+			app.Use(webiris.Auth(webiris.AuthConfig{
+				Whitelist: []string{"/health", "/api/v1/login", "/monitor"},
+			}))
+
+			// ===== 测试表 test_mycat 的 CRUD 路由 =====
+			app.Get("/api/v1/test-mycat", handler.ListTestMycat(svc))
+			app.Get("/api/v1/test-mycat/{id:int64}", handler.GetTestMycat(svc))
+			app.Post("/api/v1/test-mycat", handler.CreateTestMycat(svc))
+			app.Put("/api/v1/test-mycat/{id:int64}", handler.UpdateTestMycat(svc))
+			app.Delete("/api/v1/test-mycat/{id:int64}", handler.DeleteTestMycat(svc))
+
+			// ===== 🔓 可选:资源监控页面 /monitor(数据接口已挂限流)=====
+			// 打开方法:取消下面 import 中 framework/monitor 的注释,再取消本块注释
+			// monitor.Register(app, "/monitor", monitor.Config{})
+
+			// ===== 🔓 可选:开放平台(第三方签名调用)=====
+			// 打开方法:取消 import framework/openapi 的注释,再取消本块注释
+			// api := openapi.New(app, openapi.Config{Registry: openapi.NewRegistryWith(
+			//     &openapi.App{AppKey: "partner-001", AppSecret: "***", Algorithm: openapi.AlgHMAC, Enabled: true},
+			// )})
+			// api.GET("/v1/test-mycat/{id:int64}", handler.GetTestMycat(svc)) // 开放接口示例
+		})
+
+		// Admin 服务(pprof/metrics/日志级别)
+		builder.EnableAdmin(":{{.AdminPort}}")
+
+		// ===== 🔓 可选:监控告警(水位超阈值推送 webhook)=====
+		// 打开方法:取消 import framework/alert + framework/monitor 的注释,再取消本块注释
+		// builder.AfterSetup(func(ctx context.Context) error {
+		//     watcher := alert.NewWatcher(alert.Config{
+		//         Interval:  15 * time.Second,
+		//         Collector: monitor.NewCollector(),
+		//         Notifiers: []alert.Notifier{alert.NewWeComWebhook("https://qyapi.weixin.qq.com/...")},
+		//         Rules:     []alert.Rule{alert.CPUUsage(90, 3), alert.MemoryUsage(85, 3), alert.DiskUsage(85, 3)},
+		//     })
+		//     go watcher.Start(ctx)
+		//     return nil
+		// })
+
+		return nil
+	})
+	if err != nil {
+		log.Fatalf("start application failed: %v", err)
+	}
+}

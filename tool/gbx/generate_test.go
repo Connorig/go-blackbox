@@ -136,3 +136,60 @@ func TestValidName(t *testing.T) {
 		}
 	}
 }
+
+
+// TestRunGenStyle gen 风格:CRUD 全栈(DDD 分层 + 测试表)。
+func TestRunGenStyle(t *testing.T) {
+	workDir := t.TempDir()
+	err := run(options{name: "crud-app", dir: workDir, module: "github.com/example/crud-app", style: "gen"})
+	if err != nil {
+		t.Fatalf("run failed: %v", err)
+	}
+	root := filepath.Join(workDir, "crud-app")
+
+	expected := []string{
+		"main.go",
+		"internal/model/test_mycat.go",
+		"internal/filter/test_mycat.go",
+		"internal/repository/test_mycat.go",
+		"internal/service/test_mycat.go",
+		"internal/handler/test_mycat.go",
+	}
+	for _, rel := range expected {
+		if _, err := os.Stat(filepath.Join(root, rel)); err != nil {
+			t.Errorf("missing generated file: %s", rel)
+		}
+	}
+
+	mainSrc, _ := os.ReadFile(filepath.Join(root, "main.go"))
+	mainText := string(mainSrc)
+	for _, want := range []string{
+		"/api/v1/test-mycat",
+		"ListTestMycat(svc)",
+		"CreateTestMycat(svc)",
+		"UpdateTestMycat(svc)",
+		"DeleteTestMycat(svc)",
+		"repository.NewTestMycatRepository",
+		"service.NewTestMycatService",
+	} {
+		if !strings.Contains(mainText, want) {
+			t.Errorf("main.go missing %q", want)
+		}
+	}
+
+	modelSrc, _ := os.ReadFile(filepath.Join(root, "internal/model/test_mycat.go"))
+	if !strings.Contains(string(modelSrc), "model.StandardModel") {
+		t.Error("model template must include StandardModel")
+	}
+	repoSrc, _ := os.ReadFile(filepath.Join(root, "internal/repository/test_mycat.go"))
+	if !strings.Contains(string(repoSrc), "datasource.WithTx") {
+		t.Error("repository template must include WithTx transaction sample")
+	}
+	handlerSrc, _ := os.ReadFile(filepath.Join(root, "internal/handler/test_mycat.go"))
+	handlerText := string(handlerSrc)
+	for _, want := range []string{"webiris.OK", "webiris.Fail", "apperr.CodeRequestParamError"} {
+		if !strings.Contains(handlerText, want) {
+			t.Errorf("handler missing %q", want)
+		}
+	}
+}
