@@ -97,7 +97,55 @@ tool/gbx      代码生成 CLI:gbx new 一键生成业务项目骨架
 | Redis | `builder.EnableCache(redisOptions)` | 分布式锁/防击穿 | — |
 | 邮件 | `mail.NewSender(cfg)` | TLS/附件 | — |
 
-## AOP(面向切面)
+## AOP(面向切面,接口驱动)
+
+**Web 层**:中间件即环绕切面——`AccessLog`(日志)、`Auth`(权限前置)、`Limit`(限流前置)、`ErrorHandler`(异常后置)。
+
+**Service 层**:定义接口 + 实现 Aspect 接口,通过 `aop.Proxy` 自动拦截(对标 Spring @Aspect):
+
+```go
+// ① 业务 Service 定义成接口(调用方只依赖接口)
+type UserService interface {
+    GetUser(ctx context.Context, id int64) (*User, error)
+}
+
+// ② 实现 Aspect 接口:JoinPoint 里方法名/目标对象/参数/返回值/错误/耗时全可获取
+type LogAspect struct{}
+func (LogAspect) Name() string { return "log" }
+func (LogAspect) Before(ctx context.Context, jp *aop.JoinPoint) error {
+    log.Printf("call %s params=%v", jp.Method, jp.Params)
+    return nil // 返回 error 即终止调用(权限/参数校验)
+}
+func (LogAspect) After(ctx context.Context, jp *aop.JoinPoint) {
+    log.Printf("call %s cost=%s err=%v", jp.Method, jp.Cost, jp.Err)
+}
+
+// ③ 代理实现:方法转发 + aop.Proxy 拦截(样板固定)
+type userServiceProxy struct {
+    inner *userServiceImpl
+    aop   *aop.Proxy
+}
+func (p *userServiceProxy) GetUser(ctx context.Context, id int64) (*User, error) {
+    var result *User
+    _, err := p.aop.Invoke(ctx, "GetUser", []interface{}{ctx, id}, func() ([]interface{}, error) {
+        var callErr error
+        result, callErr = p.inner.GetUser(ctx, id)
+        return []interface{}{result}, callErr
+    })
+    return result, err
+}
+
+// ④ 装配:注册切面链(洋葱模型:Before 顺序、After 逆序)
+service := &userServiceProxy{
+    inner: &userServiceImpl{},
+    aop:   aop.NewProxy(impl, paramGuardAspect{}, LogAspect{}, authAspect{}),
+}
+var api UserService = service // 业务只持有接口,切面透明
+```
+
+`JoinPoint` 上下文:Method / Target(目标对象)/ Proxy / Params(可修改)/ Results / Err / Start / Cost。
+切面可热插拔(`proxy.AddAspects(...)`);函数级装饰器 `aop.Before/After/Around` 同步保留。
+
 
 **Web 层**:中间件即环绕切面——`AccessLog`(日志)、`Auth`(权限前置)、`Limit`(限流前置)、`ErrorHandler`(异常后置)。
 
