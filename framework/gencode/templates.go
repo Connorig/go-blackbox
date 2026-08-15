@@ -378,12 +378,12 @@ func Delete{{.ModelName}}(svc service.{{.ModelName}}Service) iris.Handler {
 }
 `
 
-const tmplRoute = `// 路由注册(复制到 main.go 的 EnableWeb 回调中):
+const tmplRoute = `// 路由注册(复制到 main.go 的 EnableWeb 回调中;自动附带接口文档,访问 /docs 查看):
 // repo := repository.New{{.ModelName}}Repository()
 // svc := service.New{{.ModelName}}Service(repo)
-// app.Get("{{.RoutePath}}", handler.List{{.ModelName}}(svc))
-// app.Get("{{.RoutePath}}/{id:int64}", handler.Get{{.ModelName}}(svc))
-// app.Post("{{.RoutePath}}", handler.Create{{.ModelName}}(svc))
-// app.Put("{{.RoutePath}}/{id:int64}", handler.Update{{.ModelName}}(svc))
-// app.Delete("{{.RoutePath}}/{id:int64}", handler.Delete{{.ModelName}}(svc))
+// apidoc.CRUD(app, "{{.RoutePath}}", &model.{{.ModelName}}{},
+//     handler.List{{.ModelName}}(svc), handler.Get{{.ModelName}}(svc),
+//     handler.Create{{.ModelName}}(svc), handler.Update{{.ModelName}}(svc),
+//     handler.Delete{{.ModelName}}(svc))
+// apidoc.Register(app, "/docs", apidoc.Config{Title: "{{.ModelName}} 服务", Version: "v1.0.0"})
 `
