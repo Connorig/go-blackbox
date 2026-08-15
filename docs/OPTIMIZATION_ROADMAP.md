@@ -29,7 +29,7 @@
 | 7 | MongoDB | `server/mongodb` | Builder 开关、Ping、超时、关闭、类型化 API | 待开始 |
 | 8 | RabbitMQ | `server/rabbitmqretry/rabbitmq` | 客户端升级、确认语义、重连、重试、死信、关闭 | 待开始 |
 | 9 | Cron / Seed | `server/cronjobs`、`seed` | 重复启动、任务错误、panic、退出等待、测试 | 待开始 |
-| 10 | IOC / 依赖访问 | `simpleioc` | 并发安全、显式错误、可重置、减少全局状态 | 待开始 |
+| 10 | IOC / 依赖访问 | `gbxioc` | 并发安全、显式错误、可重置、减少全局状态 | 待开始 |
 | 11 | JWT / RSA | `apputils/apptoken`、`apputils/rsa` | 密钥注入、算法限制、错误返回、轮换 | 待开始 |
 | 12 | 邮件 | `server/email` | 端口/TLS 配置、Context、附件校验、连接错误 | 待开始 |
 | 13 | 静态资源 / UI | `static_`、`ui` | SPA fallback、缓存、目录定位、构建边界 | 待开始 |

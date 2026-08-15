@@ -216,7 +216,7 @@ return apperr.New(http.StatusBadRequest, CodeParamInvalid, "参数错误")
 
 | 手册 | Go 落地 |
 | --- | --- |
-| 单例必须线程安全 | ✅ container(simpleioc):RWMutex + per-bean 锁 |
+| 单例必须线程安全 | ✅ container(gbxioc):RWMutex + per-bean 锁 |
 | 线程/线程池指定有意义名称 | goroutine 无法命名;文档约定:并发组件用 errgroup/受控池,不用裸 goroutine 风暴 |
 | 资源必须通过池提供 | 连接池(数据库/Redis)✅;goroutine 池约定 |
 | 线程池禁止无界队列 | Go channel 有界 ✅(SSE/WS 队列 64) |

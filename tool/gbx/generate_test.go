@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// TestRunGeneratesProject 生成完整骨架并断言关键内容。
+// TestRunGeneratesProject 默认 code 风格:生成完整骨架并断言关键内容。
 func TestRunGeneratesProject(t *testing.T) {
 	workDir := t.TempDir()
 	err := run(options{name: "demo-app", dir: workDir, module: "github.com/example/demo-app"})
@@ -16,7 +16,7 @@ func TestRunGeneratesProject(t *testing.T) {
 	}
 	root := filepath.Join(workDir, "demo-app")
 
-	// 文件齐全(7 个)
+	// 文件齐全
 	expected := []string{
 		"main.go",
 		"config.toml",
@@ -33,17 +33,19 @@ func TestRunGeneratesProject(t *testing.T) {
 		}
 	}
 
-	// main.go:配置驱动装配
+	// code 风格:显式 Enable* 装配
 	mainSrc, err := os.ReadFile(filepath.Join(root, "main.go"))
 	if err != nil {
 		t.Fatalf("read main.go: %v", err)
 	}
 	mainText := string(mainSrc)
 	for _, want := range []string{
-		"AutoConfigure(&cfg.Modules",
+		"EnableWeb(appbox.TimeFormat, \":8080\"",
+		"EnableAdmin(\":6060\"",
+		"webiris.SQLGuard()",
+		"monitor.Register(app, \"/monitor\"",
 		"apptoken.SetSecretKey",
-		"apploader.Modules",
-		"LoadConfig(&cfg",
+		"datasource.DriverSQLite",
 	} {
 		if !strings.Contains(mainText, want) {
 			t.Errorf("main.go missing %q", want)
@@ -72,19 +74,40 @@ func TestRunGeneratesProject(t *testing.T) {
 	if !strings.Contains(string(handlerSrc), "apptoken.GenTokenFull") {
 		t.Error("handler template must include GenTokenFull")
 	}
+}
 
-	// config.toml:模块开关
+// TestRunConfigStyle config 风格:AutoConfigure + 模块开关配置。
+func TestRunConfigStyle(t *testing.T) {
+	workDir := t.TempDir()
+	err := run(options{name: "cfg-app", dir: workDir, module: "github.com/example/cfg-app", style: "config"})
+	if err != nil {
+		t.Fatalf("run failed: %v", err)
+	}
+	root := filepath.Join(workDir, "cfg-app")
+	mainSrc, _ := os.ReadFile(filepath.Join(root, "main.go"))
+	mainText := string(mainSrc)
+	for _, want := range []string{
+		"AutoConfigure(&cfg.Modules",
+		"apploader.Modules",
+		"LoadConfig(&cfg",
+	} {
+		if !strings.Contains(mainText, want) {
+			t.Errorf("config style main.go missing %q", want)
+		}
+	}
 	configSrc, _ := os.ReadFile(filepath.Join(root, "config.toml"))
 	configText := string(configSrc)
-	for _, want := range []string{
-		"[modules]",
-		"[modules.web]",
-		"enabled = true",
-		"[modules.database]",
-	} {
+	for _, want := range []string{"[modules]", "[modules.web]", "enabled = true"} {
 		if !strings.Contains(configText, want) {
-			t.Errorf("config.toml missing %q", want)
+			t.Errorf("config style config.toml missing %q", want)
 		}
+	}
+}
+
+// TestRunInvalidStyle 非法风格拒绝。
+func TestRunInvalidStyle(t *testing.T) {
+	if err := run(options{name: "demo", dir: t.TempDir(), style: "weird"}); err == nil {
+		t.Fatal("invalid style must fail")
 	}
 }
 

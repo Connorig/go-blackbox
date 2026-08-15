@@ -1,4 +1,4 @@
-package simpleioc
+package gbxioc
 
 import (
 	"context"
@@ -190,7 +190,7 @@ func (c *Container) Start(ctx context.Context) error {
 			continue
 		}
 		if err := initializer.OnInit(ctx); err != nil {
-			return fmt.Errorf("simpleioc: OnInit %T: %w", instance, err)
+			return fmt.Errorf("gbxioc: OnInit %T: %w", instance, err)
 		}
 		def.mu.Lock()
 		def.onInitDone = true
@@ -256,7 +256,7 @@ func (c *Container) Shutdown(ctx context.Context) error {
 			continue
 		}
 		if err := disposer.OnDestroy(ctx); err != nil {
-			shutdownErrors = append(shutdownErrors, fmt.Errorf("simpleioc: OnDestroy %T: %w", instance, err))
+			shutdownErrors = append(shutdownErrors, fmt.Errorf("gbxioc: OnDestroy %T: %w", instance, err))
 		}
 	}
 	return errors.Join(shutdownErrors...)

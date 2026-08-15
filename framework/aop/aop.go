@@ -29,7 +29,7 @@
 //	    return nil
 //	}).(func(context.Context, int64) (*User, error))
 //
-// 与 simpleioc 配合:将装饰后的 Service 结构注册进容器,
+// 与 gbxioc 配合:将装饰后的 Service 结构注册进容器,
 // 业务调用方无感知(接口签名不变)。
 package aop
 

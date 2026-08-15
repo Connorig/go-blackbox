@@ -17,7 +17,7 @@ import (
 	"github.com/Connorig/go-blackbox/framework/web"
 	"github.com/kataras/iris/v12"
 	log "github.com/Connorig/go-blackbox/framework/log"
-	"github.com/Connorig/go-blackbox/container"
+	"github.com/Connorig/go-blackbox/gbxioc"
 )
 
 const (
@@ -274,7 +274,7 @@ func (app *ApplicationBuild) InitCronJob() *ApplicationBuild {
 	app.IsRunningCronJob = true
 
 	// 定时任务客户端放入容器
-	if err := simpleioc.RegisterInstance(cronjobs.CronInstance()); err != nil {
+	if err := gbxioc.RegisterInstance(cronjobs.CronInstance()); err != nil {
 			// 閲嶅娉ㄥ唽淇濇寔鍏煎锛氱洿鎺ュ拷鐣r
 		}
 

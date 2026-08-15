@@ -13,7 +13,7 @@ import (
 	"github.com/Connorig/go-blackbox/framework/mongo"
 	"github.com/Connorig/go-blackbox/framework/lifecycle"
 	log "github.com/Connorig/go-blackbox/framework/log"
-	"github.com/Connorig/go-blackbox/container"
+	"github.com/Connorig/go-blackbox/gbxioc"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 )
@@ -86,7 +86,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 		return err
 	}
 
-	if err := builderFun(simpleioc.GetContext().Ctx, app.builder); err != nil {
+	if err := builderFun(gbxioc.GetContext().Ctx, app.builder); err != nil {
 		stdlog.Printf("execute application builder failed: %v", err)
 		return fmt.Errorf("execute application builder: %w", err)
 	}
@@ -109,9 +109,9 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 		var dbInstance *datasource.Instance
 		var err error
 		if app.builder.databaseConfig != nil {
-			dbInstance, err = datasource.New(simpleioc.GetContext().Ctx, app.builder.databaseConfig, app.builder.dbModels...)
+			dbInstance, err = datasource.New(gbxioc.GetContext().Ctx, app.builder.databaseConfig, app.builder.dbModels...)
 		} else {
-			if _, initErr := datasource.Initialize(simpleioc.GetContext().Ctx, app.builder.dbConfig, app.builder.dbModels...); initErr != nil {
+			if _, initErr := datasource.Initialize(gbxioc.GetContext().Ctx, app.builder.dbConfig, app.builder.dbModels...); initErr != nil {
 				err = initErr
 			} else {
 				dbInstance, err = datasource.Get()
@@ -127,11 +127,11 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			return err
 		}
 		// Register container entries: Instance (typed) + GORM (legacy GormDb()).
-		if regErr := simpleioc.RegisterInstance(dbInstance); regErr != nil {
+		if regErr := gbxioc.RegisterInstance(dbInstance); regErr != nil {
 			log.SugaredLogger.Errorf("register database instance failed: %v", regErr)
 			return fmt.Errorf("register database instance: %w", regErr)
 		}
-		if regErr := simpleioc.RegisterInstance(dbInstance.DB()); regErr != nil {
+		if regErr := gbxioc.RegisterInstance(dbInstance.DB()); regErr != nil {
 			log.SugaredLogger.Errorf("register gorm instance failed: %v", regErr)
 			return fmt.Errorf("register gorm instance: %w", regErr)
 		}
@@ -145,7 +145,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 	}
 
 	if app.builder.IsEnableCache {
-		cacheInstance, cacheErr := cache.Init(simpleioc.GetContext().Ctx, app.builder.redisOptions)
+		cacheInstance, cacheErr := cache.Init(gbxioc.GetContext().Ctx, app.builder.redisOptions)
 		if cacheErr != nil {
 			log.SugaredLogger.Errorf("initialize Redis cache failed: %v", cacheErr)
 			return fmt.Errorf("initialize Redis cache: %w", cacheErr)
@@ -155,7 +155,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			log.SugaredLogger.Error(err)
 			return err
 		}
-		if err := simpleioc.RegisterInstance(cacheInstance); err != nil {
+		if err := gbxioc.RegisterInstance(cacheInstance); err != nil {
 			log.SugaredLogger.Errorf("register Redis instance failed: %v", err)
 			return fmt.Errorf("register Redis instance: %w", err)
 		}
@@ -173,7 +173,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			log.SugaredLogger.Error(err)
 			return err
 		}
-		client, mongoErr := mongodb.GetClient(app.builder.mongoBbConfig, simpleioc.GetContext().Ctx)
+		client, mongoErr := mongodb.GetClient(app.builder.mongoBbConfig, gbxioc.GetContext().Ctx)
 		if mongoErr != nil {
 			log.SugaredLogger.Errorf("initialize MongoDB client failed: %v", mongoErr)
 			return fmt.Errorf("initialize MongoDB client: %w", mongoErr)
@@ -188,7 +188,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 		if pingTimeout <= 0 {
 			pingTimeout = 10 * time.Second
 		}
-		pingCtx, pingCancel := context.WithTimeout(simpleioc.GetContext().Ctx, pingTimeout)
+		pingCtx, pingCancel := context.WithTimeout(gbxioc.GetContext().Ctx, pingTimeout)
 		pingErr := client.Ping(pingCtx)
 		pingCancel()
 		if pingErr != nil {
@@ -196,7 +196,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			log.SugaredLogger.Errorf("ping MongoDB failed: %v", pingErr)
 			return fmt.Errorf("ping MongoDB: %w", pingErr)
 		}
-		if err := simpleioc.RegisterInstance(client); err != nil {
+		if err := gbxioc.RegisterInstance(client); err != nil {
 			log.SugaredLogger.Errorf("register MongoDB instance failed: %v", err)
 			return fmt.Errorf("register MongoDB instance: %w", err)
 		}
@@ -208,7 +208,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 
 	// Web、Setup 和 Seed 使用派生 Context。启动后任一步骤失败时调用 cancel，
 	// 可以立即停止已经运行的 Web；正常退出时父 Context 会自动向下传播取消信号。
-	runtimeCtx, cancelRuntime := context.WithCancel(simpleioc.GetContext().Ctx)
+	runtimeCtx, cancelRuntime := context.WithCancel(gbxioc.GetContext().Ctx)
 	keepRuntimeContext := false
 	
 	defer func() {
@@ -218,12 +218,12 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 	}()
 	// Named database instances run in parallel with the default instance.
 	for _, named := range app.builder.namedDatabases {
-		namedInstance, namedErr := datasource.NewNamed(simpleioc.GetContext().Ctx, named.name, named.config, named.models...)
+		namedInstance, namedErr := datasource.NewNamed(gbxioc.GetContext().Ctx, named.name, named.config, named.models...)
 		if namedErr != nil {
 			log.SugaredLogger.Errorf("initialize named database %q failed: %v", named.name, namedErr)
 			return fmt.Errorf("initialize named database %q: %w", named.name, namedErr)
 		}
-		if regErr := simpleioc.RegisterNamed("database:"+named.name, func() *datasource.Instance {
+		if regErr := gbxioc.RegisterNamed("database:"+named.name, func() *datasource.Instance {
 			return namedInstance
 		}); regErr != nil {
 			log.SugaredLogger.Errorf("register named database %q failed: %v", named.name, regErr)
@@ -241,7 +241,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 
 
 	// Start IOC container: construct registered singletons and run OnInit hooks.
-	if err := simpleioc.Start(runtimeCtx); err != nil {
+	if err := gbxioc.Start(runtimeCtx); err != nil {
 		log.SugaredLogger.Errorf("start IOC container failed: %v", err)
 		return fmt.Errorf("start IOC container: %w", err)
 	}
@@ -293,7 +293,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 	}
 	// IOC container must shut down before business resources, register last.
 	if err := app.lifecycle.registerShutdown("IOC container", func(ctx context.Context) error {
-		return simpleioc.Shutdown(ctx)
+		return gbxioc.Shutdown(ctx)
 	}); err != nil {
 		log.SugaredLogger.Errorf("register IOC container shutdown failed: %v", err)
 		return fmt.Errorf("register IOC container shutdown: %w", err)
@@ -451,27 +451,27 @@ func (app *application) monitorWebService(runResult <-chan error) {
 
 // GormDb 获取操作数据库-Gorm实例
 func GormDb() *gorm.DB {
-	return simpleioc.GetDb()
+	return gbxioc.GetDb()
 }
 
 // GlobalCtx 获取context上下文
-func GlobalCtx() *simpleioc.GlobalContext {
-	return simpleioc.GetContext()
+func GlobalCtx() *gbxioc.GlobalContext {
+	return gbxioc.GetContext()
 }
 
 // RedisCache 获取Redis缓存实例
 func RedisCache() cache.Rediser {
-	return simpleioc.GetCache()
+	return gbxioc.GetCache()
 }
 
 // CronJobSingle 获取定时任务执行器实例
 func CronJobSingle() *cron.Cron {
-	return simpleioc.GetCronJobInstance()
+	return gbxioc.GetCronJobInstance()
 }
 
 // MongoDb 获取MongoDB实例
 func MongoDb() *mongodb.Client {
-	return simpleioc.GetMongoDb()
+	return gbxioc.GetMongoDb()
 }
 
 // registerSeedsAndStartCron 执行定时任务注册回调，并在全部注册成功后启动 Cron。

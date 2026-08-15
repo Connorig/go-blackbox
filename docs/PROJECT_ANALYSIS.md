@@ -33,7 +33,7 @@
 
 ### 2.2 全局实例
 
-`simpleioc` 以指针类型作为 Key，将 GORM、Redis、MongoDB、Cron 和全局 Context 保存到进程级 Map。这个方案使用方便，但存在以下限制：
+`gbxioc` 以指针类型作为 Key，将 GORM、Redis、MongoDB、Cron 和全局 Context 保存到进程级 Map。这个方案使用方便，但存在以下限制：
 
 - 无作用域，所有实例都是进程级单例。
 - 相同类型只能注册一次，后续注册会被忽略。
@@ -213,7 +213,7 @@ JWT 当前使用固定密钥 `xxxx`，验证时没有显式限制签名算法；
 
 #### 3.15 重复与实验代码
 
-`apputils/gormp` 与 `server/datasource` 存在重复 GORM 初始化；`server/mongdbdemo`、`simpleioc/factory2.go`、RabbitMQ 的 `MqStart.go` 更接近 Demo 或实验代码。
+`apputils/gormp` 与 `server/datasource` 存在重复 GORM 初始化；`server/mongdbdemo`、`gbxioc/factory2.go`、RabbitMQ 的 `MqStart.go` 更接近 Demo 或实验代码。
 
 建议将 Demo 移到 `examples/`，删除或合并重复实现，稳定 API 留在正式包中。
 
@@ -296,7 +296,7 @@ GitHub Actions 在 Tag push 时直接执行根目录 Dockerfile，但仓库没�
 
 - 根包 Builder 与 Starter。
 - `server` 下的 Web、配置、缓存、数据源、MongoDB、RabbitMQ、Cron、Shutdown、Email、Zaplog。
-- `simpleioc`、`seed`、`apputils`、`buildscript`、`version`。
+- `gbxioc`、`seed`、`apputils`、`buildscript`、`version`。
 - 所有现有 Go 测试文件。
 - `config.toml`、前端片段、静态资源和 GitHub Actions。
 

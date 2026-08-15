@@ -99,7 +99,7 @@ resp, err = client.Post(ctx, "/api/v1/order", body, &out)   // POST JSON
 | 超时重试 | 总超时 + 网络错误/5xx 重试,4xx 不重试 |
 | 错误映射 | 统一映射 C 系列:`C0001` 第三方错误、`C0200` 第三方超时 |
 | 请求头 | 自动携带 `X-Timestamp/X-Nonce/X-Signature/X-Body-SHA256/X-App-Key` |
-| 集成 | 通过 simpleioc 注册为 bean,业务 `GetBean` 注入 |
+| 集成 | 通过 gbxioc 注册为 bean,业务 `GetBean` 注入 |
 
 ## 四、接入清单(业务项目落地模板)
 
@@ -107,7 +107,7 @@ resp, err = client.Post(ctx, "/api/v1/order", body, &out)   // POST JSON
 2. 定义开放接口 handler(纯业务)→ `api.GET/POST` 注册
 3. 配置 `OnAudit`(审计落库)
 4. 生产启用 Redis nonce 存储
-5. 定义出站客户端 → `thirdparty.NewClient` + simpleioc 注册
+5. 定义出站客户端 → `thirdparty.NewClient` + gbxioc 注册
 6. HTTPS 强制(网关部署要求)
 
 ## 三.5 熔断保护(framework/circuit,可选)

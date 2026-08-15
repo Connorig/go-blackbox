@@ -1,0 +1,34 @@
+# {{.ProjectName}} 项目配置(code 风格:参数与环境覆盖)
+# 代码里的 Enable* 调用是模块开关(编译期);本文件只放参数,
+# 部署差异用环境变量 GBX_* 覆盖(如 GBX_WEB_PORT)。
+
+[web]
+port = ":{{.Port}}"
+level = "info"
+
+[db]
+driver = "sqlite"
+dsn = "./{{.ProjectName}}.db"
+# driver = "postgres"
+# host = "127.0.0.1"
+# port = 5432
+# user = "postgres"
+# password = ""
+# database = "{{.ProjectName}}"
+# ssl = "disable"
+auto_migrate = false
+max_idle_conns = 10
+max_open_conns = 20
+
+[jwt]
+secret = "0123456789abcdef0123456789abcdef"   # 生产从密钥管理注入
+
+[log]
+out_dir = "."
+level = "info"
+
+[monitor]
+path = "/monitor"
+
+[business]
+demo_field = "hello"

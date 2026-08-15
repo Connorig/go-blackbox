@@ -20,6 +20,32 @@ type templateData struct {
 	AdminPort   string // Admin 端口
 }
 
+// styleTemplates 返回指定风格的模板集合:
+//   - 风格模板:文件名以 <style>__ 开头(如 code__main.go.tmpl)
+//   - 公共模板:不以 code__/config__ 开头(如 go.mod.tmpl、internal__model__user.go.tmpl)
+func styleTemplates(style string) []string {
+	if style == "" {
+		style = "code"
+	}
+	prefix := style + "__"
+	var result []string
+	entries, err := templateFS.ReadDir("templates")
+	if err != nil {
+		return nil
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.HasPrefix(name, prefix) ||
+			(!strings.HasPrefix(name, "code__") && !strings.HasPrefix(name, "config__")) {
+			result = append(result, name)
+		}
+	}
+	return result
+}
+
 // run 执行生成。
 func run(opts options) error {
 	if strings.TrimSpace(opts.name) == "" {
@@ -27,6 +53,13 @@ func run(opts options) error {
 	}
 	if !validName(opts.name) {
 		return fmt.Errorf("invalid project name %q: only letters, digits, '-' and '_' are allowed", opts.name)
+	}
+	style := opts.style
+	if style == "" {
+		style = "code"
+	}
+	if style != "code" && style != "config" {
+		return fmt.Errorf("invalid style %q: must be 'code' or 'config'", style)
 	}
 	module := opts.module
 	if module == "" {
@@ -44,18 +77,21 @@ func run(opts options) error {
 		return fmt.Errorf("create target dir: %w", err)
 	}
 
-	entries, err := templateFS.ReadDir("templates")
-	if err != nil {
-		return fmt.Errorf("read templates: %w", err)
+	templates := styleTemplates(style)
+	if len(templates) == 0 {
+		return fmt.Errorf("no templates found for style %q", style)
 	}
 	generated := 0
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
+	for _, sourceName := range templates {
+		// 去掉 <style>__ 前缀,其余 __ 替换为路径分隔符
+		destRel := sourceName
+		for _, prefix := range []string{"code__", "config__"} {
+			if strings.HasPrefix(destRel, prefix) {
+				destRel = strings.TrimPrefix(destRel, prefix)
+				break
+			}
 		}
-		sourceName := entry.Name()
-		// templates/<rel>__<dest>.tmpl 约定:__ 后为生成目标相对路径
-		destRel := strings.ReplaceAll(strings.TrimSuffix(sourceName, ".tmpl"), "__", "/")
+		destRel = strings.ReplaceAll(strings.TrimSuffix(destRel, ".tmpl"), "__", "/")
 		if err := renderTemplate(sourceName, destRel, targetDir, data); err != nil {
 			return err
 		}
@@ -65,13 +101,22 @@ func run(opts options) error {
 	fmt.Printf("✅ 项目骨架已生成:%s\n", targetDir)
 	fmt.Printf("   项目名:  %s\n", data.ProjectName)
 	fmt.Printf("   Module:  %s\n", data.ModulePath)
+	fmt.Printf("   风格:    %s(%s)\n", style, styleDescription(style))
 	fmt.Printf("   端口:    业务 %s / Admin %s\n", data.Port, data.AdminPort)
 	fmt.Printf("   下一步:\n")
 	fmt.Printf("     cd %s\n", targetDir)
 	fmt.Printf("     go mod tidy\n")
-	fmt.Printf("     go run .   → http://localhost:%s/health, 监控页 /monitor\n", data.Port)
+	fmt.Printf("     go run .   → http://localhost:%s/health/live, 监控页 /monitor\n", data.Port)
 	fmt.Printf("   (%d 个文件)\n", generated)
 	return nil
+}
+
+// styleDescription 风格说明。
+func styleDescription(style string) string {
+	if style == "config" {
+		return "配置驱动:config.toml [modules] 开关模块"
+	}
+	return "代码式显式装配:builder.Enable* 链"
 }
 
 // renderTemplate 渲染单个模板到目标路径。

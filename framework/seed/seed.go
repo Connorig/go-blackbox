@@ -3,7 +3,7 @@ package seed
 import (
 	"context"
 	"github.com/Connorig/go-blackbox/framework/log"
-	"github.com/Connorig/go-blackbox/container"
+	"github.com/Connorig/go-blackbox/gbxioc"
 	"go.uber.org/zap"
 )
 
@@ -22,7 +22,7 @@ func Seed(SeedFunctions ...SeedFunc) error {
 	// 批量执行种子函数（定时任务、初始化配置函数等）
 	for _, v := range SeedFunctions {
 		// 批量执行种子函数，传入上下文对象
-		if err := v(simpleioc.GetContext().Ctx); err != nil {
+		if err := v(gbxioc.GetContext().Ctx); err != nil {
 			zaplog.Logger.Error("Seed func running fail.", zap.Any("err", err))
 			return err
 		}

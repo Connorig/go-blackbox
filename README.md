@@ -1,4 +1,4 @@
-﻿# go-blackbox
+# go-blackbox
 
 企业级 Go Web 应用脚手架(依赖库),**开箱即用、模块热插拔**——像 Spring Boot 一样:
 `gbx new` 一键生成项目 → 按需 `Enable*` 开启模块 → 部署即得安全基线/认证/监控/开放平台。
@@ -11,7 +11,7 @@
 | Web | Iris v12 |
 | ORM | GORM(PostgreSQL 内置,MySQL/Oracle/SQLite 可注册) |
 | 日志 | Zap + rotatelogs |
-| IOC | simpleioc v2(Spring 式:单例/多例/具名/生命周期) |
+| IOC | gbxioc v2(Spring 式:单例/多例/具名/生命周期) |
 | 配置 | Viper + 文件热更新 |
 | 发布 | 每功能点 tag 发布,GitHub Action 自动验证 + Release |
 
@@ -171,7 +171,7 @@ getUser = aop.Around(getUser, func(ctx context.Context, params []interface{},
 }).(func(context.Context, int64) (*User, error))
 ```
 
-切面可组合(Before + Around + After),签名不变,业务调用方无感知;配合 simpleioc 将装饰后的 Service 注册进容器。
+切面可组合(Before + Around + After),签名不变,业务调用方无感知;配合 gbxioc 将装饰后的 Service 注册进容器。
 
 ## 热插拔模块(按需启用)
 

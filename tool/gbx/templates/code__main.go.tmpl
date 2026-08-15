@@ -1,0 +1,134 @@
+// {{.ProjectName}} 由 go-blackbox 脚手架生成(code 风格):
+// 代码式显式装配,对标 Spring Boot 3 的 @Configuration + @EnableXxx——
+// 每个 Enable* 调用即一个模块开关,编译期类型安全、IDE 可跳转。
+// 部署环境差异(端口/密钥/连接串)通过 config.toml + 环境变量 GBX_* 覆盖。
+//
+// 运行:go run .  →  http://localhost:{{.Port}}(健康 /health/live,监控 /monitor)
+package main
+
+import (
+	"context"
+	"log"
+	"time"
+
+	appbox "github.com/Connorig/go-blackbox"
+	"github.com/Connorig/go-blackbox/component/auth/token"
+	apperr "github.com/Connorig/go-blackbox/component/error"
+	"github.com/Connorig/go-blackbox/framework/database"
+	"github.com/Connorig/go-blackbox/framework/monitor"
+	"github.com/Connorig/go-blackbox/framework/web"
+	"github.com/kataras/iris/v12"
+	"gorm.io/gorm"
+)
+
+// User 示例业务模型(数据权限字段 org_id/dept_id)。
+type User struct {
+	ID     int64  `gorm:"primarykey"`
+	Name   string `gorm:"size:64"`
+	OrgID  int64  `gorm:"column:org_id;index"`
+	DeptID int64  `gorm:"column:dept_id;index"`
+}
+
+func main() {
+	err := appbox.New().Start(func(ctx context.Context, builder *appbox.ApplicationBuild) error {
+		// @EnableLog:日志(目录/级别)
+		builder.InitLog(".", "info")
+
+		// @EnableJWT:密钥注入(生产从配置/密钥管理读取,勿硬编码)
+		if err := apptoken.SetSecretKey("0123456789abcdef0123456789abcdef"); err != nil {
+			return err
+		}
+
+		// @EnableDatabase:SQLite 演示库(生产切 PostgreSQL:DriverPostgreSQL + DSN)
+		builder.EnableDatabase(&datasource.Config{
+			Driver:      datasource.DriverSQLite,
+			DSN:         "./{{.ProjectName}}.db",
+			AutoMigrate: false,
+		})
+
+		// 版本化迁移(数据库就绪后、Web 启动前)
+		builder.BeforeSetup(func(ctx context.Context) error {
+			dbInstance, err := datasource.Get()
+			if err != nil {
+				return err
+			}
+			migrator := datasource.NewMigrator(dbInstance,
+				datasource.Migration{
+					Name: "20260815_init",
+					Up: func(db *gorm.DB) error {
+						return db.AutoMigrate(&User{})
+					},
+					Down: func(db *gorm.DB) error {
+						return db.Migrator().DropTable(&User{})
+					},
+				},
+			)
+			return migrator.Migrate(ctx)
+		})
+
+		// @EnableWeb:Web 服务 + 安全基线 + 业务路由
+		builder.EnableWeb(appbox.TimeFormat, ":{{.Port}}", "info", func(app *iris.Application) {
+			// 安全基线(对标 Spring Security 默认链):统一错误/链路/日志/安全头 + DoS 防护 + SQL 注入拦截
+			app.Use(webiris.ErrorHandler, webiris.RequestID, webiris.AccessLog, webiris.SecurityHeaders)
+			app.Use(webiris.Limit(100, 200, nil))
+			app.Use(webiris.BodyLimit(1 << 20))
+			app.Use(webiris.Timeout(10 * time.Second))
+			app.Use(webiris.SQLGuard())
+
+			// 健康探针 /health/live、/health/ready
+			webiris.RegisterHealth(app, func() error {
+				return datasource.Health(ctx)
+			})
+
+			// 登录:签发携带 scope + 组织身份的 token(数据权限基础)
+			app.Post("/api/v1/login", func(ctx iris.Context) {
+				access, refresh, err := apptoken.GenTokenFull(1, "dev@example.com", "user:read", 101, 10101)
+				if err != nil {
+					webiris.Fail(ctx, 500, apperr.CodeSystemError, "generate token failed")
+					return
+				}
+				webiris.OK(ctx, map[string]string{"access_token": access, "refresh_token": refresh})
+			})
+
+			// @EnableAuth:JWT 认证中间件(健康/登录/监控页放行)
+			app.Use(webiris.Auth(webiris.AuthConfig{
+				Whitelist: []string{"/health", "/api/v1/login", "/monitor"},
+			}))
+
+			// 业务路由
+			app.Get("/api/v1/me", func(ctx iris.Context) {
+				webiris.OK(ctx, map[string]interface{}{
+					"id":    webiris.UserID(ctx),
+					"email": webiris.UserEmail(ctx),
+					"scope": webiris.DataScope(ctx),
+				})
+			})
+			app.Get("/api/v1/users", func(ctx iris.Context) {
+				scope := webiris.DataScope(ctx)
+				dbInstance, err := datasource.Get()
+				if err != nil {
+					webiris.RespondError(ctx, err)
+					return
+				}
+				var users []User
+				if err := dbInstance.DB().WithContext(ctx.Request().Context()).
+					Scopes(scope.Condition()).Find(&users).Error; err != nil {
+					webiris.RespondError(ctx, err)
+					return
+				}
+				webiris.OK(ctx, users)
+			})
+
+			// @EnableMonitor:资源监控页 + 数据接口(路由级组件)
+			monitor.Register(app, "/monitor", monitor.Config{})
+		})
+
+		// @EnableAdmin:Admin 服务(pprof/metrics/运行时日志级别)
+		builder.EnableAdmin(":{{.AdminPort}}")
+
+		return nil
+	})
+	if err != nil {
+		log.Fatalf("start application failed: %v", err)
+	}
+}

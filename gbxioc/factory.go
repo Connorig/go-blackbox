@@ -1,4 +1,4 @@
-package simpleioc
+package gbxioc
 
 import (
 	"context"
