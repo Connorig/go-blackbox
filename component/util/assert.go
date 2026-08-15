@@ -1,4 +1,4 @@
-package appcommon
+﻿package util
 
 import "reflect"
 
