@@ -12,9 +12,9 @@ import (
 	"log"
 
 	appbox "github.com/Connorig/go-blackbox"
-	"github.com/Connorig/go-blackbox/apputils/apptoken"
-	"github.com/Connorig/go-blackbox/server/datasource"
-	"github.com/Connorig/go-blackbox/server/webiris"
+	"github.com/Connorig/go-blackbox/component/auth/token"
+	"github.com/Connorig/go-blackbox/framework/database"
+	"github.com/Connorig/go-blackbox/framework/web"
 	"github.com/kataras/iris/v12"
 	"gorm.io/gorm"
 )

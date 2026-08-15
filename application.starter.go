@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Connorig/go-blackbox/server/cache"
-	"github.com/Connorig/go-blackbox/server/datasource"
-	"github.com/Connorig/go-blackbox/server/mongodb"
-	"github.com/Connorig/go-blackbox/server/shutdown"
-	log "github.com/Connorig/go-blackbox/server/zaplog"
-	"github.com/Connorig/go-blackbox/simpleioc"
+	"github.com/Connorig/go-blackbox/framework/cache"
+	"github.com/Connorig/go-blackbox/framework/database"
+	"github.com/Connorig/go-blackbox/framework/mongo"
+	"github.com/Connorig/go-blackbox/framework/lifecycle"
+	log "github.com/Connorig/go-blackbox/framework/log"
+	"github.com/Connorig/go-blackbox/container"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 )

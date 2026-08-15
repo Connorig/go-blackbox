@@ -3,17 +3,17 @@ package appbox
 import (
 	"context"
 	"fmt"
-	"github.com/Connorig/go-blackbox/server/apploader"
-	"github.com/Connorig/go-blackbox/server/cache"
-	"github.com/Connorig/go-blackbox/server/datasource"
-	"github.com/Connorig/go-blackbox/server/shutdown"
+	"github.com/Connorig/go-blackbox/framework/config"
+	"github.com/Connorig/go-blackbox/framework/cache"
+	"github.com/Connorig/go-blackbox/framework/database"
+	"github.com/Connorig/go-blackbox/framework/lifecycle"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/Connorig/go-blackbox/server/webiris"
-	"github.com/Connorig/go-blackbox/server/zaplog"
+	"github.com/Connorig/go-blackbox/framework/web"
+	"github.com/Connorig/go-blackbox/framework/log"
 	"github.com/kataras/iris/v12"
 	"gorm.io/gorm"
 )

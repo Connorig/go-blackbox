@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Connorig/go-blackbox/server/zaplog"
+	"github.com/Connorig/go-blackbox/framework/log"
 	"go.uber.org/zap"
 )
 
