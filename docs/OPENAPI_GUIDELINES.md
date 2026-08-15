@@ -109,3 +109,24 @@ resp, err = client.Post(ctx, "/api/v1/order", body, &out)   // POST JSON
 4. 生产启用 Redis nonce 存储
 5. 定义出站客户端 → `thirdparty.NewClient` + simpleioc 注册
 6. HTTPS 强制(网关部署要求)
+
+## 三.5 熔断保护(framework/circuit,可选)
+
+出站客户端支持熔断器,防止下游故障雪崩:
+
+`go
+breaker := circuit.New(circuit.DefaultConfig()) // 失败率 50% / 最小 10 请求 / 10s 窗口 / 10s 冷却
+client := thirdparty.NewClient(thirdparty.Config{
+    BaseURL: "https://sms.partner.com",
+    Signer:  thirdparty.NewHMACSigner("key", "secret"),
+    Breaker: breaker, // 启用熔断
+})
+`
+
+行为:
+- **closed → open**:窗口内失败率 >= 阈值(默认 50%)且请求数达标(默认 10)时熔断
+- **open**:请求快速失败(错误码 B0200 系统容灾被触发),不发起真实请求
+- **half-open → closed**:冷却期(默认 10s)后放行 1 个试探请求,成功即恢复,失败重新熔断
+- **失败口径**:网络错误与 5xx 计入失败;4xx 业务错误不计(不会因下游业务报错误熔断)
+
+状态可观测: reaker.State()(closed/open/half-open),可接入监控告警。

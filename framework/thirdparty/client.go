@@ -1,4 +1,4 @@
-package thirdparty
+﻿package thirdparty
 
 import (
 	"bytes"
@@ -15,6 +15,7 @@ import (
 	"time"
 
 	apperr "github.com/Connorig/go-blackbox/component/error"
+	"github.com/Connorig/go-blackbox/framework/circuit"
 )
 
 // DefaultTimeout 默认总超时。
@@ -36,6 +37,9 @@ type Config struct {
 	ExtraHeaders map[string]string
 	// NonceFunc 自定义 nonce 生成;nil 时使用 crypto/rand 随机 hex。
 	NonceFunc func() (string, error)
+	// Breaker 熔断器(circuit.New 创建);nil 时不启用。下游连续失败(网络错误/5xx)
+	// 达到阈值后快速失败(错误码 B0200 系统容灾被触发),防止故障雪崩。
+	Breaker *circuit.Breaker
 }
 
 // Client 第三方 HTTP 客户端。
@@ -48,6 +52,7 @@ type Client struct {
 	retryBase    time.Duration
 	extraHeaders map[string]string
 	nonceFunc    func() (string, error)
+	breaker      *circuit.Breaker
 }
 
 // NewClient 构造第三方客户端。
@@ -78,6 +83,7 @@ func NewClient(cfg Config) *Client {
 		retryBase:    retryBase,
 		extraHeaders: cfg.ExtraHeaders,
 		nonceFunc:    nonceFunc,
+		breaker:      cfg.Breaker,
 	}
 }
 
@@ -120,26 +126,22 @@ func (c *Client) Do(ctx context.Context, method, path string, query map[string]s
 			case <-time.After(backoff(c.retryBase, attempt)):
 			}
 		}
-		status, respBody, err := c.roundTrip(ctx, method, url, bodyBytes)
+		_, respBody, err := c.doWithBreaker(ctx, method, url, bodyBytes)
 		if err != nil {
 			lastErr = err
-			// 网络层错误可重试
+			// 4xx 不重试(业务错误,重试无意义);网络错误与 5xx 继续重试
+			var appErr *apperr.Error
+			if errors.As(err, &appErr) && appErr.HTTPStatus >= 400 && appErr.HTTPStatus < 500 {
+				return lastErr
+			}
 			continue
 		}
-		if status >= 200 && status < 300 {
-			if out != nil && len(respBody) > 0 {
-				if err := json.Unmarshal(respBody, out); err != nil {
-					return apperr.Wrap(err, apperr.CodeThirdPartyError, "thirdparty: unmarshal response")
-				}
+		if out != nil && len(respBody) > 0 {
+			if err := json.Unmarshal(respBody, out); err != nil {
+				return apperr.Wrap(err, apperr.CodeThirdPartyError, "thirdparty: unmarshal response")
 			}
-			return nil
 		}
-		lastErr = apperr.NewWithStatus(status, apperr.CodeThirdPartyError,
-			fmt.Sprintf("thirdparty: unexpected status %d: %s", status, truncate(respBody, 200)))
-		// 4xx 不重试(客户端错误,重试无意义)
-		if status >= 400 && status < 500 {
-			return lastErr
-		}
+		return nil
 	}
 	return lastErr
 }
