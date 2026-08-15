@@ -195,6 +195,8 @@ getUser = aop.Around(getUser, func(ctx context.Context, params []interface{},
 
 ## 完整文档索引
 
+> 全部模块的使用手册(定位/启用/API/示例/链接)见 [模块使用手册](docs/MODULES_GUIDE.md)。
+
 | 文档 | 内容 |
 |---|---|
 | [API_GUIDELINES.md](docs/API_GUIDELINES.md) | URL/响应/错误码/分页/幂等规范 |
