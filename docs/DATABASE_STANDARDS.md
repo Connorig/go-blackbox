@@ -84,3 +84,28 @@ type Order struct {
 ---
 
 *配套:docs/DEVELOPMENT_STANDARDS.md 全文规范 · docs/API_GUIDELINES.md API 规范*
+
+## 数据权限(组织/部门隔离)
+
+公共模型 OrgFields(org_id/dept_id)配套的数据隔离机制,由 framework/database 的 DataScope 提供:
+
+1. 登录签发 token 时写入组织身份:pptoken.GenTokenFull(userID, email, scope, orgID, deptID)(老接口 GenTokenWithScope 行为不变)
+2. webiris.Auth 认证后自动注入,业务通过 webiris.DataScope(ctx) 取回:
+3. 查询自动过滤: db.WithContext(ctx).Scopes(webiris.DataScope(ctx).Condition()).Find(&list)
+
+`go
+// 业务查询(组织内数据隔离)
+scope := webiris.DataScope(ctx)   // OrgID/DeptID 来自 JWT claim
+var orders []Order
+if err := datasource.MustGet().WithContext(ctx).
+    Scopes(scope.Condition()).     // 自动追加 org_id/dept_id 条件(零值字段不限制)
+    Find(&orders).Error; err != nil {
+    return err
+}
+`
+
+规则:
+- 仅设置 OrgID → 按 org_id 过滤;仅设置 DeptID → 按 dept_id 过滤;都设置 → 组合过滤
+- 未登录/老 token(无组织字段) → 空范围,不产生过滤条件(业务自行决定是否拒绝)
+- 自定义列名: scope.ConditionFor("tenant_id", "dept_id")
+- 超管/跨组织场景: 不调用 Scopes 或使用空 DataScope(全量可见)

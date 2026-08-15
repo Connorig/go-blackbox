@@ -1,4 +1,4 @@
-package webiris
+﻿package webiris
 
 import (
 	"strings"
@@ -62,6 +62,8 @@ func Auth(config ...AuthConfig) iris.Handler {
 
 		ctx.Values().Set("user_id", claim.UserID)
 		ctx.Values().Set("user_email", claim.UserEmail)
+		ctx.Values().Set("user_org_id", claim.OrgID)
+		ctx.Values().Set("user_dept_id", claim.DeptID)
 		ctx.Next()
 	}
 }

@@ -65,15 +65,6 @@ func SetSecretKeys(secrets ...string) error {
 	return nil
 }
 
-// MyClaim 是 Access Token 携带的业务声明。
-// Scope 是权限标识列表（逗号分隔），认证中间件可据此做细粒度权限校验。
-type MyClaim struct {
-	UserID    int64  `json:"userId"`
-	UserEmail string `json:"userEmail"`
-	Scope     string `json:"scope,omitempty"` // 权限标识，逗号分隔
-	jwt.RegisteredClaims
-}
-
 func getJWTTime(t time.Duration) *jwt.NumericDate {
 	return jwt.NewNumericDate(time.Now().Add(t))
 }
@@ -99,38 +90,6 @@ func keyFuncFor(key []byte) jwt.Keyfunc {
 // GenToken 颁发token access token 和 refresh token（无权限声明）。
 func GenToken(UserID int64, Username string) (atoken, rtoken string, err error) {
 	return GenTokenWithScope(UserID, Username, "")
-}
-
-// GenTokenWithScope 颁发携带权限声明的 token。
-// scope 是逗号分隔的权限标识，认证中间件可要求匹配指定 scope。
-func GenTokenWithScope(UserID int64, Username, scope string) (atoken, rtoken string, err error) {
-	key, err := signingKey()
-	if err != nil {
-		return "", "", err
-	}
-	rc := jwt.RegisteredClaims{
-		ExpiresAt: getJWTTime(aTokenExpiredDuration),
-		Issuer:    tokenIssuer,
-	}
-	at := MyClaim{
-		UserID:           UserID,
-		UserEmail:        Username,
-		Scope:            scope,
-		RegisteredClaims: rc,
-	}
-	atoken, err = jwt.NewWithClaims(jwt.SigningMethodHS256, at).SignedString(key)
-	if err != nil {
-		return "", "", err
-	}
-
-	// refresh token 不需要保存任何用户信息
-	rt := rc
-	rt.ExpiresAt = getJWTTime(rTokenExpiredDuration)
-	rtoken, err = jwt.NewWithClaims(jwt.SigningMethodHS256, rt).SignedString(key)
-	if err != nil {
-		return "", "", err
-	}
-	return
 }
 
 // verifyWithKeys 使用全部已注入密钥依次尝试解析 token。
@@ -166,6 +125,7 @@ func VerifyToken(tokenID string) (*MyClaim, error) {
 
 // RefreshToken 通过 refresh token 刷新 atoken
 // 先完整校验 refresh token（算法、签发者、有效期），再尝试从旧 access token 恢复用户信息。
+// 刷新后的 token 保留权限声明与组织身份(OrgID/DeptID)。
 func RefreshToken(atoken, rtoken string) (newAtoken, newRtoken string, err error) {
 	if len(secretKeys) == 0 {
 		return "", "", ErrSecretNotConfigured
@@ -182,13 +142,13 @@ func RefreshToken(atoken, rtoken string) (newAtoken, newRtoken string, err error
 	var claim MyClaim
 	err = verifyWithKeys(atoken, &claim)
 	if err == nil {
-		// access token 仍然有效，直接重新颁发（保留权限声明）
-		return GenTokenWithScope(claim.UserID, claim.UserEmail, claim.Scope)
+		// access token 仍然有效，直接重新颁发（保留权限与组织身份）
+		return GenTokenFull(claim.UserID, claim.UserEmail, claim.Scope, claim.OrgID, claim.DeptID)
 	}
 	// 仅当 access token 是因为正常过期时才允许刷新
 	var validationErr *jwt.ValidationError
 	if errors.As(err, &validationErr) && validationErr.Errors&jwt.ValidationErrorExpired != 0 {
-		return GenTokenWithScope(claim.UserID, claim.UserEmail, claim.Scope)
+		return GenTokenFull(claim.UserID, claim.UserEmail, claim.Scope, claim.OrgID, claim.DeptID)
 	}
 	return "", "", fmt.Errorf("parse access token for refresh: %w", err)
 }
