@@ -164,17 +164,35 @@ func TestRunGenStyle(t *testing.T) {
 	mainSrc, _ := os.ReadFile(filepath.Join(root, "main.go"))
 	mainText := string(mainSrc)
 	for _, want := range []string{
-		"/api/v1/test-mycat",
-		"ListTestMycat(svc)",
-		"CreateTestMycat(svc)",
-		"UpdateTestMycat(svc)",
-		"DeleteTestMycat(svc)",
-		"repository.NewTestMycatRepository",
-		"service.NewTestMycatService",
+		"RegisterModels(model.All)",
+		"webiris.RegisterRoutes(app, router.All())",
+		"apidoc.Register",
+		"AutoMigrate: true",
 	} {
 		if !strings.Contains(mainText, want) {
 			t.Errorf("main.go missing %q", want)
 		}
+	}
+
+	// 路由分组:router 包定义 CRUD 路由
+	routerSrc, _ := os.ReadFile(filepath.Join(root, "internal/router/router.go"))
+	routerText := string(routerSrc)
+	for _, want := range []string{
+		"/api/v1/test-mycat",
+		"handler.ListTestMycat(svc)",
+		"handler.CreateTestMycat(svc)",
+		"handler.DeleteTestMycat(svc)",
+		"repository.NewTestMycatRepository",
+		"service.NewTestMycatService",
+		"func All() []webiris.Route",
+	} {
+		if !strings.Contains(routerText, want) {
+			t.Errorf("router.go missing %q", want)
+		}
+	}
+	allSrc, _ := os.ReadFile(filepath.Join(root, "internal/model/all.go"))
+	if !strings.Contains(string(allSrc), "&TestMycat{}") {
+		t.Error("model/all.go must register TestMycat")
 	}
 
 	modelSrc, _ := os.ReadFile(filepath.Join(root, "internal/model/test_mycat.go"))
