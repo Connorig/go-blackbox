@@ -11,7 +11,7 @@ go-blackbox 是企业级 Go Web 应用脚手架(依赖库),对标 Spring Boot �
 | 项 | 值 |
 |---|---|
 | Module | `github.com/Connorig/go-blackbox` |
-| Go | 1.20(勿升级,依赖锁定此基线) |
+| Go | 1.21+(最低兼容 1.21,可随工具链升级,兼容新版特性) |
 | 根包 | `appbox`(ApplicationBuild 装配) |
 | Web | Iris v12(12.2.0) |
 | ORM | GORM + glebarez/sqlite(测试用) |

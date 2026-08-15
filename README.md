@@ -5,7 +5,7 @@
 
 | 项 | 值 |
 |---|---|
-| Go | 1.20 |
+| Go | 1.21+(最低 1.21,支持升级) |
 | Module | `github.com/Connorig/go-blackbox` |
 | 根包 | `appbox` |
 | Web | Iris v12 |
