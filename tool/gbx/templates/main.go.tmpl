@@ -1,93 +1,75 @@
-// {{.ProjectName}} 由 go-blackbox 脚手架生成:
-// 企业级 Go Web 应用骨架(泰山版规范 + 安全基线 + 监控 + 数据权限)。
-// 业务端口 :{{.Port}},Admin 端口 :{{.AdminPort}}。
+// {{.ProjectName}} 由 go-blackbox 脚手架生成(配置驱动):
+// 模块启停全部由 config.toml 的 [modules] 段控制(对标 Spring Boot Auto-Configuration),
+// 业务只需注册自己的路由与业务逻辑。
+//
+// 运行:go run .  →  http://localhost:{{.Port}}(健康 /health/live,监控 /monitor)
+// 端口与模块开关见 config.toml。
 package main
 
 import (
 	"context"
 	"log"
-	"time"
 
 	appbox "github.com/Connorig/go-blackbox"
 	"github.com/Connorig/go-blackbox/component/auth/token"
-	"github.com/Connorig/go-blackbox/framework/database"
-	"github.com/Connorig/go-blackbox/framework/monitor"
+	apperr "github.com/Connorig/go-blackbox/component/error"
 	"github.com/Connorig/go-blackbox/framework/web"
-	"{{.ModulePath}}/internal/handler"
-	"{{.ModulePath}}/internal/model"
 	"github.com/kataras/iris/v12"
-	"gorm.io/gorm"
+	apploader "github.com/Connorig/go-blackbox/framework/config"
 )
+
+// AppConfig 项目配置:内嵌脚手架模块配置([modules] 段)+ 业务配置([business] 段)。
+// 模块配置结构由脚手架定义,业务无需关心字段细节。
+type AppConfig struct {
+	apploader.Modules `mapstructure:"modules"`
+	Business          BusinessConfig `mapstructure:"business"`
+}
+
+// BusinessConfig 业务自有配置段。
+type BusinessConfig struct {
+	DemoField string `mapstructure:"demo_field"`
+}
 
 func main() {
 	err := appbox.New().Start(func(ctx context.Context, builder *appbox.ApplicationBuild) error {
-		// 1. 日志
-		builder.InitLog(".", "info")
+		// 1. 加载配置(分层:内置默认 < 全局 gbx.toml < config.toml < 环境变量 GBX_*)
+		var cfg AppConfig
+		if err := builder.LoadConfig(&cfg, func(l apploader.Loader) {
+			l.SetConfigFileSearcher("config", ".")    // 项目配置(子级)
+			// l.SetGlobalConfigFile("gbx", "/etc/gbx") // 全局配置(父级,可选)
+			l.EnableEnvSearcher("GBX")
+		}); err != nil {
+			return err
+		}
 
-		// 2. JWT 密钥(生产环境从配置/密钥管理系统注入,勿硬编码)
+		// 2. JWT 密钥(生产从配置/密钥管理注入,勿硬编码)
 		if err := apptoken.SetSecretKey("0123456789abcdef0123456789abcdef"); err != nil {
 			return err
 		}
 
-		// 3. 数据库(SQLite 演示;生产切换 datasource.DriverPostgreSQL + DSN)
-		builder.EnableDatabase(&datasource.Config{
-			Driver:      datasource.DriverSQLite,
-			DSN:         "./{{.ProjectName}}.db",
-			AutoMigrate: false,
-		})
-
-		// 4. 版本化迁移(数据库初始化后、Web 启动前执行)
-		builder.BeforeSetup(func(ctx context.Context) error {
-			db, err := datasource.Get()
-			if err != nil {
-				return err
-			}
-			migrator := datasource.NewMigrator(db,
-				datasource.Migration{
-					Name: "20260815_init",
-					Up: func(db *gorm.DB) error {
-						return db.AutoMigrate(&model.User{})
-					},
-					Down: func(db *gorm.DB) error {
-						return db.Migrator().DropTable(&model.User{})
-					},
-				},
-			)
-			return migrator.Migrate(ctx)
-		})
-
-		// 5. Web 服务:安全基线 + 认证 + 健康检查 + 监控
-		builder.EnableWeb(appbox.TimeFormat, ":{{.Port}}", "info", func(app *iris.Application) {
-			// 安全基线:统一响应/链路/日志/安全头 + DoS 防护 + SQL 注入拦截
-			app.Use(webiris.ErrorHandler, webiris.RequestID, webiris.AccessLog, webiris.SecurityHeaders)
-			app.Use(webiris.Limit(100, 200, nil))
-			app.Use(webiris.BodyLimit(1 << 20))
-			app.Use(webiris.Timeout(10 * time.Second))
-			app.Use(webiris.SQLGuard())
-
-			// 健康检查
-			webiris.RegisterHealth(app, func() error {
-				return datasource.Health(ctx)
+		// 3. 自动装配:按 config.toml 的 [modules] 启停
+		//    (日志/认证/Web+安全基线/数据库/缓存/Mongo/Cron/Admin/监控/开放平台)
+		builder.AutoConfigure(&cfg.Modules, func(app *iris.Application) {
+			// 4. 业务路由(安全基线已自动挂载;认证中间件按需追加)
+			app.Post("/api/v1/login", func(ctx iris.Context) {
+				access, refresh, err := apptoken.GenTokenFull(1, "dev@example.com", "user:read", 101, 10101)
+				if err != nil {
+					webiris.Fail(ctx, 500, apperr.CodeSystemError, "generate token failed")
+					return
+				}
+				webiris.OK(ctx, map[string]string{"access_token": access, "refresh_token": refresh})
 			})
-
-			// 登录:签发携带 scope + 组织身份的 token
-			app.Post("/api/v1/login", handler.Login)
-
-			// 认证中间件(健康/登录/监控页放行)
 			app.Use(webiris.Auth(webiris.AuthConfig{
 				Whitelist: []string{"/health", "/api/v1/login", "/monitor"},
 			}))
-
-			// 业务接口
-			app.Get("/api/v1/me", handler.Me)
-			app.Get("/api/v1/users", handler.ListUsers)
-
-			// 服务器资源监控(数据接口已挂限流,生产建议内网/Admin 端口)
-			monitor.Register(app, "/monitor", monitor.Config{})
+			app.Get("/api/v1/me", func(ctx iris.Context) {
+				webiris.OK(ctx, map[string]interface{}{
+					"id":    webiris.UserID(ctx),
+					"email": webiris.UserEmail(ctx),
+					"scope": webiris.DataScope(ctx),
+				})
+			})
 		})
-
-		// 6. Admin 服务:pprof + metrics + 运行时日志级别
-		builder.EnableAdmin(":{{.AdminPort}}")
 
 		return nil
 	})

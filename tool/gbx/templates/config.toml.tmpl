@@ -1,0 +1,84 @@
+# {{.ProjectName}} 项目配置(go-blackbox 模块自动配置)
+# 分层配置:内置默认 < 全局配置(GBX_GLOBAL_CONFIG) < 本文件 < 环境变量(GBX_* 前缀)
+# 模块开关:enabled = false 即不初始化该模块(热插拔,不占资源)
+
+[modules]
+
+# ---------- 日志 ----------
+[modules.log]
+enabled = true
+level = "info"          # debug/info/warn/error
+out_dir = "."
+
+# ---------- JWT 认证参数(密钥由代码 apptoken.SetSecretKey 注入) ----------
+[modules.auth]
+enabled = true
+access_ttl = "30m"      # 访问 token 有效期
+refresh_ttl = "168h"    # 刷新 token 有效期
+issuer = "{{.ProjectName}}"
+
+# ---------- Web 服务(含安全基线) ----------
+[modules.web]
+enabled = true
+port = ":{{.Port}}"
+level = "info"
+baseline = true          # 自动挂载:限流/请求体上限/超时/SQL 注入拦截/日志/安全头
+rate_per_second = 100    # 全局限流 QPS
+burst = 200              # 限流突发容量
+max_body_bytes = 1048576 # 请求体上限 1MB
+timeout = "10s"          # 请求超时
+
+# ---------- 关系数据库 ----------
+[modules.database]
+enabled = true
+driver = "sqlite"        # sqlite / postgres / mysql
+dsn = "./{{.ProjectName}}.db"
+# driver = "postgres"
+# host = "127.0.0.1"
+# port = 5432
+# user = "postgres"
+# password = ""
+# database = "{{.ProjectName}}"
+# ssl_mode = "disable"
+auto_migrate = false
+max_idle_conns = 10
+max_open_conns = 20
+
+# ---------- Redis 缓存(分布式锁/防击穿) ----------
+[modules.cache]
+enabled = false
+addr = "127.0.0.1:6379"
+password = ""
+db = 0
+pool_size = 10
+
+# ---------- MongoDB ----------
+[modules.mongo]
+enabled = false
+addr = "127.0.0.1:27017"
+db = "admin"
+timeout = 20
+
+# ---------- 定时任务 ----------
+[modules.cron]
+enabled = false
+
+# ---------- Admin 管理服务(pprof/metrics/日志级别) ----------
+[modules.admin]
+enabled = true
+listen = ":{{.AdminPort}}"
+
+# ---------- 服务器资源监控 ----------
+[modules.monitor]
+enabled = true
+path = "/monitor"
+
+# ---------- 开放平台(第三方签名调用,业务零加密负担) ----------
+[modules.openapi]
+enabled = false
+[modules.openapi.apps]
+# partner-001 = { secret = "change-me", algorithm = "HMAC-SHA256", enabled = true }
+
+# ---------- 业务自有配置段(业务代码自定义结构映射) ----------
+[business]
+demo_field = "hello"

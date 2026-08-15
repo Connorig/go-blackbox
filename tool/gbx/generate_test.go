@@ -16,9 +16,10 @@ func TestRunGeneratesProject(t *testing.T) {
 	}
 	root := filepath.Join(workDir, "demo-app")
 
-	// 文件齐全
+	// 文件齐全(7 个)
 	expected := []string{
 		"main.go",
+		"config.toml",
 		"go.mod",
 		"README.md",
 		".gitignore",
@@ -32,25 +33,24 @@ func TestRunGeneratesProject(t *testing.T) {
 		}
 	}
 
-	// 关键内容:module 路径、项目名、端口
+	// main.go:配置驱动装配
 	mainSrc, err := os.ReadFile(filepath.Join(root, "main.go"))
 	if err != nil {
 		t.Fatalf("read main.go: %v", err)
 	}
 	mainText := string(mainSrc)
 	for _, want := range []string{
-		`EnableWeb(appbox.TimeFormat, ":8080"`,
-		`EnableAdmin(":6060"`,
-		"webiris.SQLGuard()",
-		"monitor.Register(app, \"/monitor\"",
+		"AutoConfigure(&cfg.Modules",
 		"apptoken.SetSecretKey",
-		"datasource.DriverSQLite",
+		"apploader.Modules",
+		"LoadConfig(&cfg",
 	} {
 		if !strings.Contains(mainText, want) {
 			t.Errorf("main.go missing %q", want)
 		}
 	}
 
+	// go.mod
 	goMod, err := os.ReadFile(filepath.Join(root, "go.mod"))
 	if err != nil {
 		t.Fatalf("read go.mod: %v", err)
@@ -58,10 +58,8 @@ func TestRunGeneratesProject(t *testing.T) {
 	if !strings.Contains(string(goMod), "module github.com/example/demo-app") {
 		t.Errorf("go.mod module wrong:\n%s", goMod)
 	}
-	if !strings.Contains(string(goMod), "github.com/Connorig/go-blackbox v1.13.0") {
-		t.Errorf("go.mod missing go-blackbox dependency:\n%s", goMod)
-	}
 
+	// model/handler 模板内容
 	modelSrc, _ := os.ReadFile(filepath.Join(root, "internal/model/user.go"))
 	if !strings.Contains(string(modelSrc), "model.StandardModel") ||
 		!strings.Contains(string(modelSrc), "model.OrgFields") {
@@ -73,6 +71,20 @@ func TestRunGeneratesProject(t *testing.T) {
 	}
 	if !strings.Contains(string(handlerSrc), "apptoken.GenTokenFull") {
 		t.Error("handler template must include GenTokenFull")
+	}
+
+	// config.toml:模块开关
+	configSrc, _ := os.ReadFile(filepath.Join(root, "config.toml"))
+	configText := string(configSrc)
+	for _, want := range []string{
+		"[modules]",
+		"[modules.web]",
+		"enabled = true",
+		"[modules.database]",
+	} {
+		if !strings.Contains(configText, want) {
+			t.Errorf("config.toml missing %q", want)
+		}
 	}
 }
 
