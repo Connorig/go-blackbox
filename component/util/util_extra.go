@@ -16,50 +16,11 @@ import (
 // 对标 sg-mes-api 的 SimpleCopyProperties2 行为:
 //   - 字段名 + 类型一致才拷贝
 //   - src 字段为零值(空串/0/false/nil)时跳过,保留 dst 原值
+//   - 嵌套 struct 递归逐字段(空值保护生效);时间类型自动互转
 //
 // 与 CopyProperties(无条件覆盖)互补:更新场景用本函数,避免把空值写库。
 func CopyPropertiesNonBlank(dst, src interface{}) error {
-	if dst == nil || src == nil {
-		return nil
-	}
-	dstValue := reflect.ValueOf(dst)
-	if dstValue.Kind() != reflect.Ptr || dstValue.IsNil() {
-		return nil
-	}
-	dstElem := dstValue.Elem()
-	if dstElem.Kind() != reflect.Struct {
-		return nil
-	}
-	srcValue := reflect.ValueOf(src)
-	if srcValue.Kind() == reflect.Ptr {
-		if srcValue.IsNil() {
-			return nil
-		}
-		srcValue = srcValue.Elem()
-	}
-	if srcValue.Kind() != reflect.Struct {
-		return nil
-	}
-
-	srcType := srcValue.Type()
-	for i := 0; i < srcValue.NumField(); i++ {
-		field := srcType.Field(i)
-		if field.PkgPath != "" {
-			continue
-		}
-		value := srcValue.Field(i)
-		if isBlankValue(value) {
-			continue
-		}
-		dstField := dstElem.FieldByName(field.Name)
-		if !dstField.IsValid() || !dstField.CanSet() {
-			continue
-		}
-		if err := assignValue(dstField, value); err != nil {
-			continue // 类型不匹配跳过(与 sg-mes 行为一致)
-		}
-	}
-	return nil
+	return copyProperties(dst, src, true)
 }
 
 // isBlankValue 判断零值(对齐 sg-mes 的 isBlank)。

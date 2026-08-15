@@ -4,17 +4,21 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"time"
 )
-
 // 反射工具:结构体属性拷贝(对标 Java BeanUtils.copyProperties)、
 // 深拷贝、按字段名读写属性。基于 GoFrame gconv / gin-vue-admin utils 的常用能力整理。
+
+// maxCopyDepth 嵌套拷贝最大深度(防循环引用)。
+const maxCopyDepth = 8
 
 // CopyProperties 将 src 的导出字段按「字段名」拷贝到 dst(对标 Java BeanUtils.copyProperties)。
 // dst 必须为指向结构体的指针;src 为结构体或结构体指针。
 // 规则:
 //   - 字段名完全匹配(区分大小写);src 有而 dst 没有的字段忽略
 //   - 类型相同直接赋值;基本数值类型(int 族/float 族)与 string 之间自动转换
-//   - dst 的零值字段会被 src 覆盖(与 BeanUtils 一致);dst 已有非零值也会被覆盖
+//   - 嵌套 struct 递归逐字段拷贝(深度上限 8,防循环)
+//   - 时间互转:util.Time ↔ time.Time ↔ string(自动格式化/解析)
 //   - 未导出字段、不可设置字段跳过
 //
 //	type UserDTO struct { Name string; Age int }
@@ -22,6 +26,11 @@ import (
 //	var dto UserDTO
 //	util.CopyProperties(&dto, userEntity) // Name 直接拷贝,Age int64→int 自动转换
 func CopyProperties(dst, src interface{}) error {
+	return copyProperties(dst, src, false)
+}
+
+// copyProperties 通用拷贝入口。
+func copyProperties(dst, src interface{}, nonBlank bool) error {
 	if dst == nil {
 		return errors.New("copy: dst is nil")
 	}
@@ -43,26 +52,144 @@ func CopyProperties(dst, src interface{}) error {
 	if srcValue.Kind() != reflect.Struct {
 		return errors.New("copy: src must be a struct or struct pointer")
 	}
+	return copyStruct(dstElem, srcValue, nonBlank, 0)
+}
 
-	srcType := srcValue.Type()
-	for i := 0; i < srcValue.NumField(); i++ {
+// copyStruct 递归拷贝结构体字段。
+func copyStruct(dst, src reflect.Value, nonBlank bool, depth int) error {
+	if depth > maxCopyDepth {
+		return nil
+	}
+	srcType := src.Type()
+	for i := 0; i < src.NumField(); i++ {
 		srcField := srcType.Field(i)
-		if srcField.PkgPath != "" { // 未导出字段
+		if srcField.PkgPath != "" { // 未导出
 			continue
 		}
-		srcFieldValue := srcValue.Field(i)
-		dstField := dstElem.FieldByName(srcField.Name)
+		srcFieldValue := src.Field(i)
+		if nonBlank && isBlankValue(srcFieldValue) {
+			continue
+		}
+		dstField := dst.FieldByName(srcField.Name)
 		if !dstField.IsValid() || !dstField.CanSet() {
 			continue
 		}
-		if err := assignValue(dstField, srcFieldValue); err != nil {
+		if err := assignField(dstField, srcFieldValue, nonBlank, depth); err != nil {
 			return fmt.Errorf("copy field %q: %w", srcField.Name, err)
 		}
 	}
 	return nil
 }
 
-// assignValue 赋值,支持同类型与基本类型转换。
+// assignField 单字段赋值:嵌套递归 / 时间互转 / 同类型 / 基本转换。
+func assignField(dst, src reflect.Value, nonBlank bool, depth int) error {
+	// 解引用接口
+	if src.Kind() == reflect.Interface {
+		if src.IsNil() {
+			return nil
+		}
+		src = src.Elem()
+	}
+	if !src.IsValid() {
+		return nil
+	}
+	// 嵌套 struct:优先递归(空值保护逐字段生效;非 blank 模式递归=整体 Set 效果)
+	if isStructKind(dst.Kind()) && isStructKind(src.Kind()) && !isTimeType(dst.Type()) && !isTimeType(src.Type()) {
+		if dst.Kind() == reflect.Ptr {
+			if dst.IsNil() {
+				dst.Set(reflect.New(dst.Type().Elem()))
+			}
+			dst = dst.Elem()
+		}
+		if src.Kind() == reflect.Ptr {
+			if src.IsNil() {
+				return nil
+			}
+			src = src.Elem()
+		}
+		if dst.Kind() == reflect.Struct && src.Kind() == reflect.Struct {
+			return copyStruct(dst, src, nonBlank, depth+1)
+		}
+	}
+	// 同类型直接赋值(基本类型/时间类型等)
+	if dst.Type() == src.Type() {
+		dst.Set(src)
+		return nil
+	}
+	// 时间互转
+	if assignTimeField(dst, src) {
+		return nil
+	}
+	// 基本类型转换(数值族/字符串)
+	return assignValue(dst, src)
+}
+
+// assignTimeField 时间类型互转(util.Time ↔ time.Time ↔ string)。
+// 返回 true 表示已处理。
+func assignTimeField(dst, src reflect.Value) bool {
+	srcTime, srcIsTime := toTimeValue(src)
+	if srcIsTime {
+		switch {
+		case dst.Type() == reflect.TypeOf(Time{}):
+			dst.Set(reflect.ValueOf(NewTime(srcTime)))
+			return true
+		case dst.Type() == reflect.TypeOf(time.Time{}):
+			dst.Set(reflect.ValueOf(srcTime))
+			return true
+		case dst.Kind() == reflect.String:
+			dst.SetString(FormatTime(srcTime))
+			return true
+		}
+		return false
+	}
+	// src string → dst 时间类型(解析)
+	if src.Kind() == reflect.String &&
+		(dst.Type() == reflect.TypeOf(Time{}) || dst.Type() == reflect.TypeOf(time.Time{})) {
+		parsed := Parse(src.String())
+		if dst.Type() == reflect.TypeOf(Time{}) {
+			dst.Set(reflect.ValueOf(parsed))
+		} else {
+			dst.Set(reflect.ValueOf(parsed.Time))
+		}
+		return true
+	}
+	return false
+}
+
+// toTimeValue 提取 time.Time(支持 time.Time 与 util.Time 及其指针)。
+func toTimeValue(value reflect.Value) (time.Time, bool) {
+	for value.Kind() == reflect.Ptr || value.Kind() == reflect.Interface {
+		if value.IsNil() {
+			return time.Time{}, false
+		}
+		value = value.Elem()
+	}
+	switch typed := value.Interface().(type) {
+	case time.Time:
+		return typed, true
+	case Time:
+		return typed.Time, true
+	}
+	return time.Time{}, false
+}
+
+// isStructKind 是否结构体/指针族。
+func isStructKind(kind reflect.Kind) bool {
+	return kind == reflect.Struct || kind == reflect.Ptr
+}
+
+// isTimeType 是否时间类型。
+func isTimeType(t reflect.Type) bool {
+	if t == reflect.TypeOf(time.Time{}) || t == reflect.TypeOf(Time{}) {
+		return true
+	}
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t == reflect.TypeOf(time.Time{}) || t == reflect.TypeOf(Time{})
+}
+
+// assignValue 赋值,支持同类型与基本类型转换(保持原行为)。
 func assignValue(dst, src reflect.Value) error {
 	if src.Kind() == reflect.Interface {
 		if src.IsNil() {
@@ -105,6 +232,15 @@ func assignValue(dst, src reflect.Value) error {
 		dst.Set(parsed)
 		return nil
 	}
+	// string → time.Time(时间字符串反解)
+	if src.Kind() == reflect.String && dst.Type() == reflect.TypeOf(time.Time{}) {
+		parsed := Parse(src.String())
+		if !parsed.IsZero() {
+			dst.Set(reflect.ValueOf(parsed.Time))
+			return nil
+		}
+		return fmt.Errorf("type mismatch: cannot assign %s to %s", src.Type(), dst.Type())
+	}
 	return fmt.Errorf("type mismatch: cannot assign %s to %s", src.Type(), dst.Type())
 }
 
@@ -138,168 +274,4 @@ func parseStringToNumber(text string, kind reflect.Kind) (reflect.Value, error) 
 	result := reflect.New(reflect.TypeOf(parsed)).Elem()
 	result.Set(reflect.ValueOf(parsed))
 	return result, nil
-}
-
-// DeepCopy 深拷贝任意值(对标 Java 序列化深拷贝):
-// 支持基本类型、string、struct、map、slice、array、指针、interface 的组合嵌套。
-// 结构体中的未导出字段无法复制(反射限制),导出字段递归复制。
-func DeepCopy(src interface{}) (interface{}, error) {
-	if src == nil {
-		return nil, nil
-	}
-	return deepCopyValue(reflect.ValueOf(src))
-}
-
-func deepCopyValue(value reflect.Value) (interface{}, error) {
-	if !value.IsValid() {
-		return nil, nil
-	}
-	switch value.Kind() {
-	case reflect.Ptr:
-		if value.IsNil() {
-			// 返回同类型 nil 指针
-			return reflect.Zero(value.Type()).Interface(), nil
-		}
-		copied, err := deepCopyValue(value.Elem())
-		if err != nil {
-			return nil, err
-		}
-		result := reflect.New(value.Type().Elem())
-		result.Elem().Set(reflect.ValueOf(copied))
-		return result.Interface(), nil
-	case reflect.Interface:
-		if value.IsNil() {
-			return nil, nil
-		}
-		return deepCopyValue(value.Elem())
-	case reflect.Struct:
-		result := reflect.New(value.Type()).Elem()
-		for i := 0; i < value.NumField(); i++ {
-			field := value.Type().Field(i)
-			if field.PkgPath != "" {
-				continue
-			}
-			copied, err := deepCopyValue(value.Field(i))
-			if err != nil {
-				return nil, err
-			}
-			if copied != nil {
-				result.Field(i).Set(reflect.ValueOf(copied))
-			}
-		}
-		return result.Interface(), nil
-	case reflect.Map:
-		result := reflect.MakeMapWithSize(value.Type(), value.Len())
-		iter := value.MapRange()
-		for iter.Next() {
-			keyCopied, err := deepCopyValue(iter.Key())
-			if err != nil {
-				return nil, err
-			}
-			valCopied, err := deepCopyValue(iter.Value())
-			if err != nil {
-				return nil, err
-			}
-			result.SetMapIndex(reflect.ValueOf(keyCopied), reflect.ValueOf(valCopied))
-		}
-		return result.Interface(), nil
-	case reflect.Slice:
-		if value.IsNil() {
-			return reflect.Zero(value.Type()).Interface(), nil
-		}
-		result := reflect.MakeSlice(value.Type(), value.Len(), value.Len())
-		for i := 0; i < value.Len(); i++ {
-			copied, err := deepCopyValue(value.Index(i))
-			if err != nil {
-				return nil, err
-			}
-			if copied != nil {
-				result.Index(i).Set(reflect.ValueOf(copied))
-			}
-		}
-		return result.Interface(), nil
-	case reflect.Array:
-		result := reflect.New(value.Type()).Elem()
-		for i := 0; i < value.Len(); i++ {
-			copied, err := deepCopyValue(value.Index(i))
-			if err != nil {
-				return nil, err
-			}
-			if copied != nil {
-				result.Index(i).Set(reflect.ValueOf(copied))
-			}
-		}
-		return result.Interface(), nil
-	default:
-		// 基本类型直接复制
-		return value.Interface(), nil
-	}
-}
-
-// FieldValue 按字段名读取结构体属性(支持嵌套字段名如 "User.Name")。
-func FieldValue(obj interface{}, fieldName string) (interface{}, error) {
-	value, err := fieldPath(reflect.ValueOf(obj), fieldName)
-	if err != nil {
-		return nil, err
-	}
-	if !value.IsValid() {
-		return nil, fmt.Errorf("field %q not found", fieldName)
-	}
-	return value.Interface(), nil
-}
-
-// SetFieldValue 按字段名设置结构体属性(支持嵌套字段名)。
-// value 为 nil 时清空该字段(设为类型零值)。
-func SetFieldValue(obj interface{}, fieldName string, value interface{}) error {
-	target, err := fieldPath(reflect.ValueOf(obj), fieldName)
-	if err != nil {
-		return err
-	}
-	if !target.IsValid() || !target.CanSet() {
-		return fmt.Errorf("field %q is not settable", fieldName)
-	}
-	if value == nil {
-		target.Set(reflect.Zero(target.Type()))
-		return nil
-	}
-	return assignValue(target, reflect.ValueOf(value))
-}
-
-// fieldPath 解析点号路径并返回字段 Value(自动解引用指针)。
-func fieldPath(root reflect.Value, path string) (reflect.Value, error) {
-	value := root
-	parts := splitPath(path)
-	for i, part := range parts {
-		for value.Kind() == reflect.Ptr || value.Kind() == reflect.Interface {
-			if value.IsNil() {
-				return reflect.Value{}, fmt.Errorf("field %q: nil pointer at %q", path, part)
-			}
-			value = value.Elem()
-		}
-		if value.Kind() != reflect.Struct {
-			return reflect.Value{}, fmt.Errorf("field %q: %q is not a struct", path, part)
-		}
-		field := value.FieldByName(part)
-		if !field.IsValid() {
-			return reflect.Value{}, fmt.Errorf("field %q not found", path)
-		}
-		if i == len(parts)-1 {
-			return field, nil
-		}
-		value = field
-	}
-	return reflect.Value{}, fmt.Errorf("field %q not found", path)
-}
-
-func splitPath(path string) []string {
-	var parts []string
-	start := 0
-	for i := 0; i < len(path); i++ {
-		if path[i] == '.' {
-			parts = append(parts, path[start:i])
-			start = i + 1
-		}
-	}
-	parts = append(parts, path[start:])
-	return parts
 }

@@ -128,9 +128,9 @@ func TestCopyPropertiesNonBlankPointerSrc(t *testing.T) {
 	if dst.Name != "x" || dst.Age != 1 {
 		t.Fatalf("copy wrong: %+v", dst)
 	}
-	// 类型不匹配字段跳过不报错
-	if err := CopyPropertiesNonBlank(&dst, "not struct"); err != nil {
-		t.Fatalf("non-struct src must be ignored: %v", err)
+	// 非 struct src 报错(与 CopyProperties 行为统一)
+	if err := CopyPropertiesNonBlank(&dst, "not struct"); err == nil {
+		t.Fatal("non-struct src must fail")
 	}
 }
 
