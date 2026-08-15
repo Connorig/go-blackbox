@@ -1,0 +1,12 @@
+// Package model 数据模型层:集中注册全部模型。
+package model
+
+// All 返回项目全部模型(供 builder.RegisterModels 自动建表)。
+// 新增模型后在这里追加一行即可。
+func All() []interface{} {
+	return []interface{}{
+		&TestMycat{},
+		// &User{},      // 示例:新增模型在此登记
+		// &Order{},
+	}
+}

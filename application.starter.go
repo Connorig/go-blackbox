@@ -126,7 +126,13 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			log.SugaredLogger.Error(err)
 			return err
 		}
-		// Register container entries: Instance (typed) + GORM (legacy GormDb()).
+			// 自动迁移:RegisterModels 提供的模型(函数形态,免 main 样板)
+		if err := app.builder.runModelMigrations(gbxioc.GetContext().Ctx); err != nil {
+			log.SugaredLogger.Errorf("auto migrate registered models failed: %v", err)
+			return fmt.Errorf("auto migrate registered models: %w", err)
+		}
+
+	// Register container entries: Instance (typed) + GORM (legacy GormDb()).
 		if regErr := gbxioc.RegisterInstance(dbInstance); regErr != nil {
 			log.SugaredLogger.Errorf("register database instance failed: %v", regErr)
 			return fmt.Errorf("register database instance: %w", regErr)

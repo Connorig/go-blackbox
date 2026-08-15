@@ -291,3 +291,20 @@ func databaseAddress(config Config) string {
 	}
 	return config.Host + ":" + strconv.Itoa(config.Port)
 }
+
+
+// MigrateModels 对一组模型执行 AutoMigrate(业务手动迁移/初始化建表用)。
+// 等价于 datasource.Get().DB().AutoMigrate(models...),但统一处理实例获取错误。
+func MigrateModels(ctx context.Context, models ...interface{}) error {
+	instance, err := Get()
+	if err != nil {
+		return err
+	}
+	if instance == nil || instance.DB() == nil {
+		return errors.New("database instance is nil: call EnableDatabase first")
+	}
+	if len(models) == 0 {
+		return nil
+	}
+	return instance.DB().WithContext(ctx).AutoMigrate(models...)
+}

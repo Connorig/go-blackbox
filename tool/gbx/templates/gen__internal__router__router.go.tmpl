@@ -1,0 +1,74 @@
+// Package router 路由层:按功能分组定义路由,main 中一行挂载。
+// 一级/二级分组:每个功能一个 Routes() 函数,All() 组合。
+package router
+
+import (
+	"github.com/Connorig/go-blackbox/component/auth/token"
+	apperr "github.com/Connorig/go-blackbox/component/error"
+	"github.com/Connorig/go-blackbox/framework/apidoc"
+	"github.com/Connorig/go-blackbox/framework/web"
+	"github.com/kataras/iris/v12"
+
+	"{{.ModulePath}}/internal/handler"
+	"{{.ModulePath}}/internal/model"
+	"{{.ModulePath}}/internal/repository"
+	"{{.ModulePath}}/internal/service"
+)
+
+// TestMycatRoutes 测试表路由组(一级分组示例)。
+// Doc 字段附带接口文档描述(访问 /docs 查看);不需要文档可留空。
+func TestMycatRoutes() []webiris.Route {
+	repo := repository.NewTestMycatRepository()
+	svc := service.NewTestMycatService(repo)
+	return []webiris.Route{
+		{Method: "GET", Path: "/api/v1/test-mycat", Handler: handler.ListTestMycat(svc),
+			Doc: []apidoc.Option{apidoc.Summary("查询列表"), apidoc.Responds(&[]model.TestMycat{})}},
+		{Method: "GET", Path: "/api/v1/test-mycat/{id:int64}", Handler: handler.GetTestMycat(svc),
+			Doc: []apidoc.Option{apidoc.Summary("查询详情"), apidoc.Responds(&model.TestMycat{})}},
+		{Method: "POST", Path: "/api/v1/test-mycat", Handler: handler.CreateTestMycat(svc),
+			Doc: []apidoc.Option{apidoc.Summary("创建"), apidoc.Body(&model.TestMycat{}, true, "创建参数"),
+				apidoc.Responds(&model.TestMycat{})}},
+		{Method: "PUT", Path: "/api/v1/test-mycat/{id:int64}", Handler: handler.UpdateTestMycat(svc),
+			Doc: []apidoc.Option{apidoc.Summary("更新"), apidoc.Body(&model.TestMycat{}, true, "更新参数")}},
+		{Method: "DELETE", Path: "/api/v1/test-mycat/{id:int64}", Handler: handler.DeleteTestMycat(svc),
+			Doc: []apidoc.Option{apidoc.Summary("删除")}},
+	}
+}
+
+// AuthRoutes 认证路由组。
+func AuthRoutes() []webiris.Route {
+	return []webiris.Route{
+		{Method: "POST", Path: "/api/v1/login", Handler: LoginHandler,
+			Doc: []apidoc.Option{apidoc.Summary("登录")}},
+		{Method: "GET", Path: "/api/v1/me", Handler: MeHandler,
+			Doc: []apidoc.Option{apidoc.Summary("当前用户")}},
+	}
+}
+
+// All 组合全部路由分组(main 中一行挂载)。
+// 新增功能组:return append(routes, XxxRoutes()...)
+func All() []webiris.Route {
+	var routes []webiris.Route
+	routes = append(routes, TestMycatRoutes()...)
+	routes = append(routes, AuthRoutes()...)
+	return routes
+}
+
+// LoginHandler 登录(路由层示例 handler)。
+func LoginHandler(ctx iris.Context) {
+	access, refresh, err := apptoken.GenTokenFull(1, "dev@example.com", "user:read,user:write", 101, 10101)
+	if err != nil {
+		webiris.Fail(ctx, 500, apperr.CodeSystemError, "generate token failed")
+		return
+	}
+	webiris.OK(ctx, map[string]string{"access_token": access, "refresh_token": refresh})
+}
+
+// MeHandler 当前用户。
+func MeHandler(ctx iris.Context) {
+	webiris.OK(ctx, map[string]interface{}{
+		"id":    webiris.UserID(ctx),
+		"email": webiris.UserEmail(ctx),
+		"scope": webiris.DataScope(ctx),
+	})
+}

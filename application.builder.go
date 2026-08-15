@@ -97,8 +97,10 @@ type ApplicationBuild struct {
 	namedDatabases []namedDatabaseConfig
 	// admin is the standalone admin service; nil means disabled.
 	admin *webiris.Admin
-	// 注册表模块-tables
+	// 注册表模块-tables(EnableDatabase 直接传入的模型)
 	dbModels []interface{}
+	// modelProvider 注册模型提供函数(RegisterModels,自动迁移用)
+	modelProvider func() []interface{}
 	// 上下文对象
 	ctx context.Context
 	// redis配置对象

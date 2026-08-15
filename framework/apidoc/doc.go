@@ -185,3 +185,9 @@ func inferPathParams(path string) []Param {
 	}
 	return params
 }
+
+
+// ResetStoreForTest 重置全局文档收集器(测试隔离用)。
+func ResetStoreForTest() {
+	store = NewDocStore()
+}
