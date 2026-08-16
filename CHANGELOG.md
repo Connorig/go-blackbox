@@ -74,6 +74,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - log:中间件行短名化仅限 gbx 框架与第三方依赖路径;业务项目代码保留全限定路径
   (报错定位依赖包/类/方法信息,不丢上下文)
 
+## v1.52.0 - 2026-08-16
+
+### Added
+- push/ws 房间化(直播 agent 提案落地):Join/Leave/BroadcastRoom/CountRoom/Rooms
+- 房间多对多归属(一连接多房间)、Join/Leave 幂等、断开自动清理 + OnLeave 触发
+- OnJoin/OnLeave 生命周期回调(锁外触发,回调内可安全调用房间 API)
+- Client.Meta/SetMeta/MetaValue 业务属性绑定(用户 ID/昵称等)
+- 全局 Broadcast 语义不变,完全向后兼容
+
+### Docs
+- docs/WS_ROOM_GUIDELINES.md 房间化使用指南(场景/API/弹幕示例/设计语义/验收要点)
+
 ## v1.45.0 - 2026-08-16
 
 ### Added

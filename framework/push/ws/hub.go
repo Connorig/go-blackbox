@@ -29,6 +29,10 @@ type Client struct {
 	conn *websocket.Conn
 	send chan []byte
 	id   string
+
+	// meta 业务属性(用户 ID/昵称等),metaMu 保护并发读写。
+	meta   map[string]interface{}
+	metaMu sync.RWMutex
 }
 
 // ID 返回客户端唯一标识。
@@ -67,6 +71,12 @@ type Hub struct {
 	count   int
 	nextID  atomic.Uint64
 	pingFor time.Duration
+
+	// roomsMu 保护房间表;rooms 为 room -> 成员集合(Client 多对多归属)。
+	roomsMu sync.RWMutex
+	rooms   map[string]map[*Client]struct{}
+	onJoin  RoomEvent
+	onLeave RoomEvent
 }
 
 // NewHub 创建 WebSocket Hub；onMessage 为收到业务消息的回调（可 nil）。
@@ -151,11 +161,16 @@ func (h *Hub) Close() {
 	if h.closed.CompareAndSwap(false, true) {
 		h.mu.Lock()
 		for client := range h.clients {
-			_ = client.conn.Close()
+			if client.conn != nil {
+				_ = client.conn.Close()
+			}
 		}
 		h.clients = make(map[*Client]bool)
 		h.count = 0
 		h.mu.Unlock()
+		h.roomsMu.Lock()
+		h.rooms = nil
+		h.roomsMu.Unlock()
 	}
 }
 
@@ -232,14 +247,26 @@ func (h *Hub) writePump(client *Client) {
 	}
 }
 
-// removeClient 从注册表移除客户端并关闭发送队列。
+// removeClient 从注册表移除客户端、关闭发送队列,并清理其全部房间归属。
+// 房间 OnLeave 回调在锁外触发(回调内可安全调用房间 API)。
 func (h *Hub) removeClient(client *Client) {
 	h.mu.Lock()
-	defer h.mu.Unlock()
+	removed := false
 	if _, ok := h.clients[client]; ok {
 		delete(h.clients, client)
 		close(client.send)
 		h.count = len(h.clients)
+		removed = true
+	}
+	h.mu.Unlock()
+	if !removed {
+		return
+	}
+	leftRooms := h.leaveAllRooms(client)
+	if h.onLeave != nil && len(leftRooms) > 0 {
+		for _, room := range leftRooms {
+			h.onLeave(h, client, room)
+		}
 	}
 }
 
