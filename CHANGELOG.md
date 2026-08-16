@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - live:ListStreams 兼容 SRS 5.x 顶层 video/audio 嵌套结构(平铺字段同步保留,旧版 publish 结构兼容)
 - live:SRS 回调拒绝 msg 只带业务 message,不再透出 (code=...) 内部错误码后缀
 
+## v1.47.0 - 2026-08-16
+
+### Fixed
+- database:DSN 直连自动规范化——解析后用 pgx ConnConfig 重建安全 URL 格式 DSN
+  (url.UserPassword 编码,#/$/空格/引号等特殊字符密码彻底免疫 key=value 解析歧义;
+   RuntimeParams 全量转 query;Unix socket 主机保持原样)
+- database:残留场景实测闭环——live-integration 真库(15 字符 #$ 密码)DSN 直连端到端验证通过
+
 ## v1.45.0 - 2026-08-16
 
 ### Added

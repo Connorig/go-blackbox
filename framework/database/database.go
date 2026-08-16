@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"strconv"
 	"strings"
@@ -196,13 +197,14 @@ func createDialector(config Config) (gorm.Dialector, error) {
 }
 
 // newPostgreSQLDialector 创建 PostgreSQL Dialector。
-// DSN 直连时预解析校验,提前发现语法错误或密码截断(避免等到 SASL 认证阶段的模糊失败)。
+// DSN 直连时先规范化(解析后重建安全 URL DSN),特殊字符密码彻底免疫;
 func newPostgreSQLDialector(config Config) (gorm.Dialector, error) {
 	if strings.TrimSpace(config.DSN) != "" {
-		if err := validatePostgreSQLDSN(config.DSN); err != nil {
+		dsn, err := normalizePostgreSQLDSN(config.DSN)
+		if err != nil {
 			return nil, err
 		}
-		return postgres.Open(config.DSN), nil
+		return postgres.Open(dsn), nil
 	}
 	if err := validatePostgreSQLSSLMode(config.SSLMode); err != nil {
 		return nil, err
@@ -234,18 +236,32 @@ func quotePGValue(value string) string {
 	return value
 }
 
-// validatePostgreSQLDSN 预解析 DSN,提前暴露语法错误与密码截断。
+// normalizePostgreSQLDSN 解析 DSN 并用 pgx ConnConfig 重建成安全 URL 格式 DSN。
 // 错误信息不泄露密码内容,只提示修复方式。
-func validatePostgreSQLDSN(dsn string) error {
-	if _, err := pgx.ParseConfig(dsn); err != nil {
-		return fmt.Errorf("parse postgres DSN: %w (密码含特殊字符时请用单引号包裹 password='xxx',或改用 URL 格式 postgres://...)", err)
+func normalizePostgreSQLDSN(dsn string) (string, error) {
+	config, err := pgx.ParseConfig(dsn)
+	if err != nil {
+		return "", fmt.Errorf("parse postgres DSN: %w (密码含特殊字符时请用单引号包裹 password='***',或改用字段配置/URL 格式 postgres://...)", err)
 	}
-	// 检测未加引号的密码被空格截断:password= 后未引号值之后的 token
-	// 若不是 key=value 形式,则是被截断的密码残段。错误信息不带残段内容(防泄露)。
+	// 未引号密码被空格截断的残段检测(ParseConfig 无法感知的信息丢失)
 	if suspiciousPasswordTail(dsn) {
-		return fmt.Errorf("postgres DSN password may be truncated by a space: values with spaces must be single-quoted (password='xxx') or use URL format")
+		return "", fmt.Errorf("postgres DSN password may be truncated by a space: values with spaces must be single-quoted (password='xxx') or use URL format")
 	}
-	return nil
+	if strings.HasPrefix(config.Host, "/") {
+		return dsn, nil // Unix socket 路径主机,保持 key=value 原样
+	}
+	u := &url.URL{
+		Scheme: "postgres",
+		User:   url.UserPassword(config.User, config.Password),
+		Host:   net.JoinHostPort(config.Host, strconv.FormatUint(uint64(config.Port), 10)),
+		Path:   config.Database,
+	}
+	query := u.Query()
+	for key, value := range config.RuntimeParams {
+		query.Set(key, value)
+	}
+	u.RawQuery = query.Encode()
+	return u.String(), nil
 }
 
 // suspiciousPasswordTail 检测 password= 未引号值之后是否跟有非 key=value 的残段(疑似截断)。
