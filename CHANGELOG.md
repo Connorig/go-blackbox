@@ -41,6 +41,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Docs
 - docs/LOG_GUIDELINES.md 日志使用规范(级别策略/用法/接入说明)
 
+## v1.49.0 - 2026-08-16
+
+### Fixed
+- apidoc:文档页 JS 方法名大小写匹配——OpenAPI PathItem key 为小写(get/post),
+  JS 改为 item[key] 直接取值(原先用大写取值导致接口列表永远为空)
+- apidoc:版本号显示去重 v 前缀(version 已含 v 时不再拼 v,修复 vv1 瑕疵)
+- apidoc:/docs 无尾斜杠下 fetch 相对路径 404(Bug 4 已在 v1.48.0 合入 prefix 注入,
+  本次补回归测试锁死)
+
 ## v1.45.0 - 2026-08-16
 
 ### Added

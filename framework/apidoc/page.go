@@ -40,14 +40,14 @@ func renderPage(prefix string) string {
 <div id="content"></div>
 <script>
 fetch("{{PREFIX}}/api.json").then(function(res){ return res.json(); }).then(function(spec){
-  document.getElementById("meta").textContent = spec.info.title + " · v" + spec.info.version + " · OpenAPI " + spec.openapi;
+  var shownVersion = (spec.info.version && spec.info.version.indexOf("v") === 0) ? spec.info.version : "v" + spec.info.version;  document.getElementById("meta").textContent = spec.info.title + " · " + shownVersion + " · OpenAPI " + spec.openapi;
   var content = document.getElementById("content");
   var groups = {};
   var methods = {get:"GET",post:"POST",put:"PUT",delete:"DELETE"};
   Object.keys(spec.paths).forEach(function(path){
     var item = spec.paths[path];
     Object.keys(methods).forEach(function(key){
-      var op = item[methods[key]];
+      var op = item[key];
       if (!op) return;
       var tag = (op.tags && op.tags[0]) || "default";
       if (!groups[tag]) groups[tag] = [];
