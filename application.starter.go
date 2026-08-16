@@ -54,6 +54,7 @@ func New(options ...Option) Application {
 // 任一初始化步骤失败都会立即返回，避免应用以不完整状态继续运行。
 func (app *application) Start(builderFun func(ctx context.Context, builder *ApplicationBuild) error) error {
 	printBanner()
+	printAppInfo()
 	if err := app.lifecycle.beginStart(); err != nil {
 		stdlog.Printf("start application failed: %v", err)
 		return err
