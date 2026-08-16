@@ -72,6 +72,9 @@ func NewAdminWithConfig(config AdminConfig) *Admin {
 		app:    iris.New(),
 		ready:  make(chan struct{}),
 	}
+	// admin 的 iris 实例在构造后统一接入 zap 日志
+	admin.app.Logger().Handle(zaplog.GologHandler("admin"))
+	admin.app.Logger().SetOutput(zaplog.GologWriter("admin"))
 	// 内置 API 在构造时注册，业务路由随后注册，业务无法覆盖框架 API。
 	admin.registerBuiltinRoutes()
 	return admin

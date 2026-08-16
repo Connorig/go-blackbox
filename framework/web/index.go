@@ -10,6 +10,8 @@ import (
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/recover"
+
+	zaplog "github.com/Connorig/go-blackbox/framework/log"
 )
 
 // PartyComponent 用于向 Iris Application 注册路由、中间件和错误处理器。
@@ -136,6 +138,8 @@ func (w *WebIris) Ready() <-chan struct{} {
 // components 用于集中注册业务路由和中间件，nil 表示不注册额外组件。
 func newApplication(logLevel string, components PartyComponent) *iris.Application {
 	application := iris.New()
+	application.Logger().Handle(zaplog.GologHandler("web"))
+	application.Logger().SetOutput(zaplog.GologWriter("web"))
 	application.Use(recover.New())
 	application.Logger().SetLevel(logLevel)
 

@@ -13,9 +13,10 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"github.com/jackc/pgx/v5"
+	zaplog "github.com/Connorig/go-blackbox/framework/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 )
 
@@ -333,14 +334,24 @@ func validatePostgreSQLSSLMode(mode string) error {
 
 // defaultGormConfig 返回所有关系数据库共享的 GORM 行为配置。
 func defaultGormConfig() *gorm.Config {
+	// GORM SQL 日志级别随 gbx 全局日志级别联动:开发 debug 可见 SQL 详情,
+	// 生产 info 只留慢查询与错误,保持分级策略一致。
+	gormLogLevel := gormlogger.Error
+	switch strings.ToLower(strings.TrimSpace(zaplog.CONFIG.Level)) {
+	case "debug":
+		gormLogLevel = gormlogger.Info
+	case "info":
+		gormLogLevel = gormlogger.Warn
+	}
+	gormConfig := zaplog.DefaultGormLoggerConfig()
+	gormConfig.LogLevel = gormLogLevel
 	return &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Warn),
+		Logger: zaplog.NewGormLogger(gormConfig),
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
 		},
 	}
 }
-
 // applyUnifiedPoolConfig 将统一连接池参数应用到底层 database/sql。
 func applyUnifiedPoolConfig(pool interface {
 	SetMaxIdleConns(int)

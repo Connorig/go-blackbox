@@ -65,6 +65,8 @@ func Init() error {
 	oldLogger := Logger
 	Logger = newLogger
 	SugaredLogger = newLogger.Sugar()
+	// 标准库 log 桥接:第三方依赖的 log.Print* 输出统一进 zap(info 级,component=stdlib)。
+	stdlog.SetOutput(stdlibLogWriter{})
 	if oldLogger != nil {
 		if syncErr := oldLogger.Sync(); syncErr != nil && !isIgnorableSyncError(syncErr) {
 			return fmt.Errorf("sync previous logger: %w", syncErr)
@@ -225,6 +227,12 @@ func newEncoderCore(minimumLevel zapcore.Level) (zapcore.Core, error) {
 	return zapcore.NewTee(cores...), nil
 }
 
+// consoleFunctionEncoder console 下压缩函数名(database.NewNamed),避免全限定路径撑爆一行;
+// JSON 保持全路径便于检索。
+func consoleFunctionEncoder(function string, encoder zapcore.PrimitiveArrayEncoder) {
+	encoder.AppendString(shortFunctionName(function))
+}
+
 // getEncoderConfig 返回 console 和 JSON 编码器共享的稳定字段配置。
 // timestamp 使用带时区的毫秒精度 RFC3339，caller 和 function 分别定位源码行与调用方法。
 func getEncoderConfig() zapcore.EncoderConfig {
@@ -232,9 +240,9 @@ func getEncoderConfig() zapcore.EncoderConfig {
 	if strings.EqualFold(CONFIG.Format, "json") {
 		levelEncoder = zapcore.LowercaseLevelEncoder
 	}
-	return zapcore.EncoderConfig{
+	encoderConfig := zapcore.EncoderConfig{
 		CallerKey:      "caller",
-		FunctionKey:    "function",
+		FunctionKey:    functionKeyByFormat(),
 		LevelKey:       "level",
 		MessageKey:     "message",
 		TimeKey:        "timestamp",
@@ -246,6 +254,7 @@ func getEncoderConfig() zapcore.EncoderConfig {
 		EncodeDuration: zapcore.SecondsDurationEncoder,
 		EncodeName:     zapcore.FullNameEncoder,
 	}
+	return encoderConfig
 }
 
 // getEncoder 根据 CONFIG.Format 创建日志编码器。
@@ -262,6 +271,7 @@ func getEncoder() zapcore.Encoder {
 func getErrorEncoder() zapcore.Encoder {
 	config := getEncoderConfig()
 	config.EncodeLevel = zapcore.LowercaseLevelEncoder
+	config.FunctionKey = "function" // error.log 为 JSON,保留全路径便于检索
 	return zapcore.NewJSONEncoder(config)
 }
 
@@ -284,4 +294,24 @@ func serviceName(prefix string) string {
 // isIgnorableSyncError 判断错误是否来自不支持 fsync 的终端输出。
 func isIgnorableSyncError(err error) bool {
 	return errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOTTY)
+}
+
+// stdlibLogWriter 把标准库 log 输出桥接到 zap Info(component=stdlib),每行一条。
+type stdlibLogWriter struct{}
+
+func (stdlibLogWriter) Write(p []byte) (int, error) {
+	line := strings.TrimSpace(string(p))
+	if line != "" {
+		SugaredLogger.With("component", "stdlib").Info(line)
+	}
+	return len(p), nil
+}
+
+// functionKeyByFormat 决定 function 字段输出:
+// console 下置空(全限定路径会撑爆行,caller 文件行号足够定位);JSON 保留全路径便于检索。
+func functionKeyByFormat() string {
+	if strings.EqualFold(CONFIG.Format, "json") {
+		return "function"
+	}
+	return ""
 }

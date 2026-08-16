@@ -1,8 +1,10 @@
 package apidoc
 
+import "strings"
+
 // renderPage 渲染 API 浏览页面(内嵌,无外部资源)。
 func renderPage(prefix string) string {
-	return `<!DOCTYPE html>
+	page := `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -37,7 +39,7 @@ func renderPage(prefix string) string {
 <div class="sub" id="meta">加载中…</div>
 <div id="content"></div>
 <script>
-fetch("api.json").then(function(res){ return res.json(); }).then(function(spec){
+fetch("{{PREFIX}}/api.json").then(function(res){ return res.json(); }).then(function(spec){
   document.getElementById("meta").textContent = spec.info.title + " · v" + spec.info.version + " · OpenAPI " + spec.openapi;
   var content = document.getElementById("content");
   var groups = {};
@@ -86,4 +88,6 @@ fetch("api.json").then(function(res){ return res.json(); }).then(function(spec){
 </script>
 </body>
 </html>`
+	page = strings.ReplaceAll(page, "{{PREFIX}}", prefix)
+	return page
 }

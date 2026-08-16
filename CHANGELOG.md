@@ -25,6 +25,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    RuntimeParams 全量转 query;Unix socket 主机保持原样)
 - database:残留场景实测闭环——live-integration 真库(15 字符 #$ 密码)DSN 直连端到端验证通过
 
+## v1.48.0 - 2026-08-16
+
+### Added
+- 统一日志体系:业务 zap、Iris、GORM、标准库 log 四大日志源全部收编进 zap
+- GologHandler:golog(iris)结构化日志拦截(Fields/调用点/级别映射)
+- GologWriter:Printer 直写兜底(iris 路由表有意绕过 handler,SetOutput 拦截,剥离 ANSI/级别前缀/冗余时间戳)
+- GormLogger:SQL 详情(参数化 ?/rows/elapsed_ms)进 debug,慢查询(默认 200ms)进 warn,错误进 error;级别随全局配置联动(debug=Info/info=Warn)
+- stdlib 桥接:第三方依赖 log.Print* 收编进 zap
+- EnableWeb/EnableDatabase 自动接线,业务零配置
+
+### Changed
+- console 下移除 function 全限定路径(短 caller 足够定位);error.log JSON 保留全路径
+
+### Docs
+- docs/LOG_GUIDELINES.md 日志使用规范(级别策略/用法/接入说明)
+
 ## v1.45.0 - 2026-08-16
 
 ### Added
