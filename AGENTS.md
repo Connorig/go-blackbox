@@ -77,6 +77,10 @@ docs/         全部使用文档(见 docs/MODULES_GUIDE.md 索引)
 ## 四、开发工作流(每个功能点)
 
 ```bash
+# 0. 发版前:同步版本常量(必做!)
+#    修改 banner.go Version → scripts\check-version.ps1 -ExpectedVersion <新版本> 校验通过
+.\scripts\check-version.ps1 -ExpectedVersion <新版本>
+
 # 1. 开发 → 全量验证(必须全绿)
 go build ./...
 go test ./...        # 全绿

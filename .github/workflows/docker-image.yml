@@ -22,6 +22,15 @@ jobs:
           go-version: "1.21.x"
           cache: true
 
+            - name: Verify banner version matches tag
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          CONST_VERSION=$(grep -oP 'const Version = "\K[^"]+' banner.go)
+          if [ "$TAG_VERSION" != "$CONST_VERSION" ]; then
+            echo "::error::version mismatch: tag=v${TAG_VERSION} banner=${CONST_VERSION}"
+            exit 1
+          fi
+          echo "version check OK: v${TAG_VERSION}"
       - name: Verify module path
         run: test "$(go list -m)" = "github.com/Connorig/go-blackbox"
 
