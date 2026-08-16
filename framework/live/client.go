@@ -285,12 +285,5 @@ func truncateText(data []byte, limit int) string {
 	return text
 }
 
-// 全局便捷入口:NewClient 后业务手动 SetGlobal(或 Provide 自动)。
-
-var global *Client
-
-// SetGlobal 设置全局客户端。
-func SetGlobal(client *Client) { global = client }
-
-// Get 获取全局 SRS 客户端;未初始化返回 nil。
-func Get() *Client { return global }
+// 全局便捷入口(默认/命名实例注册表,见 named.go):
+// NewClient 后业务手动 SetGlobal(或 Provide 自动);多 SRS 集群用 SetNamed/GetNamed。

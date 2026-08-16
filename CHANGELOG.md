@@ -50,6 +50,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - apidoc:/docs 无尾斜杠下 fetch 相对路径 404(Bug 4 已在 v1.48.0 合入 prefix 注入,
   本次补回归测试锁死)
 
+## v1.50.0 - 2026-08-16
+
+### Added
+- live:命名客户端实例支持(设计建议落地,对齐 datasource NewNamed 模式)
+  - SetNamed(name, client) 注册命名实例(nil 注销,幂等)
+  - GetNamed(name) 按名获取;Get() 默认实例(旧语义保留,未初始化返回 nil)
+  - Clients() 全部实例快照;读写锁并发安全
+  - 多 SRS 集群/多 vhost 场景:按集群注册、按名调用
+
 ## v1.45.0 - 2026-08-16
 
 ### Added
