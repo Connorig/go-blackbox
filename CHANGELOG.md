@@ -59,6 +59,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Clients() 全部实例快照;读写锁并发安全
   - 多 SRS 集群/多 vhost 场景:按集群注册、按名调用
 
+## v1.51.0 - 2026-08-16
+
+### Fixed
+- log:webiris 监听日志用真实地址自打(listener.Addr()),替换 iris 残缺输出
+  Now listening on: http://[(空 host 时 iris 拼接 bug)
+- log:GologWriter 丢弃 iris 的 Now listening on 行(真实地址由 webiris 输出)
+- log:iris 路由表中间件行压缩——函数全限定名与文件全路径短名化
+  (• web.ErrorHandler (error_handler.go:15)),debug 下路由表更紧凑
+
 ## v1.45.0 - 2026-08-16
 
 ### Added

@@ -194,3 +194,36 @@ func TestConsoleFunctionEncoder(t *testing.T) {
 		t.Fatal("encoder is nil")
 	}
 }
+
+// TestGologWriterDropsIrisListening iris 残缺监听行被丢弃(webiris 自打真实地址)。
+func TestGologWriterDropsIrisListening(t *testing.T) {
+	director, cleanup := setupFileLogger(t, "info")
+	defer cleanup()
+
+	var writer gologWriterAdapter
+	writer.component = "web"
+	_, _ = writer.Write([]byte("Now listening on: http://[\n"))
+	_, _ = writer.Write([]byte("Application started. Press CTRL+C to shut down.\n"))
+	_ = Sync()
+	content := readLogFile(t, director, "info.log")
+	if strings.Contains(content, "Now listening on") {
+		t.Errorf("info.log must not contain iris listening line:\n%s", content)
+	}
+	if !strings.Contains(content, "Application started") {
+		t.Errorf("other lines must pass through:\n%s", content)
+	}
+}
+
+// TestShortenMiddlewareLine 中间件行函数名与文件路径压缩。
+func TestShortenMiddlewareLine(t *testing.T) {
+	cases := map[string]string{
+		"• github.com/Connorig/go-blackbox/framework/web.ErrorHandler (D:/Codes/golang-workspace/GolandProjects/company/sg/go-blackbox/framework/web/error_handler.go:15)": "• web.ErrorHandler (error_handler.go:15)",
+		"• github.com/Connorig/go-blackbox/framework/web.Limit.func1 (C:/Users/x/pkg/mod/github.com/kataras/iris/v12@v12.2.5/ratelimit.go:32)": "• web.Limit.func1 (ratelimit.go:32)",
+		"GET: /api/streams (./internal\\handler\\stream.go:17)": "GET: /api/streams (./internal\\handler\\stream.go:17)",
+	}
+	for input, want := range cases {
+		if got := shortenMiddlewareLine(input); got != want {
+			t.Errorf("shorten(%q) = %q, want %q", input, got, want)
+		}
+	}
+}

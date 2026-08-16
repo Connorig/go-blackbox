@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/kataras/iris/v12"
+	zaplog "github.com/Connorig/go-blackbox/framework/log"
 	"github.com/kataras/iris/v12/core/host"
 )
 
@@ -25,6 +26,10 @@ func (w *WebIris) Run(ctx context.Context) error {
 		w.app.Logger().Errorf("create web listener failed, address=%s, error=%v", w.config.Address, err)
 		return fmt.Errorf("webiris: create listener on %s: %w", w.config.Address, err)
 	}
+
+	// 监听真实地址由 gbx 自打(iris 空 host 时输出残缺的 http://[),
+	// 对应的 iris Now listening on 行在 zaplog.GologWriter 中被丢弃。
+	zaplog.SugaredLogger.With("component", "web").Infow("web service listening", "address", listener.Addr().String())
 
 	watcherDone := make(chan struct{})
 	shutdownResult := w.watchShutdown(ctx, listener, watcherDone)

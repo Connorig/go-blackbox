@@ -37,14 +37,40 @@ func (w *gologWriterAdapter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// flush 输出当前累积行(剥离 ANSI 色码与空行)。
+// flush 输出当前累积行(剥离 ANSI 色码、级别前缀、行首时间戳)。
+// iris 的 "Now listening on:" 行被丢弃(空 host 时 iris 输出残缺的 http://[,gbx 在
+// webiris 侧用真实地址自打监听日志);中间件行做函数名/文件路径短名压缩。
 func (w *gologWriterAdapter) flush() {
 	line := strings.TrimSpace(w.buffer.String())
 	w.buffer.Reset()
 	if line == "" {
 		return
 	}
-	SugaredLogger.With("component", w.component).Info(stripANSI(line))
+	cleaned := stripANSI(line)
+	if strings.HasPrefix(cleaned, "Now listening on:") {
+		return // 监听信息由 webiris 用真实地址输出,丢弃 iris 的残缺文本
+	}
+	cleaned = shortenMiddlewareLine(cleaned)
+	SugaredLogger.With("component", w.component).Info(cleaned)
+}
+
+// middlewareLineRe 匹配 iris 路由表中间件行:• 函数全名 (文件:行号)。
+var middlewareLineRe = regexp.MustCompile(`^• (\S+) \(([^)]+)\)$`)
+
+// shortenMiddlewareLine 压缩中间件行的函数全限定名与文件全路径:
+// "• github.com/Connorig/go-blackbox/framework/web.ErrorHandler (D:/Codes/.../error_handler.go:15)"
+// → "• web.ErrorHandler (error_handler.go:15)"。非中间件行原样返回。
+func shortenMiddlewareLine(line string) string {
+	matches := middlewareLineRe.FindStringSubmatch(line)
+	if len(matches) != 3 {
+		return line
+	}
+	function := shortFunctionName(matches[1])
+	source := matches[2]
+	if index := strings.LastIndexAny(source, "/\\"); index >= 0 {
+		source = source[index+1:]
+	}
+	return "• " + function + " (" + source + ")"
 }
 
 // ansiRe 匹配 ANSI 颜色/样式转义序列。
