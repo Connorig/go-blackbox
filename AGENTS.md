@@ -58,7 +58,7 @@ framework/    框架能力(业务直接使用)
 ├── audit/     审计
 └── lifecycle/ 生命周期/优雅关闭
 
-tool/gbx      代码生成 CLI(code/config/gen 三种风格)
+cmd/gbx      代码生成 CLI(code/config/gen 三种风格)
 examples/     web-basic(全家桶)/ openapi / mongodb-demo
 docs/         全部使用文档(见 docs/MODULES_GUIDE.md 索引)
 ```
@@ -137,7 +137,7 @@ git push origin vX.Y.Z     # 触发 GitHub Action 验证 + 自动 Release
 
 | 命令 | 用途 |
 |---|---|
-| `go run ./tool/gbx new -name demo -style gen` | 生成 CRUD 全栈项目 |
+| `go run ./cmd/gbx new -name demo -style gen` | 生成 CRUD 全栈项目 |
 | `go test ./framework/gencode/ -v` | 单包测试 |
 | `go test ./... -run '^$'` | 全包编译(CI 第一步) |
 | `go test ./framework/lifecycle . && go test ./framework/web -run 'TestNew\|TestInit\|TestRunRejects\|TestStaticSource'` | CI 隔离生命周期测试 |

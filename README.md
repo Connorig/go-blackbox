@@ -41,7 +41,7 @@ mailC := appbox.Mail()          // *email.Client
 
 ```bash
 # 1. 用 CLI 生成项目(或直接引用本库)
-go run github.com/Connorig/go-blackbox/tool/gbx new -name demo-app
+go run github.com/Connorig/go-blackbox/cmd/gbx new -name demo-app
 cd demo-app
 
 # 2. 拉依赖并启动
@@ -91,7 +91,7 @@ framework/   框架能力(面向业务)
 ├── log/      Zap 结构化日志(运行时级别切换)
 └── lifecycle/ 生命周期与优雅关闭
 
-tool/gbx      代码生成 CLI:gbx new 一键生成业务项目骨架
+cmd/gbx      代码生成 CLI:gbx new 一键生成业务项目骨架
 ```
 
 ## 模块文档总表(配置 / 调用 / 示例)

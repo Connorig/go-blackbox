@@ -43,7 +43,7 @@ type application struct {
 
 // New 返回进程级 Application 单例。
 // 当前版本保持历史单例语义，重复配置和可重入能力将在生命周期模块中统一优化。
-func New() Application {
+func New(options ...Option) Application {
 	doOnce.Do(func() {
 		app = &application{builder: &ApplicationBuild{}}
 	})
@@ -53,6 +53,7 @@ func New() Application {
 // Start 初始化全部启用组件，并阻塞等待系统信号或组件主动退出。
 // 任一初始化步骤失败都会立即返回，避免应用以不完整状态继续运行。
 func (app *application) Start(builderFun func(ctx context.Context, builder *ApplicationBuild) error) error {
+	printBanner()
 	if err := app.lifecycle.beginStart(); err != nil {
 		stdlog.Printf("start application failed: %v", err)
 		return err

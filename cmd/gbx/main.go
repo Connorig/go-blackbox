@@ -19,8 +19,8 @@
 //   - internal/handler:业务 handler 示例(统一响应 + 错误码 + 数据权限)
 //   - config.toml / go.mod / README.md / .gitignore
 //
-// 安装:go install github.com/Connorig/go-blackbox/tool/gbx
-// 或直接:go run github.com/Connorig/go-blackbox/tool/gbx new -name demo
+// 安装:go install github.com/Connorig/go-blackbox/cmd/gbx
+// 或直接:go run github.com/Connorig/go-blackbox/cmd/gbx new -name demo
 package main
 
 import (

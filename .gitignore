@@ -11,19 +11,24 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
-/*.log
-/*_log
-*.idea
+# Dependency directories
+/vendor/
 
-*.sh
-Dockerfile
-*.log
-.idea
-/zap
-latest_log
-/vendor/**
+# IDE
+.idea/
+.vscode/
+
+# 运行产物(业务/示例运行生成,不入库)
 *.db
 *.db-journal
 *.log
+logs/
+latest_log
+tmp_*/
+.openclaw-tmp-*
+
+# 参考项目/临时目录(已清理,防止再次误入)
+/zap
+
+# 本地配置(示例保留 config.example.toml)
+/config.toml
