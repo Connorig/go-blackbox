@@ -15,6 +15,28 @@
 | 配置 | Viper + 文件热更新 |
 | 发布 | 每功能点 tag 发布,GitHub Action 自动验证 + Release |
 
+## 资源获取(门面模式,推荐)
+
+业务统一通过 ppbox 门面获取已装配的资源,无需记忆各模块获取方式:
+
+`go
+db    := appbox.DB()            // *gorm.DB
+redis := appbox.Cache()         // *cache.RedisCache
+mongo := appbox.MongoDB()       // *mongodb.Client
+mq    := appbox.MQ()            // *rabbitmq.Connection
+kafka := appbox.KafkaProducer() // *kafka.Producer
+cron  := appbox.Cron()          // *cron.Cron
+esC   := appbox.ES()            // *es.Client
+oss   := appbox.Storage()       // *storage.Client
+inf   := appbox.Influx()        // *influx.Client
+smsC  := appbox.SMS()           // *sms.Client
+mailC := appbox.Mail()          // *email.Client
+`
+
+- 未启用对应模块时返回 nil(不 panic)
+- 业务自定义对象(service 等)用 gbxioc.GetBean[T]()(单例/多例/具名)
+- 底层模块便捷函数(cache.Get() 等)保留,门面是推荐入口
+
 ## 快速开始(3 分钟)
 
 ```bash
