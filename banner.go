@@ -14,18 +14,19 @@ const Author = "Connor"
 // Organization 组织域名。
 const Organization = "nexaaico.com"
 
-// BannerText 启动横幅(ASCII art,Spring Boot 风格)。
+// BannerText 启动横幅(GBX 大字,Spring Boot 风格)。
 const BannerText = `
-    ____   _____   _  __
-   / __ \ / ____| | |/ /
-  | |  | | |      | ' / 
-  | |  | | |      |  <  
-  | |__| | |____  | . \ 
-   \____/ \_____| |_|\_\
 
-        ALL IN GBX.APP
+   ___  ____  __  __
+  / __| __ ) \ \/ /
+ | | |_|  _ \  \  /
+ | |___| |_) | /  \
+  \____|____/ /_/\_\
 
-  go-blackbox v%s · %s · %s
+      GBX.APP
+   ALL IN GBX.APP
+
+ go-blackbox v%s · %s · %s
 `
 
 // bannerEnabled 控制横幅打印(WithoutBanner 关闭)。
