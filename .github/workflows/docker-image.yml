@@ -35,6 +35,33 @@ jobs:
           fi
           echo "version check OK: v${TAG_VERSION}"
 
+      - name: Verify changelog entry exists
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if ! grep -q "^## v${TAG_VERSION}" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md missing entry for v${TAG_VERSION}. Add release notes first."
+            exit 1
+          fi
+          echo "changelog entry OK: v${TAG_VERSION}"
+
+      - name: Extract changelog section as release notes
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          awk -v ver="v${TAG_VERSION}" '
+            BEGIN { found=0 }
+            /^## / {
+              if (found) exit
+              if ($2 == ver) found=1
+            }
+            found { print }
+          ' CHANGELOG.md > /tmp/release-notes.md
+          if [ ! -s /tmp/release-notes.md ]; then
+            echo "::error::failed to extract release notes for v${TAG_VERSION}"
+            exit 1
+          fi
+          echo "--- release notes ---"
+          cat /tmp/release-notes.md
+
       - name: Compile all packages without running integration tests
         run: go test ./... -run '^$'
 
@@ -48,3 +75,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          body_path: /tmp/release-notes.md
