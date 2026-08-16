@@ -220,6 +220,8 @@ func TestShortenMiddlewareLine(t *testing.T) {
 		"• github.com/Connorig/go-blackbox/framework/web.ErrorHandler (D:/Codes/golang-workspace/GolandProjects/company/sg/go-blackbox/framework/web/error_handler.go:15)": "• web.ErrorHandler (error_handler.go:15)",
 		"• github.com/Connorig/go-blackbox/framework/web.Limit.func1 (C:/Users/x/pkg/mod/github.com/kataras/iris/v12@v12.2.5/ratelimit.go:32)": "• web.Limit.func1 (ratelimit.go:32)",
 		"GET: /api/streams (./internal\\handler\\stream.go:17)": "GET: /api/streams (./internal\\handler\\stream.go:17)",
+		// 业务项目代码保留全限定路径,报错定位不丢包/类/方法信息
+		"• github.com/Connorig/live-integration/internal/middleware.BusinessAuth (D:/Codes/live-integration/internal/middleware/auth.go:21)": "• github.com/Connorig/live-integration/internal/middleware.BusinessAuth (D:/Codes/live-integration/internal/middleware/auth.go:21)",
 	}
 	for input, want := range cases {
 		if got := shortenMiddlewareLine(input); got != want {

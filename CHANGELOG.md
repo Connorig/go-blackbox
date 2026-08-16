@@ -68,6 +68,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - log:iris 路由表中间件行压缩——函数全限定名与文件全路径短名化
   (• web.ErrorHandler (error_handler.go:15)),debug 下路由表更紧凑
 
+## v1.51.1 - 2026-08-16
+
+### Fixed
+- log:中间件行短名化仅限 gbx 框架与第三方依赖路径;业务项目代码保留全限定路径
+  (报错定位依赖包/类/方法信息,不丢上下文)
+
 ## v1.45.0 - 2026-08-16
 
 ### Added

@@ -60,15 +60,22 @@ var middlewareLineRe = regexp.MustCompile(`^• (\S+) \(([^)]+)\)$`)
 // shortenMiddlewareLine 压缩中间件行的函数全限定名与文件全路径:
 // "• github.com/Connorig/go-blackbox/framework/web.ErrorHandler (D:/Codes/.../error_handler.go:15)"
 // → "• web.ErrorHandler (error_handler.go:15)"。非中间件行原样返回。
+// shortenMiddlewareLine 压缩中间件行:仅 gbx 框架自身与第三方依赖路径短名化,
+// 业务项目代码保留全限定路径(报错定位依赖包/类/方法信息)。
 func shortenMiddlewareLine(line string) string {
 	matches := middlewareLineRe.FindStringSubmatch(line)
 	if len(matches) != 3 {
 		return line
 	}
-	function := shortFunctionName(matches[1])
+	function := matches[1]
+	if strings.HasPrefix(function, "github.com/Connorig/go-blackbox/") {
+		function = shortFunctionName(function)
+	}
 	source := matches[2]
-	if index := strings.LastIndexAny(source, "/\\"); index >= 0 {
-		source = source[index+1:]
+	if strings.Contains(source, "go-blackbox") || strings.Contains(source, "pkg/mod") {
+		if index := strings.LastIndexAny(source, "/\\"); index >= 0 {
+			source = source[index+1:]
+		}
 	}
 	return "• " + function + " (" + source + ")"
 }
