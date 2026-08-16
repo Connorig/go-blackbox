@@ -203,8 +203,13 @@ func newPostgreSQLDialector(config Config) (gorm.Dialector, error) {
 	if timeoutSeconds < 1 {
 		timeoutSeconds = 1
 	}
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s connect_timeout=%d", config.Host, config.UserName, config.Password, config.Database, config.Port, config.SSLMode, config.TimeZone, timeoutSeconds)
+	dsn := buildPostgreSQLDSN(config, timeoutSeconds)
 	return postgres.Open(dsn), nil
+}
+
+// buildPostgreSQLDSN 拼接 PostgreSQL DSN(独立函数,便于测试密码正确性)。
+func buildPostgreSQLDSN(config Config, timeoutSeconds int) string {
+	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s connect_timeout=%d", config.Host, config.UserName, config.Password, config.Database, config.Port, config.SSLMode, config.TimeZone, timeoutSeconds)
 }
 
 // newSQLiteDialector 创建纯 Go SQLite Dialector（无 CGO）。
