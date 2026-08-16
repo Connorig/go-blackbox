@@ -205,7 +205,13 @@ func newEncoderCore(minimumLevel zapcore.Level) (zapcore.Core, error) {
 			}
 			return entryLevel == fileLevel
 		})
-		cores = append(cores, zapcore.NewCore(getEncoder(), writeSyncer, enabler))
+		// error.log 使用 JSON 编码:堆栈/调用链/函数名字段分明,机器可读;
+		// debug/info/warn 保持 console 人读格式。
+		encoder := getEncoder()
+		if fileLevel == zap.ErrorLevel {
+			encoder = getErrorEncoder()
+		}
+		cores = append(cores, zapcore.NewCore(encoder, writeSyncer, enabler))
 	}
 	if CONFIG.LogInConsole {
 		consoleEnabler := zap.LevelEnablerFunc(func(entryLevel zapcore.Level) bool {
@@ -248,6 +254,15 @@ func getEncoder() zapcore.Encoder {
 		return zapcore.NewJSONEncoder(getEncoderConfig())
 	}
 	return zapcore.NewConsoleEncoder(getEncoderConfig())
+}
+
+// getErrorEncoder 返回 error.log 专用 JSON 编码器:
+// 堆栈文本、调用点、函数名、组件字段完整且结构化,单行一条记录,
+// 便于日志平台解析与告警规则匹配(修复 error.log 堆栈散乱、调用链不完整问题)。
+func getErrorEncoder() zapcore.Encoder {
+	config := getEncoderConfig()
+	config.EncodeLevel = zapcore.LowercaseLevelEncoder
+	return zapcore.NewJSONEncoder(config)
 }
 
 // customTimeEncoder 使用带时区的 RFC3339 毫秒格式输出时间，便于日志平台解析和排序。
