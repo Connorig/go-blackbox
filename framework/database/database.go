@@ -203,7 +203,7 @@ func newPostgreSQLDialector(config Config) (gorm.Dialector, error) {
 	if timeoutSeconds < 1 {
 		timeoutSeconds = 1
 	}
-	dsn := fmt.Sprintf("host=%s user=%s password=*** dbname=%s port=%d sslmode=%s TimeZone=%s connect_timeout=%d", config.Host, config.UserName, config.Database, config.Port, config.SSLMode, config.TimeZone, timeoutSeconds)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s connect_timeout=%d", config.Host, config.UserName, config.Password, config.Database, config.Port, config.SSLMode, config.TimeZone, timeoutSeconds)
 	return postgres.Open(dsn), nil
 }
 
