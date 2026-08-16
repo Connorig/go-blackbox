@@ -17,7 +17,7 @@ import (
 	"github.com/Connorig/go-blackbox/framework/web"
 	"github.com/kataras/iris/v12"
 	log "github.com/Connorig/go-blackbox/framework/log"
-	"github.com/Connorig/go-blackbox/gbxioc"
+	"github.com/Connorig/go-blackbox/framework/gbxioc"
 )
 
 const (

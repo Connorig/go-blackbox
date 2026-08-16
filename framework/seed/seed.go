@@ -3,7 +3,7 @@ package seed
 import (
 	"context"
 	"github.com/Connorig/go-blackbox/framework/log"
-	"github.com/Connorig/go-blackbox/gbxioc"
+	"github.com/Connorig/go-blackbox/framework/gbxioc"
 	"go.uber.org/zap"
 )
 

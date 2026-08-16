@@ -13,7 +13,7 @@ import (
 	"github.com/Connorig/go-blackbox/framework/mongo"
 	"github.com/Connorig/go-blackbox/framework/lifecycle"
 	log "github.com/Connorig/go-blackbox/framework/log"
-	"github.com/Connorig/go-blackbox/gbxioc"
+	"github.com/Connorig/go-blackbox/framework/gbxioc"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 )
