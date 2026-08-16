@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 发版约定:每次发版必须在顶部新增 `## vX.Y.Z` 条目,CI 会提取当前 tag 对应条目
 作为 GitHub Release 说明(banner 版本常量与 CHANGELOG 条目必须同步更新)。
 
+## v1.46.0 - 2026-08-16
+
+### Fixed
+- database:字段配置密码含空格/# 时自动单引号引用,修复 pgx key=value DSN 解析截断风险
+- database:DSN 直连预解析校验(语法错误/空格截断密码提前拦截,报错不泄露密码)
+- database:字段配置密码含单引号时明确拒绝并提示改用 URL 格式 DSN
+- live:ListStreams 兼容 SRS 5.x 顶层 video/audio 嵌套结构(平铺字段同步保留,旧版 publish 结构兼容)
+- live:SRS 回调拒绝 msg 只带业务 message,不再透出 (code=...) 内部错误码后缀
+
 ## v1.45.0 - 2026-08-16
 
 ### Added

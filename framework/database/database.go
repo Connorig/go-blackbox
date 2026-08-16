@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/glebarez/sqlite"
+	"github.com/jackc/pgx/v5"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -164,6 +165,9 @@ func validateDatabaseConfig(config Config) error {
 	if strings.TrimSpace(config.DSN) != "" {
 		return nil
 	}
+	if config.Driver == DriverPostgreSQL && strings.Contains(config.Password, "'") {
+		return errors.New("postgres password containing single quote is not expressible in key=value DSN: use Config.DSN with URL format (postgres://user:password@host/db)")
+	}
 	if config.Host == "" || config.UserName == "" || config.Database == "" {
 		return fmt.Errorf("database host, user name and database are required for driver %q", config.Driver)
 	}
@@ -192,8 +196,12 @@ func createDialector(config Config) (gorm.Dialector, error) {
 }
 
 // newPostgreSQLDialector 创建 PostgreSQL Dialector。
+// DSN 直连时预解析校验,提前发现语法错误或密码截断(避免等到 SASL 认证阶段的模糊失败)。
 func newPostgreSQLDialector(config Config) (gorm.Dialector, error) {
-	if config.DSN != "" {
+	if strings.TrimSpace(config.DSN) != "" {
+		if err := validatePostgreSQLDSN(config.DSN); err != nil {
+			return nil, err
+		}
 		return postgres.Open(config.DSN), nil
 	}
 	if err := validatePostgreSQLSSLMode(config.SSLMode); err != nil {
@@ -208,8 +216,63 @@ func newPostgreSQLDialector(config Config) (gorm.Dialector, error) {
 }
 
 // buildPostgreSQLDSN 拼接 PostgreSQL DSN(独立函数,便于测试密码正确性)。
+// Host/UserName/Password/Database 经 quotePGValue 引用:含空格、#、单引号时
+// 自动单引号包裹(内部单引号翻倍),避免 pgx key=value 解析截断。
 func buildPostgreSQLDSN(config Config, timeoutSeconds int) string {
-	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s connect_timeout=%d", config.Host, config.UserName, config.Password, config.Database, config.Port, config.SSLMode, config.TimeZone, timeoutSeconds)
+	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s connect_timeout=%d",
+		quotePGValue(config.Host), quotePGValue(config.UserName), quotePGValue(config.Password),
+		quotePGValue(config.Database), config.Port, config.SSLMode, config.TimeZone, timeoutSeconds)
+}
+
+// quotePGValue 对 pgx DSN 值做安全引用:值含空格、# 时用单引号包裹(符合 pgx key=value 规则);
+// 安全值原样返回。注意:pgx 单引号包裹不支持内部单引号转义,含 ' 的值由
+// validateDatabaseConfig 在字段配置路径拒绝(改用 URL 格式 DSN)。
+func quotePGValue(value string) string {
+	if value == "" || strings.ContainsAny(value, " #") {
+		return "'" + value + "'"
+	}
+	return value
+}
+
+// validatePostgreSQLDSN 预解析 DSN,提前暴露语法错误与密码截断。
+// 错误信息不泄露密码内容,只提示修复方式。
+func validatePostgreSQLDSN(dsn string) error {
+	if _, err := pgx.ParseConfig(dsn); err != nil {
+		return fmt.Errorf("parse postgres DSN: %w (密码含特殊字符时请用单引号包裹 password='xxx',或改用 URL 格式 postgres://...)", err)
+	}
+	// 检测未加引号的密码被空格截断:password= 后未引号值之后的 token
+	// 若不是 key=value 形式,则是被截断的密码残段。错误信息不带残段内容(防泄露)。
+	if suspiciousPasswordTail(dsn) {
+		return fmt.Errorf("postgres DSN password may be truncated by a space: values with spaces must be single-quoted (password='xxx') or use URL format")
+	}
+	return nil
+}
+
+// suspiciousPasswordTail 检测 password= 未引号值之后是否跟有非 key=value 的残段(疑似截断)。
+func suspiciousPasswordTail(dsn string) bool {
+	const prefix = "password="
+	index := strings.Index(dsn, prefix)
+	if index < 0 {
+		return false
+	}
+	rest := dsn[index+len(prefix):]
+	if strings.HasPrefix(rest, "'") {
+		return false // 已引号包裹,值完整
+	}
+	spaceIndex := strings.Index(rest, " ")
+	if spaceIndex < 0 {
+		return false // 值直到行尾,完整
+	}
+	tail := strings.TrimSpace(rest[spaceIndex+1:])
+	if tail == "" {
+		return false
+	}
+	nextToken := tail
+	if end := strings.Index(tail, " "); end >= 0 {
+		nextToken = tail[:end]
+	}
+	// 后续 token 是 key=value 形式则为合法下一参数;否则是密码残段(截断)
+	return !strings.Contains(nextToken, "=")
 }
 
 // newSQLiteDialector 创建纯 Go SQLite Dialector（无 CGO）。

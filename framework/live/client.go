@@ -41,17 +41,39 @@ type Version struct {
 }
 
 // Stream 在线流信息(字段名直观化)。
+// SRS 5.x 的 video/audio 在流对象顶层,同时兼容旧版 publish.video/publish.audio。
 type Stream struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`
 	App        string `json:"app"`
 	Vhost      string `json:"vhost"`
 	URL        string `json:"url"`
-	PublishCID string `json:"publish_cid"`  // 推流连接 ID(踢流关键)
-	VideoCodec string `json:"video_codec"`  // 如 H264
-	AudioCodec string `json:"audio_codec"`  // 如 AAC
-	Width      int    `json:"width"`
-	Height     int    `json:"height"`
+	PublishCID string `json:"publish_cid"` // 推流连接 ID(踢流关键)
+	VideoCodec string `json:"video_codec"` // 如 H264(平铺兼容字段)
+	AudioCodec string `json:"audio_codec"` // 如 AAC(平铺兼容字段)
+	Width      int    `json:"width"`       // 视频宽(平铺兼容字段)
+	Height     int    `json:"height"`      // 视频高(平铺兼容字段)
+	// Video 视频编码/分辨率详情(SRS 5.x 顶层 video 对象;无视频时为 nil)。
+	Video *StreamVideo `json:"video,omitempty"`
+	// Audio 音频编码详情(SRS 5.x 顶层 audio 对象;无音频时为 nil)。
+	Audio *StreamAudio `json:"audio,omitempty"`
+}
+
+// StreamVideo 视频编码信息(json tag 对齐 SRS streams API)。
+type StreamVideo struct {
+	Codec   string `json:"codec"`   // 如 H264
+	Profile string `json:"profile"` // 如 High
+	Level   string `json:"level"`   // 如 3.1
+	Width   int    `json:"width"`   // 如 1280
+	Height  int    `json:"height"`  // 如 720
+}
+
+// StreamAudio 音频编码信息(json tag 对齐 SRS streams API)。
+type StreamAudio struct {
+	Codec      string `json:"codec"`       // 如 AAC
+	SampleRate int    `json:"sample_rate"` // 如 44100
+	Channel    int    `json:"channel"`     // 如 2
+	Profile    string `json:"profile"`     // 如 LC
 }
 
 // ClientInfo 客户端连接信息。
@@ -97,14 +119,27 @@ func (c *Client) ListStreams(ctx context.Context) ([]*Stream, error) {
 			Vhost: s.Vhost,
 			URL:   s.URL,
 		}
+		// SRS 5.x 顶层 video/audio 优先;旧版 publish.video/publish.audio 兼容。
+		if s.Video != nil {
+			stream.Video = &StreamVideo{Codec: s.Video.Codec, Profile: s.Video.Profile, Level: s.Video.Level, Width: s.Video.Width, Height: s.Video.Height}
+			stream.VideoCodec = s.Video.Codec
+			stream.Width = s.Video.Width
+			stream.Height = s.Video.Height
+		}
+		if s.Audio != nil {
+			stream.Audio = &StreamAudio{Codec: s.Audio.Codec, SampleRate: s.Audio.SampleRate, Channel: s.Audio.Channel, Profile: s.Audio.Profile}
+			stream.AudioCodec = s.Audio.Codec
+		}
 		if s.Publish != nil {
 			stream.PublishCID = s.Publish.CID
-			if s.Publish.Video != nil {
+			if stream.Video == nil && s.Publish.Video != nil {
+				stream.Video = &StreamVideo{Codec: s.Publish.Video.Codec, Width: s.Publish.Video.Width, Height: s.Publish.Video.Height}
 				stream.VideoCodec = s.Publish.Video.Codec
 				stream.Width = s.Publish.Video.Width
 				stream.Height = s.Publish.Video.Height
 			}
-			if s.Publish.Audio != nil {
+			if stream.Audio == nil && s.Publish.Audio != nil {
+				stream.Audio = &StreamAudio{Codec: s.Publish.Audio.Codec}
 				stream.AudioCodec = s.Publish.Audio.Codec
 			}
 		}
@@ -114,12 +149,26 @@ func (c *Client) ListStreams(ctx context.Context) ([]*Stream, error) {
 }
 
 // srsStream SRS 原始流结构(内部解析用)。
+// 兼容 SRS 5.x(顶层 video/audio)与旧版(publish.video/publish.audio)。
 type srsStream struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`
 	App     string `json:"app"`
 	Vhost   string `json:"vhost"`
 	URL     string `json:"url"`
+	Video   *struct {
+		Codec   string `json:"codec"`
+		Profile string `json:"profile"`
+		Level   string `json:"level"`
+		Width   int    `json:"width"`
+		Height  int    `json:"height"`
+	} `json:"video"`
+	Audio *struct {
+		Codec      string `json:"codec"`
+		SampleRate int    `json:"sample_rate"`
+		Channel    int    `json:"channel"`
+		Profile    string `json:"profile"`
+	} `json:"audio"`
 	Publish *struct {
 		CID   string `json:"cid"`
 		Video *struct {

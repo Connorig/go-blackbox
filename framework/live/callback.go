@@ -2,6 +2,7 @@ package live
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	apperr "github.com/Connorig/go-blackbox/component/error"
@@ -46,7 +47,7 @@ func mountCallback(party iris.Party, handlers *Handlers) {
 		}
 		if err := handlers.OnPublish(ctx, info); err != nil {
 			zaplog.WithComponent("live").Infow("live on_publish denied", "app", info.App, "stream", info.Stream, "err", err.Error())
-			respondDeny(ctx, err.Error())
+			respondDeny(ctx, denyMessage(err))
 			return
 		}
 		respondOK(ctx)
@@ -66,7 +67,7 @@ func mountCallback(party iris.Party, handlers *Handlers) {
 		}
 		if err := handlers.OnPlay(ctx, info); err != nil {
 			zaplog.WithComponent("live").Infow("live on_play denied", "stream", info.Stream, "err", err.Error())
-			respondDeny(ctx, err.Error())
+			respondDeny(ctx, denyMessage(err))
 			return
 		}
 		respondOK(ctx)
@@ -84,7 +85,7 @@ func mountCallback(party iris.Party, handlers *Handlers) {
 			return
 		}
 		if err := handlers.OnConnect(ctx, info); err != nil {
-			respondDeny(ctx, err.Error())
+			respondDeny(ctx, denyMessage(err))
 			return
 		}
 		respondOK(ctx)
@@ -153,6 +154,20 @@ func respondDeny(ctx iris.Context, message string) {
 		"msg":  message,
 	})
 	_, _ = ctx.Write(payload)
+}
+
+// denyMessage 把裁决错误转为回传 SRS 的拒绝消息。
+// apperr.Error 只取业务 Message(不带 (code=...) 后缀,内部错误码不暴露给媒体层);
+// 其他错误原样透传。
+func denyMessage(err error) string {
+	if err == nil {
+		return "denied"
+	}
+	var appErr *apperr.Error
+	if errors.As(err, &appErr) {
+		return appErr.Message
+	}
+	return err.Error()
 }
 
 // 引用 component/error 保持统一错误风格(后续扩展用)。
