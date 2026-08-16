@@ -89,6 +89,7 @@ func NewClient(config Config) (*Client, error) {
 	if err := client.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("es: ping %v: %w", cfg.Addresses, err)
 	}
+	SetGlobal(client)
 	return client, nil
 }
 

@@ -81,6 +81,7 @@ func NewClient(config Config) (*Client, error) {
 		influxClient.Close()
 		return nil, fmt.Errorf("influx: ping %s: %w", cfg.ServerURL, err)
 	}
+	SetGlobal(client)
 	return client, nil
 }
 

@@ -98,10 +98,12 @@ func NewClient(config Config) (*Client, error) {
 		return nil, errors.New("sms: access key id and secret are required")
 	}
 	cfg := config.normalize()
-	return &Client{
+	client := &Client{
 		config: cfg,
 		client: &http.Client{Timeout: cfg.Timeout},
-	}, nil
+	}
+	SetGlobal(client)
+	return client, nil
 }
 
 // Send 发送短信(对标阿里云 SendSms)。

@@ -98,6 +98,7 @@ func Dial(dns string, options ...Option) (*Connection, error) {
 		return nil, err
 	}
 	go connection.watchReconnect()
+	SetGlobal(connection)
 	return connection, nil
 }
 

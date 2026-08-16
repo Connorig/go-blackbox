@@ -1,4 +1,4 @@
-﻿// Package storage 提供对象存储集成(对标 Spring Cloud 的 OSS/对象存储抽象,
+// Package storage 提供对象存储集成(对标 Spring Cloud 的 OSS/对象存储抽象,
 // 兼容 S3 协议的 MinIO/阿里云 OSS/腾讯云 COS 等):常用操作封装 + 原生客户端暴露。
 package storage
 
@@ -85,7 +85,9 @@ func NewClient(config Config) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("storage: create client: %w", err)
 	}
-	return &Client{minio: minioClient, bucket: config.Bucket}, nil
+	client := &Client{minio: minioClient, bucket: config.Bucket}
+	SetGlobal(client)
+	return client, nil
 }
 
 // Ping 连通性检查。

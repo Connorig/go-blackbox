@@ -34,13 +34,15 @@ func GetClient(emailCong *MailConnConf) *Client {
 	if port <= 0 {
 		port = DefaultSMTPPort
 	}
-	return &Client{
+	client := &Client{
 		user:  emailCong.User,
 		pass:  emailCong.Pass,
 		host:  emailCong.Host,
 		alias: emailCong.Alias,
 		port:  port,
 	}
+	SetGlobal(client)
+	return client
 }
 
 // SendMail 发送邮件。

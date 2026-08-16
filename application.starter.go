@@ -161,6 +161,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			log.SugaredLogger.Error(err)
 			return err
 		}
+		cache.SetGlobal(cacheInstance)
 		if err := gbxioc.RegisterInstance(cacheInstance); err != nil {
 			log.SugaredLogger.Errorf("register Redis instance failed: %v", err)
 			return fmt.Errorf("register Redis instance: %w", err)
@@ -202,6 +203,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			log.SugaredLogger.Errorf("ping MongoDB failed: %v", pingErr)
 			return fmt.Errorf("ping MongoDB: %w", pingErr)
 		}
+		mongodb.SetGlobal(client)
 		if err := gbxioc.RegisterInstance(client); err != nil {
 			log.SugaredLogger.Errorf("register MongoDB instance failed: %v", err)
 			return fmt.Errorf("register MongoDB instance: %w", err)
