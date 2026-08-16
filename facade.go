@@ -5,11 +5,13 @@ import (
 	"github.com/Connorig/go-blackbox/framework/cron"
 	"github.com/Connorig/go-blackbox/framework/database"
 	"github.com/Connorig/go-blackbox/framework/es"
+	"github.com/Connorig/go-blackbox/framework/httpclient"
 	"github.com/Connorig/go-blackbox/framework/influx"
 	"github.com/Connorig/go-blackbox/framework/kafka"
 	"github.com/Connorig/go-blackbox/framework/mail"
 	"github.com/Connorig/go-blackbox/framework/mongo"
 	"github.com/Connorig/go-blackbox/framework/mq"
+	"github.com/Connorig/go-blackbox/framework/mqtt"
 	"github.com/Connorig/go-blackbox/framework/sms"
 	"github.com/Connorig/go-blackbox/framework/storage"
 	"github.com/robfig/cron/v3"
@@ -99,4 +101,14 @@ func SMS() *sms.Client {
 // Mail 获取邮件客户端;未初始化返回 nil。
 func Mail() *email.Client {
 	return email.Get()
+}
+
+// MQTT 获取全局 MQTT 客户端(设备网关采集);未连接返回 nil。
+func MQTT() *mqtt.Client {
+	return mqtt.Get()
+}
+
+// HTTPClient 获取全局 HTTP 请求工具客户端;未初始化返回 nil。
+func HTTPClient() *httpclient.Client {
+	return httpclient.Get()
 }
