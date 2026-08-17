@@ -106,6 +106,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - excel:流式导出(ExportBatchToWriter,HTTP 下载场景不超时)
 - excel:导入增强(ImportWithErrors:跳过空行;返回行级错误列表;HeaderRow/DataStartRow 独立配置)
 
+## v1.55.0 - 2026-08-17
+
+### Added
+- excel:导出文件名构造(ExportName)——业务名可指定(中文安全)+ 时间戳后缀(yyyyMMdd_HHmmss)
+  防多次导出覆盖;支持自定义后缀;自动去除输入扩展名
+- excel:HTTP 下载文件名编码(ContentDisposition)——RFC 5987 percent-encode 中文文件名
+  + ASCII fallback,兼容各浏览器
+
 ## v1.45.0 - 2026-08-16
 
 ### Added

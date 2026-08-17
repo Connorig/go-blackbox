@@ -6,7 +6,7 @@ import (
 )
 
 // Version 脚手架版本(发版时与 git tag 同步更新)。
-const Version = "1.54.0"
+const Version = "1.55.0"
 
 // Author 作者签名。
 const Author = "Connor"
