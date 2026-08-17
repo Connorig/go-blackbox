@@ -124,6 +124,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - push/ws 跨节点广播:WithRedis 配置后房间/全局消息经 Redis pub/sub 路由多实例
   (消息带 node_id 防双发;订阅自动重连;单实例行为不变)
 
+## v1.57.0 - 2026-08-18
+
+### Added
+- framework/sensitive:敏感词过滤(自研 DFA,O(n) 单遍匹配,零外部依赖)
+  - Contains/Find/Replace/Validate;最长匹配(前缀嵌套);空格绕过防护;动态词条
+  - 场景:弹幕风控/昵称审核/评论过滤
+- framework/validator:统一参数校验(对标 Spring Validation,go-playground v10)
+  - Struct/StructAll/Var;中文错误信息(label tag 优先);A0400 参数错误码集成
+  - 自定义规则注册(RegisterCustom);泰山手册 A 级错误码要求落地
+
 ## v1.45.0 - 2026-08-16
 
 ### Added
