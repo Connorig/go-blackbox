@@ -98,6 +98,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Docs
 - docs/EXCEL_GUIDELINES.md Excel 模板导入导出指南(设计约定/导出/导入/模板示例)
 
+## v1.54.0 - 2026-08-17
+
+### Added
+- excel:多 sheet 导出(ExportMultiSheet,每 sheet 独立模板/数据,自动创建新 sheet 并写表头)
+- excel:分批写入(ExportBatch,万行以上大幅降低内存峰值,OnProgress 进度回调)
+- excel:流式导出(ExportBatchToWriter,HTTP 下载场景不超时)
+- excel:导入增强(ImportWithErrors:跳过空行;返回行级错误列表;HeaderRow/DataStartRow 独立配置)
+
 ## v1.45.0 - 2026-08-16
 
 ### Added
