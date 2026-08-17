@@ -153,6 +153,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 默认内存存储(带 TTL 与限次);可注入自定义 Store(Redis 分布式)
   - 大小写不敏感;验证失败即消费(防暴力破解)
 
+## v1.60.0 - 2026-08-18
+
+### Added
+- database:连接池统计(PoolStats/PoolUtilization)——监控告警场景
+  (InUse 接近 MaxOpen、WaitCount 增长即池偏小)
+- docs/MODULES_GUIDE.md:新增模块索引(v1.56+ 幂等/敏感词/校验/计数/限流/上传/验证码/Excel/WS 跨节点)
+
 ## v1.45.0 - 2026-08-16
 
 ### Added

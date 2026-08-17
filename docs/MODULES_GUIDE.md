@@ -76,3 +76,18 @@
 
 - 项目根 `AGENTS.md` 是 Agent 必读(核心约定 + 泰山版强制规范 + 工作流)
 - 新模块落地步骤:实现包 → 测试 → `config.Modules` 登记 → 文档 `docs/<名>_GUIDELINES.md` → 本索引登记 → README 模块表更新 → tag 发布
+
+## 新增模块(v1.56+ 直播刚需与企业通用)
+
+| 模块 | 包 | 说明 |
+|---|---|---|
+| 幂等 | framework/idempotent | Redis 幂等防护:Check/Release/Status,防回调重试/连点/消息重投 |
+| 敏感词 | framework/sensitive | DFA 过滤:Contains/Find/Replace/Validate,空格绕过防护 |
+| 参数校验 | framework/validator | 统一校验:Struct/StructAll/Var,中文 label + A0400,自定义规则 |
+| 在线计数 | framework/counter | 高并发计数:峰值/房间注册表(直播人数场景) |
+| 分布式限流 | framework/ratelimit | Redis 令牌桶:Allow/AllowN 多实例共享配额 |
+| 文件上传 | framework/upload | multipart 封装:大小/扩展名校验,iris 与 net/http 双入口 |
+| 验证码 | framework/captcha | 图形验证码:PNG 生成 + TTL 存储,Store 可注入 Redis |
+| Excel | framework/excel | 模板导入导出:泛型/多 sheet/分批/流式/行级错误 |
+| WS 跨节点 | framework/push/ws | WithRedis 多实例房间路由,node_id 防双发 |
+
