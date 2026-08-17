@@ -134,6 +134,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Struct/StructAll/Var;中文错误信息(label tag 优先);A0400 参数错误码集成
   - 自定义规则注册(RegisterCustom);泰山手册 A 级错误码要求落地
 
+## v1.58.0 - 2026-08-18
+
+### Added
+- framework/counter:高并发在线计数(直播人数/峰值/时段统计)
+  - Counter:Inc/Dec(下限保护)/Value/Peak(历史峰值)/ResetPeak/Snapshot
+  - Registry:按房间(键)计数注册表(直播间人数场景)
+- framework/ratelimit:Redis 令牌桶分布式限流
+  - Allow/AllowN:多实例共享配额,原子 Lua 脚本
+  - Reset 解封;key 前缀;接口限流/短信频率/防刷场景
+
 ## v1.45.0 - 2026-08-16
 
 ### Added
