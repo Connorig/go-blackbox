@@ -82,3 +82,11 @@ enabled = false
 # ---------- 业务自有配置段(业务代码自定义结构映射) ----------
 [business]
 demo_field = "hello"
+
+# ---------- InfluxDB 时序数据库(可选) ----------
+[modules.influx]
+enabled = false
+server_url = "http://127.0.0.1:8086"
+token = ""
+org = ""
+bucket = ""

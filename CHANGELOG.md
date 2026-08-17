@@ -86,6 +86,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Docs
 - docs/WS_ROOM_GUIDELINES.md 房间化使用指南(场景/API/弹幕示例/设计语义/验收要点)
 
+## v1.53.0 - 2026-08-17
+
+### Added
+- framework/excel:基于模板的泛型 Excel 导入导出(模板文件业务预调样式/格式,gbx 只填充数据)
+  - Export/ExportToFile:泛型列表按模板导出(表头映射/类型转换/样式保留)
+  - Import/ImportFromFile:Excel 解析为泛型列表(excel tag/字段名映射/多类型解析)
+  - 兼容 string/int/float/bool/指针类型;空单元格零值;未匹配列忽略
+- gbx CLI 模板:influx 配置段(code/config/gen 三风格 config.toml 模板)
+
+### Docs
+- docs/EXCEL_GUIDELINES.md Excel 模板导入导出指南(设计约定/导出/导入/模板示例)
+
 ## v1.45.0 - 2026-08-16
 
 ### Added

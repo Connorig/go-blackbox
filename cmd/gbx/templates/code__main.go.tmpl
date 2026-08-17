@@ -46,6 +46,12 @@ func main() {
 			AutoMigrate: false,
 		})
 
+		// @EnableInflux:时序数据库(可选:metrics/传感器/日志时序场景)
+		// 配置来自 config.toml 的 [influx] 段,server_url/token 必填才启用。
+		// builder.EnableInflux(
+		// 	influx.Config{ServerURL: "http://127.0.0.1:8086", Token: "", Org: "", Bucket: ""},
+		// )
+
 		// 版本化迁移(数据库就绪后、Web 启动前)
 		builder.BeforeSetup(func(ctx context.Context) error {
 			dbInstance, err := datasource.Get()
