@@ -160,6 +160,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (InUse 接近 MaxOpen、WaitCount 增长即池偏小)
 - docs/MODULES_GUIDE.md:新增模块索引(v1.56+ 幂等/敏感词/校验/计数/限流/上传/验证码/Excel/WS 跨节点)
 
+## v1.61.0 - 2026-08-18
+
+### Added
+- excel:ImportValidated——业务校验回调(ValidateFunc),失败行收集 RowError(行号+原因),
+  部分成功语义;无校验函数时行为同 ImportWithErrors
+- excel:ImportStream——流式导入(超大文件几十万行),逐行回调不一次性加载,
+  回调错误中断导入;handler 必填校验
+
 ## v1.45.0 - 2026-08-16
 
 ### Added
