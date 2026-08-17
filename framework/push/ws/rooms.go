@@ -106,6 +106,7 @@ func (h *Hub) BroadcastRoom(room string, data []byte) {
 	for _, client := range clients {
 		client.Send(data)
 	}
+	h.publishToRedis(room, data)
 }
 
 // CountRoom 返回房间在线连接数。

@@ -76,6 +76,10 @@ type Hub struct {
 	roomsMu sync.RWMutex
 	rooms   map[string]map[*Client]struct{}
 	onJoin  RoomEvent
+
+	// bridge 跨节点广播桥接(WithRedis 配置;nil 表示单实例模式)。
+	bridge   *redisBridge
+	bridgeMu sync.RWMutex
 	onLeave RoomEvent
 }
 
@@ -117,6 +121,7 @@ func (h *Hub) Count() int {
 // Run 启动 Hub 事件循环（注册/注销/广播），ctx 取消时关闭全部连接。
 // 应在 Handle 之前启动。
 func (h *Hub) Run(ctx context.Context) {
+	h.startRedisSubscription(ctx)
 	go func() {
 		<-ctx.Done()
 		h.Close()
@@ -134,10 +139,11 @@ func (h *Hub) Run(ctx context.Context) {
 			h.removeClient(client)
 		case message := <-h.broadcast:
 			h.mu.RLock()
-			for client := range h.clients {
+					for client := range h.clients {
 				client.Send(message)
 			}
 			h.mu.RUnlock()
+			h.publishToRedis("", message)
 		}
 	}
 }

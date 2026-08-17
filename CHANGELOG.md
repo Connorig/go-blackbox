@@ -114,6 +114,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - excel:HTTP 下载文件名编码(ContentDisposition)——RFC 5987 percent-encode 中文文件名
   + ASCII fallback,兼容各浏览器
 
+## v1.56.0 - 2026-08-18
+
+### Added
+- framework/idempotent:Redis 业务幂等防护(Check/Release/Status)——
+  首次执行占用标记,重复请求(回调重试/连点/消息重投)直接拒绝;
+  与 cache.Lock 互斥语义互补(锁=执行期互斥,幂等=结果性占用)
+- cache.RawClient:暴露底层 go-redis 客户端(高级场景入口)
+- push/ws 跨节点广播:WithRedis 配置后房间/全局消息经 Redis pub/sub 路由多实例
+  (消息带 node_id 防双发;订阅自动重连;单实例行为不变)
+
 ## v1.45.0 - 2026-08-16
 
 ### Added

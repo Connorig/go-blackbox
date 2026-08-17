@@ -39,6 +39,15 @@ func (rc *RedisCache) GetRedisClient() *cache.Cache {
 	return rc.proxy
 }
 
+// RawClient 返回底层 go-redis 客户端(幂等/分布式锁/跨节点广播等高级场景)。
+// 未初始化时返回 nil。
+func (rc *RedisCache) RawClient() *redis.Client {
+	if rc == nil {
+		return nil
+	}
+	return rc.rdb
+}
+
 // IsExists 判断 key 是否存在。
 func (rc *RedisCache) IsExists(key string) bool {
 	if rc == nil || rc.proxy == nil {
