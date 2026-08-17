@@ -168,6 +168,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - excel:ImportStream——流式导入(超大文件几十万行),逐行回调不一次性加载,
   回调错误中断导入;handler 必填校验
 
+## v1.62.0 - 2026-08-18
+
+### Fixed
+- config:环境变量覆盖排障(Bug 7)——实测 v1.52.0+ 当前代码 LIVE_LIVE_WEBADDR
+  覆盖生效(:9998 验证);gbx config 模块 v1.50→v1.52 零变更,疑为测试环境因素
+- config:新增环境变量覆盖回归测试(嵌套键覆盖/文件回退)锁死行为,防回退
+
 ## v1.45.0 - 2026-08-16
 
 ### Added
