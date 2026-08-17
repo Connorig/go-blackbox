@@ -144,6 +144,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Allow/AllowN:多实例共享配额,原子 Lua 脚本
   - Reset 解封;key 前缀;接口限流/短信频率/防刷场景
 
+## v1.59.0 - 2026-08-18
+
+### Added
+- framework/upload:multipart 文件上传封装(大小/扩展名校验 + 内容读取)
+  - iris 与 net/http 双入口;直播封面/头像/附件场景
+- framework/captcha:图形验证码(生成 PNG + 答案存储校验)
+  - 默认内存存储(带 TTL 与限次);可注入自定义 Store(Redis 分布式)
+  - 大小写不敏感;验证失败即消费(防暴力破解)
+
 ## v1.45.0 - 2026-08-16
 
 ### Added
