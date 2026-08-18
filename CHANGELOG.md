@@ -420,6 +420,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.64.0 - 2026-08-19
 ## v1.65.0 - 2026-08-19
 ## v1.66.0 - 2026-08-19
+## v1.67.0 - 2026-08-19
+
+### Added
+- framework/notify 统一通知中心:多渠道发送抽象(短信/邮件/站内信等),Sender 接口插拔
+- Register 渠道注册(重复拒绝)、Send 单渠道、SendAll 并发多渠道(错误聚合,成功渠道不受影响)
+- Content 支持渠道模板 + 参数渲染与直发正文两种模式
+- 与 framework/sms、framework/mail 组合:业务只依赖 notify 统一入口
+
+### Tests
+- 注册/重复拒绝/参数校验/发送成功/SendAll 错误聚合/默认全渠道/nil 安全 7 组全绿
+
 
 ### Added
 - framework/event RedisBridge:Redis Pub/Sub 桥接进程内事件总线,多实例部署跨实例事件投递
