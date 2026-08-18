@@ -98,6 +98,8 @@
 | 异步任务队列 | framework/taskqueue | 延迟执行/并发控制/panic 捕获;抽奖开奖/定时下播/消息撤回 |
 | 回调签名验签 | framework/live | HMAC-SHA256 签名中间件,防伪造 SRS 回调 |
 | DVR 录制 | framework/live | StartRecord/StopRecord 录制客户端封装 |
+| RBAC 权限 | framework/rbac | 角色权限判定:Enforcer/RequirePermission/RequireRole,带缓存 | —(见包注释) |
+
 | 灰度路由 | framework/grayscale | 按比例/按用户稳定分流新旧版本;A/B 测试 |
 | 配置中心 | framework/configcenter | Nacos 风格 HTTP 客户端:Fetch 拉取 + Watch 监听变更 |
 

@@ -417,6 +417,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 多数据源实例(生命周期管理 + SQLite 支持)
 
+## v1.64.0 - 2026-08-19
+
+### Added
+- framework/rbac 角色权限判定层:Provider 抽象 + Enforcer(内存缓存 TTL 默认 60s)
+- HasPermission/HasAnyPermission/HasRole/HasAnyRole 判定 API,权限点按角色自动合并
+- RequirePermission/RequireRole 声明式中间件(403 A0312),与 Auth/scope 叠加使用
+- ClearCache:角色变更后即时生效;WithTTL 可调缓存
+- 定位:与 JWT scope 互补——scope 控 API 组访问,rbac 控业务操作粒度
+
+### Tests
+- 权限合并/任一权限/角色判定/缓存命中/声明式中间件/nil 安全/并发访问 8 组全绿
+
 ## v1.3.0 - 2026-07-29
 
 ### Changed
