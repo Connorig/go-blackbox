@@ -422,6 +422,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.66.0 - 2026-08-19
 ## v1.67.0 - 2026-08-19
 ## v1.68.0 - 2026-08-19
+## v1.69.0 - 2026-08-19
+
+### Added
+- framework/notify 渠道适配器:SMSAdapter(包装 framework/sms,模板覆盖/参数透传/上游拒绝转错误)
+- MailAdapter(包装 framework/mail,标题正文映射)
+- 与通知中心组合:Register 后业务只依赖 notify 统一入口,开箱即用
+- 集成测试:SMS 真实发送 env 门控(GO_BLACKBOX_SMS_KEY/SECRET/PHONE)
+
+### Tests
+- 渠道标识/nil 安全/取消 Context 拒绝/注册进 Manager/SMS 集成 5 组
+
 
 ### Added
 - framework/audit RedisListSink:审计日志落地 Redis List(LPUSH 倒序,limit 保留最近 N 条),多实例共享
