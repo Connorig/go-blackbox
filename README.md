@@ -119,6 +119,13 @@ cmd/gbx      代码生成 CLI:gbx new 一键生成业务项目骨架
 | Redis | `builder.EnableCache(redisOptions)` | 分布式锁/防击穿 | — |
 | 邮件 | `mail.NewSender(cfg)` | TLS/附件 | — |
 
+| RBAC 权限 | `rbac.NewEnforcer(provider)` + `enforcer.RequirePermission(...)` | `HasPermission/HasRole` 带缓存,403 A0312 | [RBAC_GUIDELINES](docs/RBAC_GUIDELINES.md) |
+| 可靠任务队列 | `redqueue.NewQueue(client, prefix)` | `Submit(delay)/Consume`,多实例 | — |
+| 事件桥接(跨实例) | `eventbus.NewRedisBridge(client, ch, bus)` | `Start/Publish` | — |
+| 通知中心 | `notify.NewManager()` + `Register(adapter)` | `Send/SendAll`,sms/mail 适配器内置 | — |
+| 审计查询 | `audit.NewRedisListSink(client, key, limit)` | `Query/Count` 倒序分页 | — |
+
+
 ## AOP(面向切面,接口驱动)
 
 **Web 层**:中间件即环绕切面——`AccessLog`(日志)、`Auth`(权限前置)、`Limit`(限流前置)、`ErrorHandler`(异常后置)。
