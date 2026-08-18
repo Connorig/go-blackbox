@@ -419,6 +419,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v1.64.0 - 2026-08-19
 ## v1.65.0 - 2026-08-19
+## v1.66.0 - 2026-08-19
+
+### Added
+- framework/event RedisBridge:Redis Pub/Sub 桥接进程内事件总线,多实例部署跨实例事件投递
+- Start 订阅远端事件转发本地总线(单条损坏消息跳过);Publish 发布事件到 Redis 频道
+- 场景:分布式缓存失效通知、跨实例业务联动、多实例广播
+- 注意:跨实例收到的 data 类型为 map[string]interface{}(JSON 反序列化),负载必须可 JSON 序列化
+
+### Tests
+- 参数校验/序列化往返/跨实例投递(双客户端 Redis env 门控)3 组
+
 
 ### Added
 - framework/taskqueue/redqueue:基于 Redis 的可靠任务队列(进程内 taskqueue 的持久化/多实例补充)
