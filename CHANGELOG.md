@@ -175,6 +175,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   覆盖生效(:9998 验证);gbx config 模块 v1.50→v1.52 零变更,疑为测试环境因素
 - config:新增环境变量覆盖回归测试(嵌套键覆盖/文件回退)锁死行为,防回退
 
+## v1.63.0 - 2026-08-19
+
+### Added
+- framework/taskqueue:进程内异步任务队列(延迟执行/并发控制/panic 捕获/优雅退出)
+- live:回调签名验签(HMAC-SHA256 中间件,防伪造 SRS 回调)+ DVR 录制客户端(StartRecord/StopRecord)
+- framework/grayscale:灰度路由(按比例/按用户稳定分流,发版灰度/A-B 测试)
+- framework/configcenter:Nacos 风格配置中心客户端(Fetch 拉取 + Watch 轮询监听)
+
 ## v1.45.0 - 2026-08-16
 
 ### Added

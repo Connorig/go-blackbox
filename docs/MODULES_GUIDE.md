@@ -91,3 +91,13 @@
 | Excel | framework/excel | 模板导入导出:泛型/多 sheet/分批/流式/行级错误 |
 | WS 跨节点 | framework/push/ws | WithRedis 多实例房间路由,node_id 防双发 |
 
+## 第三批模块(v1.63 异步/签名/灰度/配置中心)
+
+| 模块 | 包 | 说明 |
+|---|---|---|
+| 异步任务队列 | framework/taskqueue | 延迟执行/并发控制/panic 捕获;抽奖开奖/定时下播/消息撤回 |
+| 回调签名验签 | framework/live | HMAC-SHA256 签名中间件,防伪造 SRS 回调 |
+| DVR 录制 | framework/live | StartRecord/StopRecord 录制客户端封装 |
+| 灰度路由 | framework/grayscale | 按比例/按用户稳定分流新旧版本;A/B 测试 |
+| 配置中心 | framework/configcenter | Nacos 风格 HTTP 客户端:Fetch 拉取 + Watch 监听变更 |
+
