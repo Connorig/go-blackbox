@@ -418,6 +418,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 多数据源实例(生命周期管理 + SQLite 支持)
 
 ## v1.64.0 - 2026-08-19
+## v1.65.0 - 2026-08-19
+
+### Added
+- framework/taskqueue/redqueue:基于 Redis 的可靠任务队列(进程内 taskqueue 的持久化/多实例补充)
+- 即时任务走 List,延迟任务走 ZSet(score=执行时间),Lua 原子搬移到期任务
+- BRPop 阻塞消费,handler 失败自动延迟 1s 重新入队;多消费者并行不重复投递
+- Pending 队列深度查询;Submit/Consume/Pending 全 nil 安全
+- 场景:无 MQ 环境的轻量可靠延迟队列、多实例任务分发、重启不丢任务
+
+### Tests
+- 参数校验/即时往返/延迟到期执行/失败重投/多消费者并发 5 组(Redis env 门控)
+
 
 ### Added
 - framework/rbac 角色权限判定层:Provider 抽象 + Enforcer(内存缓存 TTL 默认 60s)
