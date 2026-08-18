@@ -98,6 +98,12 @@
 | 异步任务队列 | framework/taskqueue | 延迟执行/并发控制/panic 捕获;抽奖开奖/定时下播/消息撤回 |
 | 回调签名验签 | framework/live | HMAC-SHA256 签名中间件,防伪造 SRS 回调 |
 | DVR 录制 | framework/live | StartRecord/StopRecord 录制客户端封装 |
+| RBAC 权限 | framework/rbac | 角色权限判定:Enforcer/RequirePermission/RequireRole,带缓存 | [RBAC_GUIDELINES](RBAC_GUIDELINES.md) |
+| 可靠任务队列 | framework/taskqueue/redqueue | Redis 持久化延迟队列:多实例消费/失败重投 | —(见包注释) |
+| 事件桥接 | framework/event | RedisBridge 跨实例事件投递 | —(见包注释) |
+| 通知中心 | framework/notify | 多渠道统一发送:Sender 插拔/SendAll 聚合 | —(见包注释) |
+| 审计查询 | framework/audit | RedisListSink 最近 N 条 + Query 分页查询 | —(见包注释) |
+
 | RBAC 权限 | framework/rbac | 角色权限判定:Enforcer/RequirePermission/RequireRole,带缓存 | —(见包注释) |
 
 | 灰度路由 | framework/grayscale | 按比例/按用户稳定分流新旧版本;A/B 测试 |

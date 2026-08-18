@@ -421,6 +421,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.65.0 - 2026-08-19
 ## v1.66.0 - 2026-08-19
 ## v1.67.0 - 2026-08-19
+## v1.68.0 - 2026-08-19
+
+### Added
+- framework/audit RedisListSink:审计日志落地 Redis List(LPUSH 倒序,limit 保留最近 N 条),多实例共享
+- framework/audit Query/Count:最近审计日志倒序分页查询,损坏条目自动跳过
+- Entry 全字段 json tag(snake_case),对接管理界面/导出
+- docs/RBAC_GUIDELINES.md:RBAC 使用指南(Provider 实现/装配/缓存策略/数据权限配合/最佳实践)
+- MODULES_GUIDE 登记:RBAC/可靠任务队列/事件桥接/通知中心/审计查询
+
+### Tests
+- RedisListSink 写入查询往返(倒序+分页)/limit 截断/损坏条目跳过/nil 安全 4 组(Redis env 门控)
+
 
 ### Added
 - framework/notify 统一通知中心:多渠道发送抽象(短信/邮件/站内信等),Sender 接口插拔
