@@ -432,6 +432,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.71.0 - 2026-08-19
 ## v1.72.0 - 2026-08-19
 ## v1.73.0 - 2026-08-19
+## v1.74.0 - 2026-08-19
+
+### Added
+- framework/configcenter CachedClient(带本地缓存的配置中心客户端):
+  - Get 首次拉取并缓存,之后直接返回缓存(配置中心不可用也能用最后成功值)
+  - Refresh 强制更新(失败保留旧值);Start 后台轮询(启动即刷新)
+  - Subscribe 变更订阅(首次立即收到当前值,Close 关闭通道)
+  - 对标 Nacos 客户端体验:断网不丢配置,变更自动推送
+
+### Tests
+- 首次拉取与刷新/故障保留旧值/订阅广播/后台轮询/nil 安全 5 组(httptest Nacos 风格服务)
+
 
 ### Added
 - framework/taskqueue/redqueue 死信回调:
