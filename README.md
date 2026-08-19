@@ -128,6 +128,10 @@ cmd/gbx      代码生成 CLI:gbx new 一键生成业务项目骨架
 | 灰度路由 | `grayscale.New(ratio, userKey)` + `gray.Route(new, old)` | 比例/用户稳定分流,A/B 测试 | [GRAYSCALE_GUIDELINES](docs/GRAYSCALE_GUIDELINES.md) |
 | 配置中心 | `configcenter.NewClient(url, dataId, group)` | `Fetch/Watch` 热更新 | [CONFIGCENTER_GUIDELINES](docs/CONFIGCENTER_GUIDELINES.md) |
 
+| 国际化 | `i18n.NewBundle()` + `LoadDir("langs")` | `T/Tf/DetectLanguage` | [I18N_GUIDELINES](docs/I18N_GUIDELINES.md) |
+| 通知中心 | `notify.NewManager()` + `Register(adapter)` | `Send/SendAll` 模板渲染 | [NOTIFY_GUIDELINES](docs/NOTIFY_GUIDELINES.md) |
+
+
 
 
 ## AOP(面向切面,接口驱动)

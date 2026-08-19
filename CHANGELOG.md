@@ -437,6 +437,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.76.0 - 2026-08-19
 ## v1.77.0 - 2026-08-19
 ## v1.78.0 - 2026-08-19
+## v1.79.0 - 2026-08-19
+
+### Docs
+- I18N_GUIDELINES:国际化使用指南(资源文件格式、翻译/回退链、语言检测、与错误码联动)
+- NOTIFY_GUIDELINES:通知中心使用指南(渠道注册、模板渲染、自定义渠道、注意事项)
+- README 模块表登记国际化与通知中心
+
+### Changed
+- 文档环节补齐:i18n/notify 模板语法统一说明({{key}},嵌套键点分隔)
+
 
 ### Added
 - component/i18n 国际化组件(对标 Java ResourceBundle + Spring MessageSource):
