@@ -125,6 +125,10 @@ cmd/gbx      代码生成 CLI:gbx new 一键生成业务项目骨架
 | 通知中心 | `notify.NewManager()` + `Register(adapter)` | `Send/SendAll`,sms/mail 适配器内置 | — |
 | 审计查询 | `audit.NewRedisListSink(client, key, limit)` | `Query/Count` 倒序分页 | — |
 
+| 灰度路由 | `grayscale.New(ratio, userKey)` + `gray.Route(new, old)` | 比例/用户稳定分流,A/B 测试 | [GRAYSCALE_GUIDELINES](docs/GRAYSCALE_GUIDELINES.md) |
+| 配置中心 | `configcenter.NewClient(url, dataId, group)` | `Fetch/Watch` 热更新 | [CONFIGCENTER_GUIDELINES](docs/CONFIGCENTER_GUIDELINES.md) |
+
+
 
 ## AOP(面向切面,接口驱动)
 

@@ -430,6 +430,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README 模块表登记:RBAC/可靠任务队列/事件桥接/通知中心/审计查询
 
 ## v1.71.0 - 2026-08-19
+## v1.72.0 - 2026-08-19
+
+### Docs
+- GRAYSCALE_GUIDELINES:灰度路由使用指南(比例/用户稳定分流算法、发版流程、与配置中心联动、注意事项)
+- CONFIGCENTER_GUIDELINES:配置中心使用指南(Fetch/Watch、灰度开关/业务参数热更新、Nacos 接入、注意事项)
+- README 模块表登记灰度路由与配置中心
+
+### Changed
+- configcenter:Watch 间隔默认 30s;onChange 首次拉取即回调(初始化配置)
+
 
 ### Added
 - framework/taskqueue/redqueue 重试上限与死信:
