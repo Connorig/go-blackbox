@@ -434,6 +434,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.73.0 - 2026-08-19
 ## v1.74.0 - 2026-08-19
 ## v1.75.0 - 2026-08-19
+## v1.76.0 - 2026-08-19
+
+### Added
+- framework/grayscale 灰度可观测性:
+  - Route 响应头标记命中版本(X-Gray-Version: new|old,WithHeaderName 可关闭)
+  - Stats 命中统计(Total/NewHits/OldHits/实际占比,原子计数,可接监控)
+  - 与日志埋点配合,灰度期对比新旧版本错误率更直观
+
+### Tests
+- 响应头标记与统计一致性(100 请求断言)/关闭标记/nil 与全量边界 3 组
+
 
 ### Docs
 - REDQUEUE_GUIDELINES:可靠任务队列使用指南(快速使用、重试与死信、死信治理流程、监控、多实例说明、与进程内 taskqueue 对比)
