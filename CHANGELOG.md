@@ -423,6 +423,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.67.0 - 2026-08-19
 ## v1.68.0 - 2026-08-19
 ## v1.69.0 - 2026-08-19
+## v1.70.0 - 2026-08-19
+
+### Added
+- framework/audit QueryHandler:审计日志查询 HTTP 接口(offset/count 分页,统一响应 list+total),与 RedisListSink 组合,挂载/鉴权由业务决定
+- README 模块表登记:RBAC/可靠任务队列/事件桥接/通知中心/审计查询
+
+## v1.71.0 - 2026-08-19
+
+### Added
+- framework/taskqueue/redqueue 重试上限与死信:
+  - WithMaxRetries(默认 5,0 无限);handler 失败计数 +1 延迟 1s 重投,超限进死信队列
+  - 存储信封格式 {data, retries};兼容早期裸 payload(自动识别)
+  - DeadLetterCount/DeadLetters(倒序分页)/RequeueDeadLetter(重投并移除)
+  - 损坏消息不会阻塞队列
+
+### Tests
+- 超限进死信(尝试次数断言)/死信查询与重投/裸 payload 兼容 3 组(Redis env 门控)
+
 
 ### Added
 - framework/notify 渠道适配器:SMSAdapter(包装 framework/sms,模板覆盖/参数透传/上游拒绝转错误)
