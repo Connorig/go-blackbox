@@ -435,6 +435,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.74.0 - 2026-08-19
 ## v1.75.0 - 2026-08-19
 ## v1.76.0 - 2026-08-19
+## v1.77.0 - 2026-08-19
+
+### Added
+- framework/notify 模板注册与渲染:
+  - RegisterTemplate/Template:进程内模板注册中心(同名覆盖)
+  - RenderTemplate/Render:{{key}} 占位符渲染,支持嵌套键 {{user.name}}(点分隔)
+  - 缺失参数返回错误并列出缺失键(便于排查);未注册模板明确报错
+  - 与适配器组合:模板内容 → content.Template/Params → Send,统一管理通知文案
+
+### Tests
+- 注册渲染(嵌套键/中文/数值)/缺失参数列键/未注册报错/直接渲染/边界与覆盖 6 组
+
 
 ### Added
 - framework/grayscale 灰度可观测性:
