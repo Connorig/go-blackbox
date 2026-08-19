@@ -436,6 +436,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.75.0 - 2026-08-19
 ## v1.76.0 - 2026-08-19
 ## v1.77.0 - 2026-08-19
+## v1.78.0 - 2026-08-19
+
+### Added
+- component/i18n 国际化组件(对标 Java ResourceBundle + Spring MessageSource):
+  - Bundle:Register 注册 / LoadDir 按目录加载语言文件(langs/zh-CN.json、en-US.json)
+  - T 翻译(缺失回退默认语言,再缺失返回 key);{{key}} 占位符,支持嵌套键
+  - Tf fmt 风格格式化;DetectLanguage 解析 Accept-Language(大小写归一)
+  - SetFallback 自定义回退语言;协程安全
+
+### Tests
+- 注册翻译与回退/目录加载/目录错误/Accept-Language 解析/Tf/nil 与边界 6 组
+
 
 ### Added
 - framework/notify 模板注册与渲染:
