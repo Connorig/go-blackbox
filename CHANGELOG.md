@@ -431,6 +431,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v1.71.0 - 2026-08-19
 ## v1.72.0 - 2026-08-19
+## v1.73.0 - 2026-08-19
+
+### Added
+- framework/taskqueue/redqueue 死信回调:
+  - WithDeadLetterHook:死信产生时回调(可接 alert/notify/日志),不阻塞消费
+  - 回调携带完整 DeadLetter(payload/retries/failed_at);多实例部署时每实例都会收到,业务侧去重
+
+### Tests
+- 回调触发(载荷/重试次数/时间戳断言)与未设置回调行为不变 2 组(Redis env 门控)
+
 
 ### Docs
 - GRAYSCALE_GUIDELINES:灰度路由使用指南(比例/用户稳定分流算法、发版流程、与配置中心联动、注意事项)

@@ -1,6 +1,7 @@
 // Package redqueue 提供基于 Redis 的可靠任务队列:
 // 即时任务走 List,延迟任务走 ZSet(score=执行时间),多实例可并行消费。
-// 消息带重试计数:handler 失败自动重投(延迟 1s),超过上限进入死信队列。
+// 消息带重试计数:handler 失败自动重投(延迟 1s),超过上限进入死信队列,
+// 并通过死信回调(OnDeadLetter)通知运维(可接 alert/notify)。
 // 与进程内 taskqueue 互补:进程内队列重启丢失,redqueue 持久化且支持多实例。
 package redqueue
 
@@ -31,11 +32,17 @@ type DeadLetter struct {
 	FailedAt time.Time `json:"failed_at"` // 进入死信时间
 }
 
+// DeadLetterHook 死信回调:死信产生时调用(可接 alert/notify/日志)。
+// 注意:多实例部署时每个实例都会收到回调,业务侧需自行去重
+// (如以 failed_at+payload 指纹做 Redis SETNX,或接受重复告警)。
+type DeadLetterHook func(ctx context.Context, letter DeadLetter)
+
 // Queue 是基于 Redis 的可靠任务队列。
 type Queue struct {
 	client     *redis.Client
 	keyPrefix  string
 	maxRetries int
+	deadHook   DeadLetterHook
 }
 
 // NewQueue 创建队列;client 为 go-redis 客户端(可用 cache.RedisCache.Client())。
@@ -48,6 +55,14 @@ func NewQueue(client *redis.Client, keyPrefix string) *Queue {
 func (q *Queue) WithMaxRetries(maxRetries int) *Queue {
 	if q != nil {
 		q.maxRetries = maxRetries
+	}
+	return q
+}
+
+// WithDeadLetterHook 设置死信回调(死信产生时调用,不阻塞消费)。
+func (q *Queue) WithDeadLetterHook(hook DeadLetterHook) *Queue {
+	if q != nil {
+		q.deadHook = hook
 	}
 	return q
 }
@@ -114,7 +129,8 @@ func (q *Queue) Pending(ctx context.Context) (int64, error) {
 }
 
 // Consume 阻塞消费任务:延迟任务到期后原子搬入即时队列,再阻塞取任务执行。
-// handler 返回错误时任务重试计数 +1 并延迟 1s 重投;超过上限进入死信队列。
+// handler 返回错误时任务重试计数 +1 并延迟 1s 重投;超过上限进入死信队列
+// 并触发死信回调(如有设置)。
 // ctx 取消时优雅退出(处理中的任务完成后返回)。
 func (q *Queue) Consume(ctx context.Context, handler func(ctx context.Context, payload []byte) error) error {
 	if q == nil || q.client == nil {
@@ -191,18 +207,23 @@ func (q *Queue) requeue(ctx context.Context, payload []byte, retries int) error 
 	return nil
 }
 
-// pushDead 写入死信队列。
+// pushDead 写入死信队列并触发死信回调。
 func (q *Queue) pushDead(ctx context.Context, payload []byte, retries int) error {
-	encoded, err := json.Marshal(DeadLetter{
+	letter := DeadLetter{
 		Payload:  payload,
 		Retries:  retries,
 		FailedAt: time.Now(),
-	})
+	}
+	encoded, err := json.Marshal(letter)
 	if err != nil {
 		return fmt.Errorf("redqueue: encode dead letter: %w", err)
 	}
 	if err := q.client.LPush(ctx, q.deadKey(), encoded).Err(); err != nil {
 		return fmt.Errorf("redqueue: push dead letter: %w", err)
+	}
+	// 死信回调:不阻塞消费;hook 自身 panic 由调用方决定是否 recover
+	if q.deadHook != nil {
+		q.deadHook(ctx, letter)
 	}
 	return nil
 }
