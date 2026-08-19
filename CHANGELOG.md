@@ -433,6 +433,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.72.0 - 2026-08-19
 ## v1.73.0 - 2026-08-19
 ## v1.74.0 - 2026-08-19
+## v1.75.0 - 2026-08-19
+
+### Docs
+- REDQUEUE_GUIDELINES:可靠任务队列使用指南(快速使用、重试与死信、死信治理流程、监控、多实例说明、与进程内 taskqueue 对比)
+- CONFIGCENTER_GUIDELINES 新增「本地缓存客户端(推荐)」章节(CachedClient 用法与 API 一览)
+- README/MODULES_GUIDE 补文档链接
+
+### Changed
+- configcenter:Fetch 返回错误时 CachedClient.Get 未加载场景明确报错,业务使用默认值兜底
+
 
 ### Added
 - framework/configcenter CachedClient(带本地缓存的配置中心客户端):

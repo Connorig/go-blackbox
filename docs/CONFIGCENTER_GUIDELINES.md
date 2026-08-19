@@ -76,7 +76,55 @@ if err == nil {
 - 轻量实现(HTTP 拉取 + 定时轮询);Nacos 长轮询与鉴权签名可在此基础上扩展
 - 配置变更发布后,最长 interval 内生效
 
-## 五、注意事项
+
+## 五、本地缓存客户端(推荐)
+
+`CachedClient` 解决配置中心短暂不可用时配置丢失的问题:进程内保留最后成功值,
+断网也能继续用旧配置;变更自动推送订阅者。
+
+```go
+import "github.com/Connorig/go-blackbox/framework/configcenter"
+
+client := configcenter.NewClient("http://127.0.0.1:8848", "order-config", "DEFAULT_GROUP")
+cached := configcenter.NewCachedClient(client)
+
+// ① 读取配置(未加载先拉取;已加载直接返回缓存,配置中心挂了也能用)
+content, err := cached.Get(ctx)
+
+// ② 订阅变更(首次立即收到当前值;变化自动推送;Close 关闭通道)
+updates := cached.Subscribe()
+go func() {
+    for content := range updates {
+        _ = json.Unmarshal([]byte(content), &params)
+    }
+}()
+
+// ③ 后台轮询刷新(启动即刷新一次,失败保留旧值,不退出)
+go cached.Start(ctx, 10*time.Second)
+```
+
+API 一览:
+
+| API | 说明 |
+| --- | --- |
+| `NewCachedClient(client)` | 包装基础客户端 |
+| `Get(ctx) (string, error)` | 未加载先拉取;已加载直接返回缓存 |
+| `Refresh(ctx) error` | 强制拉取更新(失败保留旧值) |
+| `Content() string` | 当前缓存值(无锁读) |
+| `Loaded() bool` / `UpdatedAt() time.Time` | 加载状态 / 最近成功时间 |
+| `Subscribe() <-chan string` | 变更订阅(初始值 + 后续变更) |
+| `Start(ctx, interval)` | 后台轮询(阻塞,ctx 取消退出并关闭订阅) |
+| `Close()` | 关闭所有订阅通道 |
+
+## 六、注意事项
+
+- 配置内容敏感信息(密码/token)不建议放配置中心明文,或使用加密存储
+- onChange 回调中避免长时间阻塞(解析+应用要快);应用失败保留旧值
+- 多实例部署:每实例独立轮询,变更在 interval 内陆续生效(短暂不一致可接受)
+- 配置内容格式建议 JSON,与结构体直接映射,校验失败保留旧值并告警
+- CachedClient 的 Get 在未加载且配置中心不可用时会返回错误(此时业务应使用默认值)
+
+## 六、注意事项
 
 - 配置内容敏感信息(密码/token)不建议放配置中心明文,或使用加密存储
 - onChange 回调中避免长时间阻塞(解析+应用要快);应用失败保留旧值
