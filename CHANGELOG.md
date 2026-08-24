@@ -450,6 +450,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.89.0 - 2026-08-19
 ## v1.90.0 - 2026-08-19
 ## v1.91.0 - 2026-08-19
+## v1.92.0 - 2026-08-19
+
+### Added
+- framework/grayscale StatsHandler:灰度命中统计 HTTP 接口
+  - 返回 total/new_hits/old_hits/实际占比 + 配置占比(便于对比目标与实况)
+  - 可挂监控路由/面板:app.Get("/gray/stats", strategy.StatsHandler())
+  - nil strategy 返回明确错误(不 panic)
+
+### Tests
+- 统计接口完整 JSON(3 次命中全量新版断言)/nil strategy 500 2 组
+
 
 ### Docs
 - EVENTBUS_GUIDELINES:事件总线使用指南(同步/异步对比、SubscribeRetry 重试、Redis 跨实例桥接、与 safe 治理关系、注意事项)
