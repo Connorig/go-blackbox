@@ -6,8 +6,8 @@ import (
 	"reflect"
 
 	"github.com/Connorig/go-blackbox/framework/cache"
-	"github.com/Connorig/go-blackbox/framework/mongo"
 	"github.com/Connorig/go-blackbox/framework/lifecycle"
+	"github.com/Connorig/go-blackbox/framework/mongo"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 )

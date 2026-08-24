@@ -11,12 +11,12 @@ import (
 
 // orderItem 测试用订单行(含基础类型与嵌套)。
 type orderItem struct {
-	OrderNo   string `excel:"订单号"`
-	Customer  string `excel:"客户名称"`
-	Quantity  int    `excel:"数量"`
-	Price     float64 `excel:"单价"`
-	Shipped   bool   `excel:"已发货"`
-	Remark    string `excel:"备注"`
+	OrderNo  string  `excel:"订单号"`
+	Customer string  `excel:"客户名称"`
+	Quantity int     `excel:"数量"`
+	Price    float64 `excel:"单价"`
+	Shipped  bool    `excel:"已发货"`
+	Remark   string  `excel:"备注"`
 }
 
 // buildTemplate 生成测试模板:表头 + 样式(仅表头,无数据)。

@@ -16,11 +16,11 @@ func TestQuotePGValue(t *testing.T) {
 		value string
 		want  string
 	}{
-		{"plain-password", "plain-password"},   // 安全值不引用
+		{"plain-password", "plain-password"},     // 安全值不引用
 		{"qwertyui#$DTGop", "'qwertyui#$DTGop'"}, // # 触发引用
-		{"with space", "'with space'"},         // 空格触发引用
-		{"#lead", "'#lead'"},                   // # 触发引用
-		{"", "''"},                             // 空值显式引用
+		{"with space", "'with space'"},           // 空格触发引用
+		{"#lead", "'#lead'"},                     // # 触发引用
+		{"", "''"},                               // 空值显式引用
 	}
 	for _, tc := range cases {
 		if got := quotePGValue(tc.value); got != tc.want {

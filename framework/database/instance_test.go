@@ -41,6 +41,7 @@ func withCleanRegistry(t *testing.T) {
 		instancesMu.Unlock()
 	})
 }
+
 // testSQLiteConfig 创建指向临时文件的 SQLite 配置。
 func testSQLiteConfig(t *testing.T, name string) *Config {
 	t.Helper()

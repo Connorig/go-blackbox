@@ -1,4 +1,4 @@
-﻿package appbox
+package appbox
 
 import (
 	"time"
@@ -6,11 +6,11 @@ import (
 	"github.com/Connorig/go-blackbox/framework/cache"
 	apploader "github.com/Connorig/go-blackbox/framework/config"
 	"github.com/Connorig/go-blackbox/framework/database"
+	mongodb "github.com/Connorig/go-blackbox/framework/mongo"
 	"github.com/Connorig/go-blackbox/framework/monitor"
 	"github.com/Connorig/go-blackbox/framework/openapi"
 	"github.com/Connorig/go-blackbox/framework/web"
 	"github.com/kataras/iris/v12"
-	mongodb "github.com/Connorig/go-blackbox/framework/mongo"
 )
 
 // AutoConfigure 按配置自动装配模块(对标 Spring Boot Auto-Configuration):

@@ -17,9 +17,9 @@ type GeneratedFile struct {
 
 // GenResult 一次生成的输出。
 type GenResult struct {
-	Table     string           `json:"table"`
-	Files     []GeneratedFile  `json:"files"`
-	RouteCode string           `json:"route_code"` // 路由注册代码段(复制进 main.go)
+	Table     string          `json:"table"`
+	Files     []GeneratedFile `json:"files"`
+	RouteCode string          `json:"route_code"` // 路由注册代码段(复制进 main.go)
 }
 
 // modelName 表名转模型名(test_mycat → TestMycat)。
@@ -93,12 +93,12 @@ func goColumnTag(column ColumnMeta) string {
 
 // genData 模板数据。
 type genData struct {
-	Table       TableMeta
-	ModelName   string
-	VarName     string
-	RoutePath   string
-	ModulePath  string
-	GoFields    []genField
+	Table      TableMeta
+	ModelName  string
+	VarName    string
+	RoutePath  string
+	ModulePath string
+	GoFields   []genField
 }
 
 // genField 渲染用字段。
@@ -155,11 +155,11 @@ func Generate(table TableMeta, modulePath string) (*GenResult, error) {
 
 	result := &GenResult{Table: table.Name}
 	files := map[string]string{
-		"internal/model/" + table.Name + ".go":        tmplModel,
-		"internal/filter/" + table.Name + ".go":       tmplFilter,
-		"internal/repository/" + table.Name + ".go":   tmplRepository,
-		"internal/service/" + table.Name + ".go":      tmplService,
-		"internal/handler/" + table.Name + ".go":      tmplHandler,
+		"internal/model/" + table.Name + ".go":      tmplModel,
+		"internal/filter/" + table.Name + ".go":     tmplFilter,
+		"internal/repository/" + table.Name + ".go": tmplRepository,
+		"internal/service/" + table.Name + ".go":    tmplService,
+		"internal/handler/" + table.Name + ".go":    tmplHandler,
 	}
 	for path, tmplText := range files {
 		content, err := render(tmplText, path)

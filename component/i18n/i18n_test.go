@@ -80,13 +80,13 @@ func TestDetectLanguage(t *testing.T) {
 	bundle.Register("en-US", map[string]string{"k": "v"})
 
 	cases := map[string]string{
-		"":                            "zh-CN", // 空 → 回退
-		"zh-CN,zh;q=0.9":              "zh-CN",
-		"zh-cn":                       "zh-CN", // 大小写归一
-		"en-US,en;q=0.9":              "en-US",
-		"fr-FR,en-US;q=0.8":           "en-US", // 首个未注册跳过,取下一个
-		"fr-FR;q=0.9,de-DE":           "zh-CN", // 都未注册 → 回退
-		"EN-us":                       "en-US",
+		"":                  "zh-CN", // 空 → 回退
+		"zh-CN,zh;q=0.9":    "zh-CN",
+		"zh-cn":             "zh-CN", // 大小写归一
+		"en-US,en;q=0.9":    "en-US",
+		"fr-FR,en-US;q=0.8": "en-US", // 首个未注册跳过,取下一个
+		"fr-FR;q=0.9,de-DE": "zh-CN", // 都未注册 → 回退
+		"EN-us":             "en-US",
 	}
 	for header, expected := range cases {
 		if got := bundle.DetectLanguage(header); got != expected {

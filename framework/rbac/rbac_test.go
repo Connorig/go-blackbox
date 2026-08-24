@@ -12,9 +12,9 @@ import (
 
 // memoryProvider 是测试用内存权限源。
 type memoryProvider struct {
-	mu            sync.Mutex
-	userRoles     map[int64][]string
-	rolePerms     map[string][]string
+	mu               sync.Mutex
+	userRoles        map[int64][]string
+	rolePerms        map[string][]string
 	permissionsCalls int
 }
 
@@ -210,4 +210,3 @@ func TestConcurrentAccess(t *testing.T) {
 		t.Fatalf("check after concurrency failed: %v", err)
 	}
 }
-

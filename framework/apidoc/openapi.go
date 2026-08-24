@@ -131,10 +131,10 @@ func handlerName(handler iris.Handler) string {
 
 // OpenAPISpec OpenAPI 3.0 文档结构。
 type OpenAPISpec struct {
-	OpenAPI    string                 `json:"openapi"`
-	Info       Info                   `json:"info"`
-	Paths      map[string]PathItem    `json:"paths"`
-	Components Components             `json:"components"`
+	OpenAPI    string              `json:"openapi"`
+	Info       Info                `json:"info"`
+	Paths      map[string]PathItem `json:"paths"`
+	Components Components          `json:"components"`
 }
 
 // Info 文档信息。
@@ -196,9 +196,9 @@ func BuildOpenAPI(store *DocStore, title, version, description string) *OpenAPIS
 		store = NewDocStore()
 	}
 	spec := &OpenAPISpec{
-		OpenAPI: "3.0.3",
-		Info: Info{Title: title, Description: description, Version: version},
-		Paths:  map[string]PathItem{},
+		OpenAPI:    "3.0.3",
+		Info:       Info{Title: title, Description: description, Version: version},
+		Paths:      map[string]PathItem{},
 		Components: Components{Schemas: map[string]jsonSchema{}},
 	}
 	for _, operation := range store.Operations() {

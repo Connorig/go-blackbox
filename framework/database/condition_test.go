@@ -55,8 +55,8 @@ func TestBuildConditionIn(t *testing.T) {
 // TestBuildConditionNull is null / is not null。
 func TestBuildConditionNull(t *testing.T) {
 	condition, values, err := BuildCondition(map[string]interface{}{
-		"deleted_at is null":      true,
-		"remark is not null":      true,
+		"deleted_at is null": true,
+		"remark is not null": true,
 	})
 	if err != nil {
 		t.Fatalf("build failed: %v", err)

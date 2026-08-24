@@ -78,4 +78,3 @@ func SignPayload(secret, method, path string, body []byte) string {
 	mac.Write(body)
 	return hex.EncodeToString(mac.Sum(nil))
 }
-

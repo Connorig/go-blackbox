@@ -1,8 +1,8 @@
 package excel
 
 import (
-	"path/filepath"
 	"bytes"
+	"path/filepath"
 	"testing"
 
 	"github.com/xuri/excelize/v2"

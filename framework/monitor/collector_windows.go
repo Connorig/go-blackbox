@@ -10,11 +10,11 @@ import (
 )
 
 var (
-	kernel32                       = windows.NewLazySystemDLL("kernel32.dll")
-	procGlobalMemoryStatusEx       = kernel32.NewProc("GlobalMemoryStatusEx")
-	procGetSystemTimes             = kernel32.NewProc("GetSystemTimes")
-	procGetDiskFreeSpaceExW        = kernel32.NewProc("GetDiskFreeSpaceExW")
-	procGetTickCount64             = kernel32.NewProc("GetTickCount64")
+	kernel32                 = windows.NewLazySystemDLL("kernel32.dll")
+	procGlobalMemoryStatusEx = kernel32.NewProc("GlobalMemoryStatusEx")
+	procGetSystemTimes       = kernel32.NewProc("GetSystemTimes")
+	procGetDiskFreeSpaceExW  = kernel32.NewProc("GetDiskFreeSpaceExW")
+	procGetTickCount64       = kernel32.NewProc("GetTickCount64")
 )
 
 // memoryStats Windows:GlobalMemoryStatusEx。

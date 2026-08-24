@@ -265,4 +265,3 @@ func formatEvent(event string, data interface{}) (string, error) {
 	}
 	return fmt.Sprintf("event: %s\ndata: %s\n\n", event, payload), nil
 }
-

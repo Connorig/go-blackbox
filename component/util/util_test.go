@@ -99,9 +99,9 @@ type deepOuter struct {
 // TestDeepCopyStruct 深拷贝:修改副本不影响原值。
 func TestDeepCopyStruct(t *testing.T) {
 	original := deepOuter{
-		ID: 1,
+		ID:    1,
 		Inner: &deepInner{Items: []string{"a", "b"}, Meta: map[string]int{"x": 1}},
-		Tags: []string{"t1"},
+		Tags:  []string{"t1"},
 		Extra: map[string]*deepInner{"k": {Items: []string{"z"}}},
 	}
 	copied, err := DeepCopy(original)

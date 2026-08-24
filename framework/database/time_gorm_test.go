@@ -13,7 +13,7 @@ import (
 // TestUtilTimeGORM util.Time 数据库字段 GORM 存取兼容。
 func TestUtilTimeGORM(t *testing.T) {
 	type timeRow struct {
-		ID     int64 `gorm:"primarykey"`
+		ID     int64     `gorm:"primarykey"`
 		PaidAt util.Time `gorm:"column:paid_at"`
 	}
 	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "time.db")), &gorm.Config{})

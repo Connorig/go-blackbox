@@ -2,8 +2,8 @@ package seed
 
 import (
 	"context"
-	"github.com/Connorig/go-blackbox/framework/log"
 	"github.com/Connorig/go-blackbox/framework/gbxioc"
+	"github.com/Connorig/go-blackbox/framework/log"
 	"go.uber.org/zap"
 )
 

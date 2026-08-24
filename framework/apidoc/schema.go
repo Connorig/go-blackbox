@@ -10,13 +10,13 @@ import (
 
 // jsonSchema 简化 JSON Schema。
 type jsonSchema struct {
-	Type       string                 `json:"type,omitempty"`
-	Format     string                 `json:"format,omitempty"`
-	Required   []string               `json:"required,omitempty"`
-	Properties map[string]jsonSchema  `json:"properties,omitempty"`
-	Items      *jsonSchema            `json:"items,omitempty"`
-	Ref        string                 `json:"$ref,omitempty"`
-	Example    interface{}            `json:"example,omitempty"`
+	Type       string                `json:"type,omitempty"`
+	Format     string                `json:"format,omitempty"`
+	Required   []string              `json:"required,omitempty"`
+	Properties map[string]jsonSchema `json:"properties,omitempty"`
+	Items      *jsonSchema           `json:"items,omitempty"`
+	Ref        string                `json:"$ref,omitempty"`
+	Example    interface{}           `json:"example,omitempty"`
 }
 
 // modelTypeName 模型类型名(去包前缀)。

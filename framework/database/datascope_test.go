@@ -11,9 +11,9 @@ import (
 
 // orgRow 组织数据测试表(对齐 OrgFields 字段名)。
 type orgRow struct {
-	ID     int64 `gorm:"primarykey;column:id"`
-	OrgID  int64 `gorm:"column:org_id;index"`
-	DeptID int64 `gorm:"column:dept_id;index"`
+	ID     int64  `gorm:"primarykey;column:id"`
+	OrgID  int64  `gorm:"column:org_id;index"`
+	DeptID int64  `gorm:"column:dept_id;index"`
 	Name   string `gorm:"column:name;size:64"`
 }
 

@@ -30,24 +30,24 @@ type Modules struct {
 // LogModule 日志模块配置。
 type LogModule struct {
 	Enabled bool   `mapstructure:"enabled"`
-	Level   string `mapstructure:"level"`    // debug/info/warn/error
-	OutDir  string `mapstructure:"out_dir"`  // 日志目录,默认 "."
+	Level   string `mapstructure:"level"`   // debug/info/warn/error
+	OutDir  string `mapstructure:"out_dir"` // 日志目录,默认 "."
 }
 
 // AuthModule JWT 认证参数(密钥仍由业务代码 apptoken.SetSecretKey 注入)。
 type AuthModule struct {
-	Enabled     bool          `mapstructure:"enabled"`
-	AccessTTL   time.Duration `mapstructure:"access_ttl"`   // 访问 token 有效期,默认 30m
-	RefreshTTL  time.Duration `mapstructure:"refresh_ttl"`  // 刷新 token 有效期,默认 168h
-	Issuer      string        `mapstructure:"issuer"`       // 签发者
+	Enabled    bool          `mapstructure:"enabled"`
+	AccessTTL  time.Duration `mapstructure:"access_ttl"`  // 访问 token 有效期,默认 30m
+	RefreshTTL time.Duration `mapstructure:"refresh_ttl"` // 刷新 token 有效期,默认 168h
+	Issuer     string        `mapstructure:"issuer"`      // 签发者
 }
 
 // WebModule Web 服务与安全基线配置。
 type WebModule struct {
-	Enabled  bool   `mapstructure:"enabled"`
-	Port     string `mapstructure:"port"`      // 监听地址,默认 ":8080"
-	Level    string `mapstructure:"level"`     // 日志级别
-	TimeFmt  string `mapstructure:"time_format"` // iris 时间格式(默认 appbox.TimeFormat)
+	Enabled bool   `mapstructure:"enabled"`
+	Port    string `mapstructure:"port"`        // 监听地址,默认 ":8080"
+	Level   string `mapstructure:"level"`       // 日志级别
+	TimeFmt string `mapstructure:"time_format"` // iris 时间格式(默认 appbox.TimeFormat)
 	// Baseline 是否自动挂载安全基线中间件(限流/请求体上限/超时/SQL 注入拦截/日志/安全头)。
 	Baseline bool `mapstructure:"baseline"`
 	// RatePerSecond 基线全局限流 QPS(默认 100)。
@@ -63,8 +63,8 @@ type WebModule struct {
 // DatabaseModule 关系数据库模块配置。
 type DatabaseModule struct {
 	Enabled     bool   `mapstructure:"enabled"`
-	Driver      string `mapstructure:"driver"`       // sqlite/postgres/mysql
-	DSN         string `mapstructure:"dsn"`          // 连接串或 SQLite 文件路径
+	Driver      string `mapstructure:"driver"` // sqlite/postgres/mysql
+	DSN         string `mapstructure:"dsn"`    // 连接串或 SQLite 文件路径
 	Host        string `mapstructure:"host"`
 	Port        int    `mapstructure:"port"`
 	User        string `mapstructure:"user"`
@@ -79,7 +79,7 @@ type DatabaseModule struct {
 // CacheModule Redis 缓存模块配置。
 type CacheModule struct {
 	Enabled  bool   `mapstructure:"enabled"`
-	Addr     string `mapstructure:"addr"`     // host:port
+	Addr     string `mapstructure:"addr"` // host:port
 	Password string `mapstructure:"password"`
 	DB       int    `mapstructure:"db"`
 	PoolSize int    `mapstructure:"pool_size"`

@@ -14,16 +14,16 @@ import (
 
 // Entry 是单条操作日志。
 type Entry struct {
-	Time      time.Time `json:"time"`
-	UserID    int64 `json:"user_id"`
-	UserEmail string `json:"user_email"`
-	Method    string `json:"method"`
-	Path      string `json:"path"`
-	Status    int `json:"status"`
+	Time      time.Time     `json:"time"`
+	UserID    int64         `json:"user_id"`
+	UserEmail string        `json:"user_email"`
+	Method    string        `json:"method"`
+	Path      string        `json:"path"`
+	Status    int           `json:"status"`
 	Duration  time.Duration `json:"duration"`
-	RequestID string `json:"request_id"`
-	Action    string `json:"action"`
-	Detail    string `json:"detail"`
+	RequestID string        `json:"request_id"`
+	Action    string        `json:"action"`
+	Detail    string        `json:"detail"`
 }
 
 // Sink 是操作日志的落库目标；业务方实现（写数据库、ES、文件等）。

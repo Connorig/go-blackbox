@@ -168,9 +168,9 @@ func main() {
 			// 5.7 出站调用示例:签名客户端 + 熔断保护
 			// (演示端点:调用 /api/v1/partner 会请求本服务自己的 /monitor/api/stats 并返回)
 			partnerClient := thirdparty.NewClient(thirdparty.Config{
-				BaseURL:   "http://127.0.0.1:9528",
-				Signer:    thirdparty.NewBearerSigner("demo-partner-token"),
-				Timeout:   3 * time.Second,
+				BaseURL:    "http://127.0.0.1:9528",
+				Signer:     thirdparty.NewBearerSigner("demo-partner-token"),
+				Timeout:    3 * time.Second,
 				MaxRetries: 1,
 				Breaker: circuit.New(circuit.Config{
 					FailureThreshold: 0.5,

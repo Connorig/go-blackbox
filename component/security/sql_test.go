@@ -42,7 +42,7 @@ func TestIsSQLInjectionNegative(t *testing.T) {
 		"2026-08-15 14:00:00",
 		"abc@example.com",
 		"13800138000",
-		"select_status",   // 字段名包含 select 但不构成注入
+		"select_status",     // 字段名包含 select 但不构成注入
 		"union_high_school", // 单词前缀不是关键字注入
 		"{\"name\":\"demo\"}",
 		"order_id=100",

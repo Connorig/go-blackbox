@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
+	zaplog "github.com/Connorig/go-blackbox/framework/log"
 	"github.com/glebarez/sqlite"
 	"github.com/jackc/pgx/v5"
-	zaplog "github.com/Connorig/go-blackbox/framework/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -352,6 +352,7 @@ func defaultGormConfig() *gorm.Config {
 		},
 	}
 }
+
 // applyUnifiedPoolConfig 将统一连接池参数应用到底层 database/sql。
 func applyUnifiedPoolConfig(pool interface {
 	SetMaxIdleConns(int)
@@ -386,7 +387,6 @@ func databaseAddress(config Config) string {
 	}
 	return config.Host + ":" + strconv.Itoa(config.Port)
 }
-
 
 // MigrateModels 对一组模型执行 AutoMigrate(业务手动迁移/初始化建表用)。
 // 等价于 datasource.Get().DB().AutoMigrate(models...),但统一处理实例获取错误。

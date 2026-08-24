@@ -68,13 +68,13 @@ type ConnectInfo struct {
 
 // HlsInfo on_hls 回调(切片生成,后续回放用)。
 type HlsInfo struct {
-	Action   string `json:"action"`
-	ClientID string `json:"client_id"`
-	IP       string `json:"ip"`
-	Vhost    string `json:"vhost"`
-	App      string `json:"app"`
-	Stream   string `json:"stream"`
-	Param    string `json:"param"`
+	Action   string  `json:"action"`
+	ClientID string  `json:"client_id"`
+	IP       string  `json:"ip"`
+	Vhost    string  `json:"vhost"`
+	App      string  `json:"app"`
+	Stream   string  `json:"stream"`
+	Param    string  `json:"param"`
 	Duration float64 `json:"duration"` // 切片时长(秒)
 	CWD      string  `json:"cwd"`      // m3u8 目录
 	File     string  `json:"file"`     // 切片文件

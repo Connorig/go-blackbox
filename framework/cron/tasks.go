@@ -17,10 +17,10 @@ type TaskFunc func(ctx context.Context) error
 
 // Task 描述一个已注册的具名定时任务。
 type Task struct {
-	Name    string         // 任务名称，注册后不可重复
-	Spec    string         // Cron 表达式
-	EntryID cron.EntryID   // 调度器条目 ID
-	AddedAt time.Time      // 注册时间
+	Name    string       // 任务名称，注册后不可重复
+	Spec    string       // Cron 表达式
+	EntryID cron.EntryID // 调度器条目 ID
+	AddedAt time.Time    // 注册时间
 }
 
 var (

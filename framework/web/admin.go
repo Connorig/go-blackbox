@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Connorig/go-blackbox/framework/log"
 	apperr "github.com/Connorig/go-blackbox/component/error"
+	"github.com/Connorig/go-blackbox/framework/log"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/core/host"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -42,7 +42,6 @@ type AdminConfig struct {
 type Admin struct {
 	config AdminConfig
 	app    *iris.Application
-
 
 	mu        sync.Mutex
 	started   bool
@@ -198,4 +197,3 @@ func (a *Admin) watchShutdown(ctx context.Context, listener net.Listener, watche
 	}()
 	return result
 }
-

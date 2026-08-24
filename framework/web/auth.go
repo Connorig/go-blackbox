@@ -1,4 +1,4 @@
-﻿package webiris
+package webiris
 
 import (
 	"strings"

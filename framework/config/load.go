@@ -46,7 +46,7 @@ type loader struct {
 	envSearchEnable  bool
 	envPrefix        string
 	configurationErr error
-	watchTarget      interface{} // watchTarget 是 Watch 重载时反序列化的目标结构体
+	watchTarget      interface{}   // watchTarget 是 Watch 重载时反序列化的目标结构体
 	global           *globalConfig // 全局(父级)配置定位,分层加载用
 	configName       string
 	configPaths      []string

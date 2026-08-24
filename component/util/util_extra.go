@@ -44,8 +44,8 @@ func isBlankValue(value reflect.Value) bool {
 
 // Pager 分页参数与计算(对齐 sg-mes 的 PagerReq/PagerRes)。
 type Pager struct {
-	PageNo   int // 页码(从 1 开始;<=0 时按 1)
-	PageSize int // 每页数量(<=0 时按 10;>100 时截断为 100)
+	PageNo   int   // 页码(从 1 开始;<=0 时按 1)
+	PageSize int   // 每页数量(<=0 时按 10;>100 时截断为 100)
 	Count    int64 // 总条数(查询后设置,用于计算分页信息)
 }
 

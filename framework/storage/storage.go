@@ -67,7 +67,7 @@ type StorageTemplate interface {
 
 // Client 是对象存储模板实现。
 type Client struct {
-	minio *minio.Client
+	minio  *minio.Client
 	bucket string
 }
 

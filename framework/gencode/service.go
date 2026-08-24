@@ -29,9 +29,9 @@ func (genRecord) TableName() string { return recordTableName }
 
 // Service 低代码生成服务。
 type Service struct {
-	meta      *Meta
+	meta       *Meta
 	modulePath string // 业务项目 module 路径(import 用)
-	outputDir string // 生成文件输出根目录(默认 ./)
+	outputDir  string // 生成文件输出根目录(默认 ./)
 }
 
 // NewService 创建生成服务。
@@ -60,7 +60,7 @@ func NewService(db *gorm.DB, modulePath, outputDir string) (*Service, error) {
 // TableInfo 表 + 已生成标记。
 type TableInfo struct {
 	TableMeta
-	Generated bool      `json:"generated"`
+	Generated   bool       `json:"generated"`
 	GeneratedAt *time.Time `json:"generated_at,omitempty"`
 }
 

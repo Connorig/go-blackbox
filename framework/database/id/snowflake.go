@@ -11,11 +11,11 @@ import (
 
 // 雪花算法位分配(对齐主流实现):
 //
-//	| 1 bit 符号位 | 41 bit 毫秒时间戳 | 10 bit 节点 ID | 12 bit 序列号 |
+//		| 1 bit 符号位 | 41 bit 毫秒时间戳 | 10 bit 节点 ID | 12 bit 序列号 |
 //
-//   - 时间戳:从 epoch 起的毫秒数,支持约 69 年(41 位)
-//   - 节点 ID:0-1023,通过 SetNode 配置(或环境变量 GOBLACKBOX_SNOWFLAKE_NODE)
-//   - 序列号:同一毫秒内 0-4095,超出则等待下一毫秒
+//	  - 时间戳:从 epoch 起的毫秒数,支持约 69 年(41 位)
+//	  - 节点 ID:0-1023,通过 SetNode 配置(或环境变量 GOBLACKBOX_SNOWFLAKE_NODE)
+//	  - 序列号:同一毫秒内 0-4095,超出则等待下一毫秒
 const (
 	snowflakeEpoch    int64 = 1704067200000 // 2024-01-01T00:00:00Z
 	snowflakeNodeBits       = 10

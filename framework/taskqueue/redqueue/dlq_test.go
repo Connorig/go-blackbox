@@ -146,4 +146,3 @@ func TestLegacyBarePayloadCompatibility(t *testing.T) {
 		t.Fatal("timed out waiting for legacy task")
 	}
 }
-

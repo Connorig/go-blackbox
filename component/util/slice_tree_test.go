@@ -132,9 +132,9 @@ func TestBuildTreeOrphan(t *testing.T) {
 // TestBuildTreeString 字符串 ID 树。
 func TestBuildTreeString(t *testing.T) {
 	type category struct {
-		Code     string
-		Parent   string
-		Name     string
+		Code   string
+		Parent string
+		Name   string
 	}
 	categories := []category{
 		{Code: "cn", Parent: "", Name: "中国"},

@@ -122,10 +122,10 @@ func TestClientRetryOn5xx(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(Config{
-		BaseURL:   server.URL,
-		Signer:    NewBearerSigner("t"),
-		Timeout:   3 * time.Second,
-		MaxRetries: 2,
+		BaseURL:        server.URL,
+		Signer:         NewBearerSigner("t"),
+		Timeout:        3 * time.Second,
+		MaxRetries:     2,
 		RetryBaseDelay: 10 * time.Millisecond,
 	})
 	var out struct {

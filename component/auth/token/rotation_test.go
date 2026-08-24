@@ -113,4 +113,3 @@ func TestRefreshWithRotatedSecret(t *testing.T) {
 		t.Fatalf("refresh valid access failed: %v", err)
 	}
 }
-

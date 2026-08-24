@@ -141,4 +141,3 @@ func PanicRecovery() iris.Handler {
 		ctx.Next()
 	}
 }
-

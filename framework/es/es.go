@@ -255,7 +255,7 @@ func (c *Client) do(ctx context.Context, request esapi.Request) error {
 
 // SearchResponse 搜索响应(常用字段)。
 type SearchResponse struct {
-	Took     int `json:"took"`
+	Took     int  `json:"took"`
 	TimedOut bool `json:"timed_out"`
 	Hits     struct {
 		Total struct {

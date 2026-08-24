@@ -111,5 +111,5 @@ func parameterizeSQL(sql string) string {
 	return sqlLiteralRe.ReplaceAllString(sql, "?")
 }
 
-// sqlLiteralRe 匹配 SQL 字面量:单引号字符串(含 '' 转义)与数字。
+// sqlLiteralRe 匹配 SQL 字面量:单引号字符串(含 ” 转义)与数字。
 var sqlLiteralRe = regexp.MustCompile(`'([^']|'')*'|\b\d+(?:\.\d+)?\b`)

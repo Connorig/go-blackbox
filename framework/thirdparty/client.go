@@ -1,4 +1,4 @@
-﻿package thirdparty
+package thirdparty
 
 import (
 	"bytes"

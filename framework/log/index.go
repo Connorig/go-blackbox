@@ -23,8 +23,8 @@ var (
 	SugaredLogger = Logger.Sugar()
 	loggerMu      sync.Mutex
 	// logWriters 保存 Init 创建的轮转日志写入器，Close 时统一释放文件句柄。
-	logWriters        []io.Closer
-	writersMu         sync.Mutex
+	logWriters         []io.Closer
+	writersMu          sync.Mutex
 	consoleAtomicLevel = zap.NewAtomicLevel()
 )
 

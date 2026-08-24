@@ -20,8 +20,8 @@ import (
 	"strings"
 	"sync"
 
-	playground "github.com/go-playground/validator/v10"
 	apperr "github.com/Connorig/go-blackbox/component/error"
+	playground "github.com/go-playground/validator/v10"
 )
 
 // instance 全局校验器(线程安全)。

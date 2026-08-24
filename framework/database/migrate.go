@@ -24,9 +24,9 @@ type Migration struct {
 // Migrator 是轻量版本化迁移执行器。
 // 迁移记录保存在 schema_migrations 表（可按需改名）。
 type Migrator struct {
-	instance  *Instance
+	instance   *Instance
 	migrations []Migration
-	tableName string
+	tableName  string
 }
 
 // NewMigrator 创建迁移器。
@@ -151,7 +151,7 @@ func (m *Migrator) Rollback(ctx context.Context) error {
 
 // migrationRow 是迁移记录表结构。
 type migrationRow struct {
-	Name      string    `gorm:"primarykey;size:255"`
+	Name      string `gorm:"primarykey;size:255"`
 	AppliedAt time.Time
 }
 

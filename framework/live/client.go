@@ -30,14 +30,14 @@ func NewClient(baseURL string, timeout time.Duration) *Client {
 
 // Version SRS 版本信息。
 type Version struct {
-	Code       int    `json:"code"`
-	ServerID   string `json:"server_id"`
-	ServiceID  string `json:"service_id"`
-	PID        string `json:"pid"`
-	Major      int    `json:"major"`
-	Minor      int    `json:"minor"`
-	Revision   int    `json:"revision"`
-	Version    string `json:"version"`
+	Code      int    `json:"code"`
+	ServerID  string `json:"server_id"`
+	ServiceID string `json:"service_id"`
+	PID       string `json:"pid"`
+	Major     int    `json:"major"`
+	Minor     int    `json:"minor"`
+	Revision  int    `json:"revision"`
+	Version   string `json:"version"`
 }
 
 // Stream 在线流信息(字段名直观化)。
@@ -78,15 +78,15 @@ type StreamAudio struct {
 
 // ClientInfo 客户端连接信息。
 type ClientInfo struct {
-	ID       string `json:"id"`
-	Vhost    string `json:"vhost"`
-	Stream   string `json:"stream"`
-	App      string `json:"app"`
-	IP       string `json:"ip"`
-	PageURL  string `json:"page_url"`
-	Type     string `json:"type"`   // publisher / player
-	Alive    string `json:"alive"`  // 秒
-	Publish  bool   `json:"publish"`
+	ID      string `json:"id"`
+	Vhost   string `json:"vhost"`
+	Stream  string `json:"stream"`
+	App     string `json:"app"`
+	IP      string `json:"ip"`
+	PageURL string `json:"page_url"`
+	Type    string `json:"type"`  // publisher / player
+	Alive   string `json:"alive"` // 秒
+	Publish bool   `json:"publish"`
 }
 
 // Version 查询 SRS 版本(GET /api/v1/versions)。
@@ -104,7 +104,7 @@ func (c *Client) Version(ctx context.Context) (*Version, error) {
 // ListStreams 查询在线流(GET /api/v1/streams/,必须带尾部斜杠)。
 func (c *Client) ListStreams(ctx context.Context) ([]*Stream, error) {
 	var result struct {
-		Code  int            `json:"code"`
+		Code    int          `json:"code"`
 		Streams []*srsStream `json:"streams"`
 	}
 	if err := c.getJSON(ctx, "/api/v1/streams/", &result); err != nil {
@@ -151,12 +151,12 @@ func (c *Client) ListStreams(ctx context.Context) ([]*Stream, error) {
 // srsStream SRS 原始流结构(内部解析用)。
 // 兼容 SRS 5.x(顶层 video/audio)与旧版(publish.video/publish.audio)。
 type srsStream struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	App     string `json:"app"`
-	Vhost   string `json:"vhost"`
-	URL     string `json:"url"`
-	Video   *struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	App   string `json:"app"`
+	Vhost string `json:"vhost"`
+	URL   string `json:"url"`
+	Video *struct {
 		Codec   string `json:"codec"`
 		Profile string `json:"profile"`
 		Level   string `json:"level"`
@@ -211,7 +211,7 @@ func (c *Client) KickClient(ctx context.Context, cid string) error {
 // ListClients 查询客户端连接(GET /api/v1/clients/,带尾部斜杠)。
 func (c *Client) ListClients(ctx context.Context) ([]*ClientInfo, error) {
 	var result struct {
-		Code    int          `json:"code"`
+		Code    int           `json:"code"`
 		Clients []*ClientInfo `json:"clients"`
 	}
 	if err := c.getJSON(ctx, "/api/v1/clients/", &result); err != nil {

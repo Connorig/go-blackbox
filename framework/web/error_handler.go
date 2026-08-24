@@ -70,4 +70,3 @@ func RegisterPprof(app *iris.Application) {
 		pprof.Index(ctx.ResponseWriter(), ctx.Request())
 	})
 }
-

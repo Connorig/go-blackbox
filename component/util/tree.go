@@ -4,7 +4,7 @@ package util
 
 // Tree 树节点包装:保留原始实体 + 子节点列表。
 type Tree[T any] struct {
-	Node     T         `json:"node"`     // 原始实体
+	Node     T          `json:"node"`     // 原始实体
 	Children []*Tree[T] `json:"children"` // 子节点(N 级递归)
 }
 

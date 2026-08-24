@@ -27,16 +27,16 @@ import (
 
 // Operation 接口操作元数据(OpenAPI operation 对齐)。
 type Operation struct {
-	Method      string            // HTTP 方法(GET/POST/PUT/DELETE)
-	Path        string            // 路由路径(如 /api/v1/orders/{id})
-	Summary     string            // 摘要
-	Description string            // 详细描述
-	Tags        []string          // 标签
-	Params      []Param           // 参数
-	Responses   []Response        // 响应
-	Deprecated  bool              // 弃用标记
-	RequestBody *RequestBody      // 请求体(有 body 参数时)
-	HandlerName string            // 处理函数名(调试)
+	Method      string       // HTTP 方法(GET/POST/PUT/DELETE)
+	Path        string       // 路由路径(如 /api/v1/orders/{id})
+	Summary     string       // 摘要
+	Description string       // 详细描述
+	Tags        []string     // 标签
+	Params      []Param      // 参数
+	Responses   []Response   // 响应
+	Deprecated  bool         // 弃用标记
+	RequestBody *RequestBody // 请求体(有 body 参数时)
+	HandlerName string       // 处理函数名(调试)
 }
 
 // Param 参数定义。
@@ -50,16 +50,16 @@ type Param struct {
 
 // Response 响应定义。
 type Response struct {
-	Code    int
-	Desc    string
-	Model   interface{} // 响应 data 模型(可选;nil=通用响应)
+	Code  int
+	Desc  string
+	Model interface{} // 响应 data 模型(可选;nil=通用响应)
 }
 
 // RequestBody 请求体定义。
 type RequestBody struct {
-	Model     interface{}
-	Required  bool
-	Desc      string
+	Model    interface{}
+	Required bool
+	Desc     string
 }
 
 // DocStore 文档收集器。
@@ -185,7 +185,6 @@ func inferPathParams(path string) []Param {
 	}
 	return params
 }
-
 
 // ResetStoreForTest 重置全局文档收集器(测试隔离用)。
 func ResetStoreForTest() {

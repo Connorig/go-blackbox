@@ -21,13 +21,13 @@ type task struct {
 
 // Queue 异步任务队列(延迟任务按时间排序执行)。
 type Queue struct {
-	mu       sync.Mutex
-	pending  []*task
-	wake     chan struct{}
-	workers  int
-	running  int32
-	nextID   atomic.Uint64
-	onError  func(taskID string, err error)
+	mu      sync.Mutex
+	pending []*task
+	wake    chan struct{}
+	workers int
+	running int32
+	nextID  atomic.Uint64
+	onError func(taskID string, err error)
 }
 
 // NewQueue 创建队列。workers 为并发执行数(默认 2)。

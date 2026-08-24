@@ -3,8 +3,8 @@ package appbox
 import (
 	"context"
 	"fmt"
-	"github.com/Connorig/go-blackbox/framework/config"
 	"github.com/Connorig/go-blackbox/framework/cache"
+	"github.com/Connorig/go-blackbox/framework/config"
 	"github.com/Connorig/go-blackbox/framework/database"
 	"github.com/Connorig/go-blackbox/framework/lifecycle"
 	"os"
@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Connorig/go-blackbox/framework/web"
 	"github.com/Connorig/go-blackbox/framework/log"
+	"github.com/Connorig/go-blackbox/framework/web"
 	"github.com/kataras/iris/v12"
 	"gorm.io/gorm"
 )

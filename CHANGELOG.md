@@ -441,6 +441,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.80.0 - 2026-08-19
 ## v1.81.0 - 2026-08-19
 ## v1.82.0 - 2026-08-19
+## v1.83.0 - 2026-08-19
+
+### Changed
+- 全仓 gofmt 格式化(102 个文件):import 分组排序、doc comment 列表规则(Go 1.19+ 注释规范)、对齐修正
+- 纯格式变更,无语义改动;全量编译与测试验证通过
+
+### Quality
+- gofmt -l . 全仓干净(此前约 20 个文件不合规,含 application.*、cmd/gbx、component/util 等)
 
 ### Added
 - framework/safe goroutine panic 治理(safe.Go / safe.Recover):

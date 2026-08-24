@@ -16,11 +16,11 @@ import (
 
 // 默认写队列容量与心跳间隔。
 const (
-	writeQueueSize       = 64
-	defaultPingInterval  = 30 * time.Second
-	writeWait            = 10 * time.Second
-	pongWait             = 60 * time.Second
-	maxMessageSize int64 = 4096
+	writeQueueSize            = 64
+	defaultPingInterval       = 30 * time.Second
+	writeWait                 = 10 * time.Second
+	pongWait                  = 60 * time.Second
+	maxMessageSize      int64 = 4096
 )
 
 // Client 表示一个 WebSocket 连接。
@@ -80,7 +80,7 @@ type Hub struct {
 	// bridge 跨节点广播桥接(WithRedis 配置;nil 表示单实例模式)。
 	bridge   *redisBridge
 	bridgeMu sync.RWMutex
-	onLeave RoomEvent
+	onLeave  RoomEvent
 }
 
 // NewHub 创建 WebSocket Hub；onMessage 为收到业务消息的回调（可 nil）。
@@ -139,7 +139,7 @@ func (h *Hub) Run(ctx context.Context) {
 			h.removeClient(client)
 		case message := <-h.broadcast:
 			h.mu.RLock()
-					for client := range h.clients {
+			for client := range h.clients {
 				client.Send(message)
 			}
 			h.mu.RUnlock()
@@ -286,4 +286,3 @@ func (h *Hub) isClosed(client *Client) bool {
 	_, ok := h.clients[client]
 	return !ok
 }
-

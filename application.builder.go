@@ -8,16 +8,16 @@ import (
 	"time"
 
 	"github.com/Connorig/go-blackbox/component/auth/token"
-	"github.com/Connorig/go-blackbox/framework/seed"
-	"github.com/Connorig/go-blackbox/framework/config"
 	"github.com/Connorig/go-blackbox/framework/cache"
+	"github.com/Connorig/go-blackbox/framework/config"
 	"github.com/Connorig/go-blackbox/framework/cron"
 	"github.com/Connorig/go-blackbox/framework/database"
+	"github.com/Connorig/go-blackbox/framework/gbxioc"
+	log "github.com/Connorig/go-blackbox/framework/log"
 	"github.com/Connorig/go-blackbox/framework/mongo"
+	"github.com/Connorig/go-blackbox/framework/seed"
 	"github.com/Connorig/go-blackbox/framework/web"
 	"github.com/kataras/iris/v12"
-	log "github.com/Connorig/go-blackbox/framework/log"
-	"github.com/Connorig/go-blackbox/framework/gbxioc"
 )
 
 const (
@@ -277,8 +277,8 @@ func (app *ApplicationBuild) InitCronJob() *ApplicationBuild {
 
 	// 定时任务客户端放入容器
 	if err := gbxioc.RegisterInstance(cronjobs.CronInstance()); err != nil {
-			// 閲嶅娉ㄥ唽淇濇寔鍏煎锛氱洿鎺ュ拷鐣r
-		}
+		// 閲嶅娉ㄥ唽淇濇寔鍏煎锛氱洿鎺ュ拷鐣r
+	}
 
 	return app
 }

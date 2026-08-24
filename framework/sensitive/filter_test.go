@@ -10,9 +10,9 @@ func TestFilterContains(t *testing.T) {
 	filter := NewFilter([]string{"赌博", "色情", "广告"})
 	cases := map[string]bool{
 		"这条弹幕包含赌博内容": true,
-		"正常聊天":          false,
-		"广告词":           true,
-		"":               false,
+		"正常聊天":       false,
+		"广告词":        true,
+		"":           false,
 	}
 	for text, want := range cases {
 		if got := filter.Contains(text); got != want {

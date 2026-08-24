@@ -114,12 +114,12 @@ func (m *Meta) listTablesSQLite(ctx context.Context) ([]TableMeta, error) {
 // readTableColumnsSQLite PRAGMA table_info。
 func (m *Meta) readTableColumnsSQLite(ctx context.Context, tableName string) ([]ColumnMeta, error) {
 	var rows []struct {
-		CID      int
-		Name     string
-		Type     string
-		NotNull  int
-		Default  *string
-		PK       int
+		CID     int
+		Name    string
+		Type    string
+		NotNull int
+		Default *string
+		PK      int
 	}
 	if err := m.db.WithContext(ctx).Raw("PRAGMA table_info(" + quoteIdent(tableName) + ")").Scan(&rows).Error; err != nil {
 		return nil, err

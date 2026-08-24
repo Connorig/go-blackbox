@@ -8,7 +8,8 @@
 // 业务端口 :9530
 //
 // 验证命令(见 README.md):
-//   PowerShell 运行 scripts/sign.ps1 生成签名请求头,再用 curl 调用。
+//
+//	PowerShell 运行 scripts/sign.ps1 生成签名请求头,再用 curl 调用。
 package main
 
 import (
@@ -80,7 +81,7 @@ func main() {
 				//   NonceStore: openapi.NewRedisNonceStore(redis SETNX),多实例共享防重放
 				//   OnAudit:    记录每次开放调用(zaplog 或异步日志队列)
 			})
-			api.GET("/v1/order/query", QueryOrder)   // 实际路径 /openapi/v1/order/query
+			api.GET("/v1/order/query", QueryOrder)    // 实际路径 /openapi/v1/order/query
 			api.POST("/v1/order/update", UpdateOrder) // 实际路径 /openapi/v1/order/update
 
 			// 内部健康探针(不经过开放网关)

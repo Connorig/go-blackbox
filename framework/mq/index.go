@@ -573,7 +573,7 @@ func Recv2(mq RabbitMQ, receiver Receiver, taskQuit chan<- struct{}) {
 	mq.listenReceiver(receiver)
 }
 
-//消息处理失败之后 延时尝试
+// 消息处理失败之后 延时尝试
 func retryMsg(msg []byte, retry_nums int32, queueExchange QueueExchange) {
 	//原始队列名称 交换机名称
 	oldQName := queueExchange.QuName

@@ -75,14 +75,14 @@ func TestIsChecksBusinessCode(t *testing.T) {
 // TestHTTPStatusMapping 验证错误码 HTTP 状态映射。
 func TestHTTPStatusMapping(t *testing.T) {
 	cases := map[Code]int{
-		CodeOK:                   200,
-		CodeRequestParamError:    400,
-		CodeAccessUnauthorized:   401,
-		CodeAPINoPermission:      403,
-		CodeRequestRateLimited:   429,
-		CodeSystemError:          500,
-		CodeSystemTimeout:        504,
-		CodeDatabaseError:        500,
+		CodeOK:                 200,
+		CodeRequestParamError:  400,
+		CodeAccessUnauthorized: 401,
+		CodeAPINoPermission:    403,
+		CodeRequestRateLimited: 429,
+		CodeSystemError:        500,
+		CodeSystemTimeout:      504,
+		CodeDatabaseError:      500,
 	}
 	for code, expected := range cases {
 		if got := HTTPStatus(code); got != expected {

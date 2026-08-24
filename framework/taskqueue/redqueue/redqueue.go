@@ -320,6 +320,7 @@ func decodeEnvelope(value []byte) envelope {
 	// 兼容裸 payload(可能本身是 JSON,原样作为数据)
 	return envelope{Data: value}
 }
+
 // invokeHandler 执行业务 handler 并捕获 panic(转错误,走重试/死信路径,
 // 避免业务 panic 崩溃消费进程)。
 func invokeHandler(handler func(context.Context, []byte) error, ctx context.Context, payload []byte) (err error) {

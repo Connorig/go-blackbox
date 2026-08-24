@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/kataras/golog"
-	gormlogger "gorm.io/gorm/logger"
 	"go.uber.org/zap/zapcore"
+	gormlogger "gorm.io/gorm/logger"
 )
 
 // setupFileLogger 初始化写到临时目录的日志,返回目录与清理函数。
@@ -78,11 +78,11 @@ func TestGologHandlerToZap(t *testing.T) {
 // TestGologLevelMapping 级别映射覆盖。
 func TestGologLevelMapping(t *testing.T) {
 	cases := map[golog.Level]zapcore.Level{
-		golog.DebugLevel:   zapcore.DebugLevel,
-		golog.InfoLevel:    zapcore.InfoLevel,
-		golog.WarnLevel:    zapcore.WarnLevel,
-		golog.ErrorLevel:   zapcore.ErrorLevel,
-		golog.FatalLevel:   zapcore.FatalLevel,
+		golog.DebugLevel: zapcore.DebugLevel,
+		golog.InfoLevel:  zapcore.InfoLevel,
+		golog.WarnLevel:  zapcore.WarnLevel,
+		golog.ErrorLevel: zapcore.ErrorLevel,
+		golog.FatalLevel: zapcore.FatalLevel,
 	}
 	for from, want := range cases {
 		if got := gologToZapLevel(from); got != want {
@@ -95,8 +95,8 @@ func TestGologLevelMapping(t *testing.T) {
 func TestShortFunctionName(t *testing.T) {
 	cases := map[string]string{
 		"github.com/Connorig/go-blackbox/framework/database.NewNamed": "database.NewNamed",
-		"main.main":            "main.main",
-		"github.com/a/b/c.F":   "c.F",
+		"main.main":          "main.main",
+		"github.com/a/b/c.F": "c.F",
 	}
 	for input, want := range cases {
 		if got := shortFunctionName(input); got != want {
@@ -218,7 +218,7 @@ func TestGologWriterDropsIrisListening(t *testing.T) {
 func TestShortenMiddlewareLine(t *testing.T) {
 	cases := map[string]string{
 		"• github.com/Connorig/go-blackbox/framework/web.ErrorHandler (D:/Codes/golang-workspace/GolandProjects/company/sg/go-blackbox/framework/web/error_handler.go:15)": "• web.ErrorHandler (error_handler.go:15)",
-		"• github.com/Connorig/go-blackbox/framework/web.Limit.func1 (C:/Users/x/pkg/mod/github.com/kataras/iris/v12@v12.2.5/ratelimit.go:32)": "• web.Limit.func1 (ratelimit.go:32)",
+		"• github.com/Connorig/go-blackbox/framework/web.Limit.func1 (C:/Users/x/pkg/mod/github.com/kataras/iris/v12@v12.2.5/ratelimit.go:32)":                             "• web.Limit.func1 (ratelimit.go:32)",
 		"GET: /api/streams (./internal\\handler\\stream.go:17)": "GET: /api/streams (./internal\\handler\\stream.go:17)",
 		// 业务项目代码保留全限定路径,报错定位不丢包/类/方法信息
 		"• github.com/Connorig/live-integration/internal/middleware.BusinessAuth (D:/Codes/live-integration/internal/middleware/auth.go:21)": "• github.com/Connorig/live-integration/internal/middleware.BusinessAuth (D:/Codes/live-integration/internal/middleware/auth.go:21)",

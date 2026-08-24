@@ -10,10 +10,10 @@ import (
 
 	"github.com/Connorig/go-blackbox/framework/cache"
 	"github.com/Connorig/go-blackbox/framework/database"
-	"github.com/Connorig/go-blackbox/framework/mongo"
+	"github.com/Connorig/go-blackbox/framework/gbxioc"
 	"github.com/Connorig/go-blackbox/framework/lifecycle"
 	log "github.com/Connorig/go-blackbox/framework/log"
-	"github.com/Connorig/go-blackbox/framework/gbxioc"
+	"github.com/Connorig/go-blackbox/framework/mongo"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 )
@@ -107,7 +107,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 		return fmt.Errorf("register logger shutdown: %w", err)
 	}
 
-		if app.builder.IsEnableDB {
+	if app.builder.IsEnableDB {
 		var dbInstance *datasource.Instance
 		var err error
 		if app.builder.databaseConfig != nil {
@@ -128,13 +128,13 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			log.SugaredLogger.Error(err)
 			return err
 		}
-			// 自动迁移:RegisterModels 提供的模型(函数形态,免 main 样板)
+		// 自动迁移:RegisterModels 提供的模型(函数形态,免 main 样板)
 		if err := app.builder.runModelMigrations(gbxioc.GetContext().Ctx); err != nil {
 			log.SugaredLogger.Errorf("auto migrate registered models failed: %v", err)
 			return fmt.Errorf("auto migrate registered models: %w", err)
 		}
 
-	// Register container entries: Instance (typed) + GORM (legacy GormDb()).
+		// Register container entries: Instance (typed) + GORM (legacy GormDb()).
 		if regErr := gbxioc.RegisterInstance(dbInstance); regErr != nil {
 			log.SugaredLogger.Errorf("register database instance failed: %v", regErr)
 			return fmt.Errorf("register database instance: %w", regErr)
@@ -220,7 +220,7 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 	// 可以立即停止已经运行的 Web；正常退出时父 Context 会自动向下传播取消信号。
 	runtimeCtx, cancelRuntime := context.WithCancel(gbxioc.GetContext().Ctx)
 	keepRuntimeContext := false
-	
+
 	defer func() {
 		if !keepRuntimeContext {
 			cancelRuntime()
@@ -247,8 +247,6 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 			return fmt.Errorf("register named database %q shutdown: %w", namedName, err)
 		}
 	}
-
-
 
 	// Start IOC container: construct registered singletons and run OnInit hooks.
 	if err := gbxioc.Start(runtimeCtx); err != nil {
@@ -317,7 +315,6 @@ func (app *application) buildingService(builderFun func(ctx context.Context, bui
 	}
 	return nil
 }
-
 
 // stopCron 停止 Cron 接收新任务，并等待正在执行的任务结束或关闭 Context 超时。
 func (app *application) stopCron(ctx context.Context) error {

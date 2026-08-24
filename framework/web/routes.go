@@ -29,9 +29,9 @@ import (
 //	// main.go(一行挂载)
 //	webiris.RegisterRoutes(app, router.All())
 type Route struct {
-	Method  string        // HTTP 方法:GET/POST/PUT/DELETE
-	Path    string        // 路由路径(支持 iris 参数语法 /{id:int64})
-	Handler iris.Handler  // 处理函数
+	Method  string          // HTTP 方法:GET/POST/PUT/DELETE
+	Path    string          // 路由路径(支持 iris 参数语法 /{id:int64})
+	Handler iris.Handler    // 处理函数
 	Doc     []apidoc.Option // 可选:接口文档描述(apidoc.Summary 等);nil 时仅注册路由
 }
 

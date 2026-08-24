@@ -196,4 +196,3 @@ func TestMigrationNameUniquenessWithinRun(t *testing.T) {
 		t.Fatal("duplicate migration names must be rejected before running")
 	}
 }
-

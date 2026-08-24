@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/kataras/iris/v12"
 	zaplog "github.com/Connorig/go-blackbox/framework/log"
+	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/core/host"
 )
 

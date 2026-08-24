@@ -27,18 +27,18 @@ const Version = "v1.13.0"
 
 // Stats 一次采集快照。
 type Stats struct {
-	Hostname    string      `json:"hostname"`      // 主机名
-	Platform    string      `json:"platform"`      // 平台,如 linux/amd64
-	GoVersion   string      `json:"go_version"`    // Go 版本
-	Version     string      `json:"version"`       // go-blackbox monitor 组件版本
-	Uptime      int64       `json:"uptime_seconds"` // 系统运行时长(秒)
-	ProcessUptime int64     `json:"process_uptime_seconds"` // 进程运行时长(秒)
-	Goroutines  int         `json:"goroutines"`    // 当前协程数
-	Time        int64       `json:"time"`          // 采集时间戳(Unix 秒)
-	Memory      MemoryStats `json:"memory"`        // 内存
-	CPU         CPUStats    `json:"cpu"`           // CPU
-	Disk        DiskStats   `json:"disk"`          // 磁盘(根分区)
-	Load        LoadStats   `json:"load"`          // 系统负载(非 Linux 为 0)
+	Hostname      string      `json:"hostname"`               // 主机名
+	Platform      string      `json:"platform"`               // 平台,如 linux/amd64
+	GoVersion     string      `json:"go_version"`             // Go 版本
+	Version       string      `json:"version"`                // go-blackbox monitor 组件版本
+	Uptime        int64       `json:"uptime_seconds"`         // 系统运行时长(秒)
+	ProcessUptime int64       `json:"process_uptime_seconds"` // 进程运行时长(秒)
+	Goroutines    int         `json:"goroutines"`             // 当前协程数
+	Time          int64       `json:"time"`                   // 采集时间戳(Unix 秒)
+	Memory        MemoryStats `json:"memory"`                 // 内存
+	CPU           CPUStats    `json:"cpu"`                    // CPU
+	Disk          DiskStats   `json:"disk"`                   // 磁盘(根分区)
+	Load          LoadStats   `json:"load"`                   // 系统负载(非 Linux 为 0)
 }
 
 // MemoryStats 内存统计(字节)。
@@ -79,11 +79,11 @@ func percent(used, total uint64) float64 {
 
 // Collector 资源采集器。CPU 使用率基于两次采样的差值,线程安全。
 type Collector struct {
-	hostname   string
-	platform   string
-	startTime  time.Time
-	cpuLock    chan struct{} // 串行化 CPU 采样缓存(简单互斥)
-	lastCPU    *cpuCache
+	hostname  string
+	platform  string
+	startTime time.Time
+	cpuLock   chan struct{} // 串行化 CPU 采样缓存(简单互斥)
+	lastCPU   *cpuCache
 }
 
 type cpuCache struct {
@@ -115,18 +115,18 @@ func (c *Collector) Stats() (*Stats, error) {
 	uptime := c.uptime()
 
 	stats := &Stats{
-		Hostname:       c.hostname,
-		Platform:       c.platform,
-		GoVersion:      runtime.Version(),
-		Version:        Version,
-		Uptime:         uptime,
-		ProcessUptime:  int64(now.Sub(c.startTime).Seconds()),
-		Goroutines:     runtime.NumGoroutine(),
-		Time:           now.Unix(),
-		Memory:         memory,
-		CPU:            cpu,
-		Disk:           disk,
-		Load:           load,
+		Hostname:      c.hostname,
+		Platform:      c.platform,
+		GoVersion:     runtime.Version(),
+		Version:       Version,
+		Uptime:        uptime,
+		ProcessUptime: int64(now.Sub(c.startTime).Seconds()),
+		Goroutines:    runtime.NumGoroutine(),
+		Time:          now.Unix(),
+		Memory:        memory,
+		CPU:           cpu,
+		Disk:          disk,
+		Load:          load,
 	}
 	// 任一关键采集失败时返回错误(页面据此提示部分数据不可用)
 	for name, err := range map[string]error{"memory": memErr, "cpu": cpuErr, "disk": diskErr, "load": loadErr} {
@@ -136,7 +136,6 @@ func (c *Collector) Stats() (*Stats, error) {
 	}
 	return stats, nil
 }
-
 
 // sampleCPU 通用 CPU 采样缓存(平台实现提供 idle/total 原始计数)。
 // 首次调用返回 0,之后返回自上次采样以来的平均使用率。线程安全。

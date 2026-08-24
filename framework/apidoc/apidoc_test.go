@@ -22,8 +22,8 @@ type testOrder struct {
 }
 
 type testOrderItem struct {
-	SkuID  int64  `json:"sku_id"`
-	Count  int    `json:"count"`
+	SkuID int64 `json:"sku_id"`
+	Count int   `json:"count"`
 }
 
 func noop(ctx iris.Context) {}

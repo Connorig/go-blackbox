@@ -171,4 +171,3 @@ func (p *Producer) PublishRetry(ctx context.Context, body string, retryNums int3
 func retryQueueName(queueName string) string {
 	return queueName + "_retry_3"
 }
-

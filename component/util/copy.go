@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"time"
 )
+
 // 反射工具:结构体属性拷贝(对标 Java BeanUtils.copyProperties)、
 // 深拷贝、按字段名读写属性。基于 GoFrame gconv / gin-vue-admin utils 的常用能力整理。
 
@@ -15,16 +16,21 @@ const maxCopyDepth = 8
 // CopyProperties 将 src 的导出字段按「字段名」拷贝到 dst(对标 Java BeanUtils.copyProperties)。
 // dst 必须为指向结构体的指针;src 为结构体或结构体指针。
 // 规则:
+//
 //   - 字段名完全匹配(区分大小写);src 有而 dst 没有的字段忽略
+//
 //   - 类型相同直接赋值;基本数值类型(int 族/float 族)与 string 之间自动转换
+//
 //   - 嵌套 struct 递归逐字段拷贝(深度上限 8,防循环)
+//
 //   - 时间互转:util.Time ↔ time.Time ↔ string(自动格式化/解析)
+//
 //   - 未导出字段、不可设置字段跳过
 //
-//	type UserDTO struct { Name string; Age int }
-//	type UserEntity struct { Name string; Age int64; Extra string }
-//	var dto UserDTO
-//	util.CopyProperties(&dto, userEntity) // Name 直接拷贝,Age int64→int 自动转换
+//     type UserDTO struct { Name string; Age int }
+//     type UserEntity struct { Name string; Age int64; Extra string }
+//     var dto UserDTO
+//     util.CopyProperties(&dto, userEntity) // Name 直接拷贝,Age int64→int 自动转换
 func CopyProperties(dst, src interface{}) error {
 	return copyProperties(dst, src, false)
 }

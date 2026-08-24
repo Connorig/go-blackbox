@@ -51,7 +51,7 @@ ssl = "require"
 
 	t.Setenv("TESTAPP_WEB_PORT", "7070")
 	loader := NewLoader()
-	loader.SetGlobalConfigFile("gbx", dir)     // 父级
+	loader.SetGlobalConfigFile("gbx", dir)      // 父级
 	loader.SetConfigFileSearcher("config", dir) // 子级
 	loader.EnableEnvSearcher("TESTAPP")
 	if err := loader.LoadToStruct(&cfg); err != nil {
