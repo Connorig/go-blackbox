@@ -448,6 +448,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.87.0 - 2026-08-19
 ## v1.88.0 - 2026-08-19
 ## v1.89.0 - 2026-08-19
+## v1.90.0 - 2026-08-19
+
+### Added
+- framework/event SubscribeRetry 订阅者失败重试(同步模式):
+  - handler 失败按指数退避(backoff × 2^attempt)重试,最多 maxRetries 次(总尝试 +1)
+  - 适用依赖外部资源(DB/HTTP)的订阅者,瞬态失败自动恢复
+  - ctx 取消立即中断退避;maxRetries/backoff 边界归一;异步总线退化为普通订阅
+
+### Tests
+- 首试成功不重试/失败后恢复/耗尽返回/ctx 取消中断/取消订阅与并发安全 5 组
+
 
 ### Added
 - framework/audit 审计查询管理页:
