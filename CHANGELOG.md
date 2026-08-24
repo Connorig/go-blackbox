@@ -452,6 +452,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.91.0 - 2026-08-19
 ## v1.92.0 - 2026-08-19
 ## v1.93.0 - 2026-08-19
+## v1.94.0 - 2026-08-19
+
+### Added
+- component/i18n WatchDir 语言资源热加载(不改代码不重启):
+  - 周期扫描目录(默认 30s),按 mtime+size+内容哈希指纹检测变化
+  - 变化自动重载(同名 key 覆盖)并回调;目录暂不可读/加载失败保留旧资源
+  - 首次扫描不触发回调;ctx 取消立即退出
+  - 典型场景:运营修改 langs/*.json 后自动生效,或配合配置中心 Watch 联动
+
+### Tests
+- 变化触发重载与回调/无变化不回调/目录错误与 nil/取消退出 4 组
+
 
 ### Docs
 - GRAYSCALE_GUIDELINES 新增「灰度统计观测」章节:StatsHandler 用法、实况与目标占比对比、按 X-Gray-Version 错误率评估、回滚建议
