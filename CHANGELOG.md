@@ -447,6 +447,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.86.0 - 2026-08-19
 ## v1.87.0 - 2026-08-19
 ## v1.88.0 - 2026-08-19
+## v1.89.0 - 2026-08-19
+
+### Added
+- framework/audit 审计查询管理页:
+  - Register(app, prefix, client, key, Config):页面 + 数据接口一键注册
+  - 页面:深色监控风表格(时间/用户/方法/路径/状态/耗时/动作)+ 关键字过滤 + 10s 自动刷新,自包含无外部依赖
+  - 数据接口 /api/audit 复用 QueryHandler:限流(默认 5 QPS)+ 可选 Auth(与 monitor 同模式)
+  - prefix 注入脚本({{PREFIX}} 替换,兼容无斜杠访问)
+
+### Tests
+- 页面 200/prefix 注入/占位符替换、斜杠访问、nil app 防御 3 组
+
 
 ### Docs
 - NOTIFY_GUIDELINES 新增「频控(防短信轰炸)」章节:RateLimiter 用法、与 SendAll 组合、多实例注意点
