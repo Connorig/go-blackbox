@@ -445,6 +445,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.84.0 - 2026-08-19
 ## v1.85.0 - 2026-08-19
 ## v1.86.0 - 2026-08-19
+## v1.87.0 - 2026-08-19
+
+### Added
+- framework/notify RateLimiter 通知频控(防短信轰炸/验证码刷接口):
+  - 滑动窗口:同一 key(channel:target)窗口内限次;窗口滑动后自动恢复
+  - Allow 判断 + AllowSend 错误包装(业务可提示"发送过于频繁")
+  - Clean 清理过期 key 防内存泄漏;频控关闭(window<=0/max<=0)与 nil 安全
+
+### Tests
+- 窗口限次与恢复/AllowSend 错误/并发精确限次/关闭与 nil/Clean 5 组
+
 
 ### Fixed
 - middleware.go 文件尾多余空行(gofmt 合规修正,无行为变化)
