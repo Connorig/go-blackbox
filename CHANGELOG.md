@@ -453,6 +453,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.92.0 - 2026-08-19
 ## v1.93.0 - 2026-08-19
 ## v1.94.0 - 2026-08-19
+## v1.95.0 - 2026-08-19
+
+### Docs
+- I18N_GUIDELINES 新增「语言资源热加载」章节:WatchDir 用法、与配置中心联动、行为说明与注意点
 
 ### Added
 - component/i18n WatchDir 语言资源热加载(不改代码不重启):

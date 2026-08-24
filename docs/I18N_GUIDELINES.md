@@ -102,3 +102,30 @@ app.Get("/api/order", func(ctx iris.Context) {
 - T 的缺失参数**保留占位符不报错**(翻译兜底优先);需要严格校验用 notify.Render
 - LoadDir 在启动时调用一次;运行期变更用 Register 覆盖
 - 与通知模板(notify.RegisterTemplate)语法一致,可共用占位符习惯
+
+
+## 六、语言资源热加载(不改代码不重启)
+
+`WatchDir` 周期扫描语言目录,文件变化自动重载:
+
+```go
+// ① 启动热加载(默认轮询 30s;变化自动生效并回调)
+go bundle.WatchDir(ctx, "langs", 10*time.Second, func() {
+    logger.Info("language resources reloaded")
+})
+
+// ② 或与配置中心联动:配置变更时手动重载
+go cfgClient.Watch(ctx, 15*time.Second, func(content string) {
+    _ = bundle.LoadDir("langs") // 同名 key 覆盖,原子生效
+})
+```
+
+行为说明:
+- 指纹 = 文件名 + mtime + size + 内容哈希;任一变化触发重载
+- 首次扫描不回调;目录暂不可读或加载失败保留旧资源(下轮重试)
+- 同 key 覆盖更新;删除 key 需要重启(或调用方显式 Register 空值)
+
+注意:
+- 生产环境语言文案建议走配置中心/发布流程,本地目录热加载适合开发与运营快速调文案
+- 多实例部署每实例独立轮询,变更在 interval 内陆续生效(短暂不一致可接受)
+
