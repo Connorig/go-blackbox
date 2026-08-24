@@ -7,6 +7,7 @@ import (
 	"time"
 
 	apperr "github.com/Connorig/go-blackbox/component/error"
+	"github.com/Connorig/go-blackbox/component/i18n"
 	zaplog "github.com/Connorig/go-blackbox/framework/log"
 	"github.com/kataras/iris/v12"
 )
@@ -141,3 +142,33 @@ func PanicRecovery() iris.Handler {
 		ctx.Next()
 	}
 }
+
+// Language 中间件:按 Accept-Language 检测请求语言并写入上下文
+// (ctx.Values "lang";读取用 webiris.Lang(ctx))。
+// bundle 为 i18n 资源包,负责语言识别与回退(nil 时恒为默认语言)。
+// 用法:
+//
+//	app.Use(webiris.Language(i18nBundle))
+//	message := bundle.T(webiris.Lang(ctx), "order.created", params)
+func Language(bundle *i18n.Bundle) iris.Handler {
+	return func(ctx iris.Context) {
+		lang := i18n.DefaultLang
+		if bundle != nil {
+			lang = bundle.DetectLanguage(ctx.GetHeader("Accept-Language"))
+		}
+		ctx.Values().Set("lang", lang)
+		ctx.Next()
+	}
+}
+
+// Lang 返回当前请求语言(webiris.Language 中间件设置;未设置返回默认 zh-CN)。
+func Lang(ctx iris.Context) string {
+	if ctx == nil {
+		return i18n.DefaultLang
+	}
+	if lang, ok := ctx.Values().Get("lang").(string); ok && lang != "" {
+		return lang
+	}
+	return i18n.DefaultLang
+}
+

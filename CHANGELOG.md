@@ -443,6 +443,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.82.0 - 2026-08-19
 ## v1.83.0 - 2026-08-19
 ## v1.84.0 - 2026-08-19
+## v1.85.0 - 2026-08-19
+
+### Added
+- webiris.Language 中间件:按 Accept-Language 检测请求语言写入上下文(webiris.Lang 读取)
+  - 与 component/i18n Bundle 集成(识别+回退);nil bundle 安全(恒默认语言)
+  - 业务用法:app.Use(webiris.Language(bundle)) 后 bundle.T(webiris.Lang(ctx), key)
+
+### Tests
+- zh/en/无头回退、nil bundle、Lang nil 安全 3 组
 
 ### Changed
 - webiris 默认中间件升级:newApplication 默认安装 PanicRecovery(替换 iris recover.New)
