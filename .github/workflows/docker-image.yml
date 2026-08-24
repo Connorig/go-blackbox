@@ -105,4 +105,20 @@ jobs:
       - name: Compile tests (no run)
         shell: bash
         run: go test ./... -run '^$'
+  race-detection:
+    needs: verify-and-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout tagged source
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.21.x"
+          cache: true
+
+      - name: Race detector test suite
+        run: go test -race ./...
 

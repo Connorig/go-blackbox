@@ -442,6 +442,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.81.0 - 2026-08-19
 ## v1.82.0 - 2026-08-19
 ## v1.83.0 - 2026-08-19
+## v1.84.0 - 2026-08-19
+
+### Changed
+- webiris 默认中间件升级:newApplication 默认安装 PanicRecovery(替换 iris recover.New)
+  - 业务 handler panic → 统一 500 + B0001 JSON 响应(此前为 iris 默认空响应)
+  - 结构化日志(request_id/path/堆栈);业务无需显式 Use
+- CI 新增 race-detection job:ubuntu 上 `go test -race ./...`(发布 tag 自动执行)
+
+### Tests
+- 默认应用 panic → 500 + B0001(无需显式挂载)1 组
+
 
 ### Changed
 - 全仓 gofmt 格式化(102 个文件):import 分组排序、doc comment 列表规则(Go 1.19+ 注释规范)、对齐修正

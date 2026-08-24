@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/middleware/recover"
 
 	zaplog "github.com/Connorig/go-blackbox/framework/log"
 )
@@ -134,13 +133,14 @@ func (w *WebIris) Ready() <-chan struct{} {
 	return w.ready
 }
 
-// newApplication 创建 Iris 实例并安装默认 Recovery 中间件。
+// newApplication 创建 Iris 实例并安装默认 PanicRecovery 中间件
+// (业务 handler panic 返回统一 500 B0001 JSON 并记录结构化日志)。
 // components 用于集中注册业务路由和中间件，nil 表示不注册额外组件。
 func newApplication(logLevel string, components PartyComponent) *iris.Application {
 	application := iris.New()
 	application.Logger().Handle(zaplog.GologHandler("web"))
 	application.Logger().SetOutput(zaplog.GologWriter("web"))
-	application.Use(recover.New())
+	application.Use(PanicRecovery())
 	application.Logger().SetLevel(logLevel)
 
 	if components != nil {
