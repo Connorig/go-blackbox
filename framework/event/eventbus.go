@@ -9,6 +9,9 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+
+	zaplog "github.com/Connorig/go-blackbox/framework/log"
+	"github.com/Connorig/go-blackbox/framework/safe"
 )
 
 // Event 是事件负载。
@@ -97,8 +100,9 @@ func (b *Bus) Publish(ctx context.Context, event Event) error {
 	if b.async {
 		for _, entry := range entries {
 			go func(handler Handler) {
+				defer safe.Recover("eventbus async handler")
 				if err := handler(ctx, event); err != nil {
-					fmt.Printf("eventbus async handler failed, event=%s error=%v\n", event.Name, err)
+					zaplog.SugaredLogger.Errorw("eventbus async handler failed", "event", event.Name, "error", err)
 				}
 			}(entry.handler)
 		}

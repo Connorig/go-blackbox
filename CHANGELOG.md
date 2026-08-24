@@ -440,6 +440,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.79.0 - 2026-08-19
 ## v1.80.0 - 2026-08-19
 ## v1.81.0 - 2026-08-19
+## v1.82.0 - 2026-08-19
+
+### Added
+- framework/safe goroutine panic 治理(safe.Go / safe.Recover):
+  捕获 goroutine panic 并记录组件名/错误/堆栈,避免业务回调崩溃整个进程
+- webiris.PanicRecovery 中间件:业务 handler panic 时返回统一 500(B0001)并记录
+  日志(含 request_id/path/堆栈);响应已开始写入时不覆盖;建议中间件链最外层
+
+### Fixed
+- redqueue.Consume:handler panic 转错误,走重试/死信路径(此前 panic 会崩溃消费进程)
+- notify.SendAll:渠道 panic 捕获并聚合进返回错误(此前 goroutine panic 崩溃进程)
+- eventbus 异步订阅:handler panic 捕获并记录日志(此前崩溃进程);同步 handler 错误改走结构化日志
+
+### Tests
+- safe 并发 panic 恢复 3 组;webiris recovery 500/短路 2 组;redqueue panic→死信 1 组(Redis 门控);notify panic 聚合 1 组
+
 
 ### Fixed
 - framework/log 关闭阶段 stdout 同步错误处理不完整(其他项目 BUG-002):

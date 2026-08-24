@@ -178,7 +178,7 @@ func (q *Queue) Consume(ctx context.Context, handler func(ctx context.Context, p
 		// 解码信封(兼容早期裸 payload 格式)
 		enveloped := decodeEnvelope([]byte(results[1]))
 
-		if err := handler(ctx, enveloped.Data); err != nil {
+		if err := invokeHandler(handler, ctx, enveloped.Data); err != nil {
 			nextRetries := enveloped.Retries + 1
 			if q.maxRetries > 0 && nextRetries > q.maxRetries {
 				// 超过上限:进死信
@@ -319,4 +319,14 @@ func decodeEnvelope(value []byte) envelope {
 	}
 	// 兼容裸 payload(可能本身是 JSON,原样作为数据)
 	return envelope{Data: value}
+}
+// invokeHandler 执行业务 handler 并捕获 panic(转错误,走重试/死信路径,
+// 避免业务 panic 崩溃消费进程)。
+func invokeHandler(handler func(context.Context, []byte) error, ctx context.Context, payload []byte) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("redqueue: handler panic: %v", r)
+		}
+	}()
+	return handler(ctx, payload)
 }

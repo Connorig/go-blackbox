@@ -3,9 +3,11 @@ package webiris
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"runtime/debug"
 	"time"
 
-	"github.com/Connorig/go-blackbox/framework/log"
+	apperr "github.com/Connorig/go-blackbox/component/error"
+	zaplog "github.com/Connorig/go-blackbox/framework/log"
 	"github.com/kataras/iris/v12"
 )
 
@@ -116,3 +118,27 @@ func RegisterHealth(app *iris.Application, ready func() error) {
 		}
 	})
 }
+
+// PanicRecovery 兜底中间件:业务 handler panic 时返回统一 500 响应并记录
+// 错误与堆栈,避免连接悬挂。建议放在中间件链最外层(app.Use 第一个注册)。
+// 响应已开始写入(iris IsRecovered)时不再覆盖,仅记录日志。
+func PanicRecovery() iris.Handler {
+	return func(ctx iris.Context) {
+		defer func() {
+			if r := recover(); r != nil {
+				zaplog.SugaredLogger.Errorw("http handler panic",
+					"request_id", ctx.Values().GetString("request_id"),
+					"path", ctx.Path(),
+					"panic", r,
+					"stack", string(debug.Stack()),
+				)
+				if _, recovered := ctx.IsRecovered(); recovered {
+					return
+				}
+				Fail(ctx, 500, apperr.CodeSystemError, "internal server error")
+			}
+		}()
+		ctx.Next()
+	}
+}
+

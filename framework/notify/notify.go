@@ -119,6 +119,11 @@ func (m *Manager) SendAll(ctx context.Context, target string, content Content, c
 		waitGroup.Add(1)
 		go func(ch string) {
 			defer waitGroup.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					errCh <- fmt.Errorf("notify: send via %q panic: %v", ch, r)
+				}
+			}()
 			if err := m.Send(ctx, ch, target, content); err != nil {
 				errCh <- err
 			}
