@@ -449,6 +449,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.88.0 - 2026-08-19
 ## v1.89.0 - 2026-08-19
 ## v1.90.0 - 2026-08-19
+## v1.91.0 - 2026-08-19
+
+### Docs
+- EVENTBUS_GUIDELINES:事件总线使用指南(同步/异步对比、SubscribeRetry 重试、Redis 跨实例桥接、与 safe 治理关系、注意事项)
+- README 模块表:事件总线/事件桥接补文档链接,审计查询补管理页说明,通知频控登记
 
 ### Added
 - framework/event SubscribeRetry 订阅者失败重试(同步模式):

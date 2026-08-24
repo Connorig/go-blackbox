@@ -113,7 +113,7 @@ cmd/gbx      代码生成 CLI:gbx new 一键生成业务项目骨架
 | 监控告警 | `alert.NewWatcher(cfg)` + `go watcher.Start(ctx)` | CPU/内存/磁盘规则 + webhook | [ALERT_GUIDELINES](docs/ALERT_GUIDELINES.md) |
 | 工具集 | `util.CopyProperties/DeepCopy/MD5/UUID...` | 对标 Java commons/hutool | [SECURITY_GUIDELINES](docs/SECURITY_GUIDELINES.md) |
 | 代码生成 | `gbx new -name demo` | 一键生成项目骨架 | 本文档「快速开始」 |
-| 事件总线 | `eventbus.New(...)` | `Subscribe/SubscribeAll/Publish` | — |
+| 事件总线 | `eventbus.New(...)` | `Subscribe/SubscribeAll/Publish`,失败重试 | [EVENTBUS_GUIDELINES](docs/EVENTBUS_GUIDELINES.md) |
 | SSE/WebSocket | `framework/push/sse`、`framework/push/ws` | 实时推送 | — |
 | Cron | `builder.InitCronJob()` + `Register(name, spec, fn)` | 单例防重入 | — |
 | Redis | `builder.EnableCache(redisOptions)` | 分布式锁/防击穿 | — |
@@ -121,9 +121,11 @@ cmd/gbx      代码生成 CLI:gbx new 一键生成业务项目骨架
 
 | RBAC 权限 | `rbac.NewEnforcer(provider)` + `enforcer.RequirePermission(...)` | `HasPermission/HasRole` 带缓存,403 A0312 | [RBAC_GUIDELINES](docs/RBAC_GUIDELINES.md) |
 | 可靠任务队列 | `redqueue.NewQueue(client, prefix)` | `Submit(delay)/Consume` 多实例,重试+死信 | [REDQUEUE_GUIDELINES](docs/REDQUEUE_GUIDELINES.md) |
-| 事件桥接(跨实例) | `eventbus.NewRedisBridge(client, ch, bus)` | `Start/Publish` | — |
+| 事件桥接(跨实例) | `eventbus.NewRedisBridge(client, ch, bus)` | `Start/Publish` | [EVENTBUS_GUIDELINES](docs/EVENTBUS_GUIDELINES.md) |
 | 通知中心 | `notify.NewManager()` + `Register(adapter)` | `Send/SendAll`,sms/mail 适配器内置 | — |
-| 审计查询 | `audit.NewRedisListSink(client, key, limit)` | `Query/Count` 倒序分页 | — |
+| 通知频控 | 
+otify.NewRateLimiter(window, max) | Allow/AllowSend 防轰炸 | [NOTIFY_GUIDELINES](docs/NOTIFY_GUIDELINES.md) |
+| 审计查询 | `audit.NewRedisListSink(client, key, limit)` | `Query/Count` + 管理页 `oplog.Register` | [MODULES_GUIDE](docs/MODULES_GUIDE.md) |
 
 | 灰度路由 | `grayscale.New(ratio, userKey)` + `gray.Route(new, old)` | 比例/用户稳定分流,A/B 测试 | [GRAYSCALE_GUIDELINES](docs/GRAYSCALE_GUIDELINES.md) |
 | 配置中心 | `configcenter.NewClient(url, dataId, group)` | `Fetch/Watch` 热更新 | [CONFIGCENTER_GUIDELINES](docs/CONFIGCENTER_GUIDELINES.md) |
