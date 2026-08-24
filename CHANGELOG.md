@@ -438,6 +438,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.77.0 - 2026-08-19
 ## v1.78.0 - 2026-08-19
 ## v1.79.0 - 2026-08-19
+## v1.80.0 - 2026-08-19
+
+### Fixed
+- 直播项目 Bug 7(环境变量覆盖失效类问题)根因修复:驼峰配置字段的环境变量名不可直觉
+  - `apiBase` 此前只认 `LIVE_LIVE_APIBASE`(viper ToUpper 原约定),不认运维直觉的 `LIVE_LIVE_API_BASE`
+  - 新增驼峰拆分约定:applySplitEnvOverrides 自动识别拆分写法,优先级最高(override 层)
+  - 原约定兼容保留:`LIVE_LIVE_WEBADDR` 等既有环境变量不受影响
+  - 覆盖场景回归:分层合并后 env 覆盖、拆分优先级、拆分对全小写字段(webAddr→WEB_ADDR)、无 env 回退文件
+
+### Added
+- framework/monitor macOS(darwin)采集器:
+  - 内存:hw.memsize + vm.page_free_count/page_size(sysctl)
+  - CPU:kern.cp_time 两次采样(与 linux/windows 同缓存机制,首次 0)
+  - 磁盘:statfs 根分区;负载:vm.loadavg(定点缩放);uptime:kern.boottime
+  - CPU 采样逻辑抽为共享 sampleCPU(linux/darwin 复用)
+  - darwin/arm64 + darwin/amd64 + linux + windows 四平台编译验证
+
+### Tests
+- 环境变量覆盖 5 组(分层合并覆盖/拆分优先级/拆分全小写/无 env 回退/拆分算法单测)
+
 
 ### Docs
 - I18N_GUIDELINES:国际化使用指南(资源文件格式、翻译/回退链、语言检测、与错误码联动)

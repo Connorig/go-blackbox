@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 )
 
 // memoryStats Linux:读 /proc/meminfo。
@@ -56,31 +55,14 @@ func (c *Collector) memoryStats() (MemoryStats, error) {
 	}, nil
 }
 
-// cpuStats Linux:读取 /proc/stat 两次采样计算使用率。
+// cpuStats Linux:读取 /proc/stat 两次采样计算使用率(采样逻辑复用 sampleCPU)。
 // 首次调用(无缓存)返回 0,后续调用返回自上次采样以来的平均使用率。
 func (c *Collector) cpuStats() (CPUStats, error) {
 	idle, total, err := readProcStat()
 	if err != nil {
 		return CPUStats{}, err
 	}
-	c.cpuLock <- struct{}{}
-	defer func() { <-c.cpuLock }()
-
-	if c.lastCPU == nil {
-		c.lastCPU = &cpuCache{idle: idle, total: total, sampledAt: time.Now()}
-		return CPUStats{UsagePercent: 0}, nil
-	}
-	prev := c.lastCPU
-	now := time.Now()
-	c.lastCPU = &cpuCache{idle: idle, total: total, sampledAt: now}
-
-	totalDelta := total - prev.total
-	idleDelta := idle - prev.idle
-	usage := 0.0
-	if totalDelta > 0 {
-		usage = 100 * (1 - float64(idleDelta)/float64(totalDelta))
-	}
-	return CPUStats{UsagePercent: usage}, nil
+	return c.sampleCPU(idle, total)
 }
 
 // readProcStat 解析 /proc/stat 第一行(cpu 汇总)。

@@ -136,3 +136,27 @@ func (c *Collector) Stats() (*Stats, error) {
 	}
 	return stats, nil
 }
+
+
+// sampleCPU 通用 CPU 采样缓存(平台实现提供 idle/total 原始计数)。
+// 首次调用返回 0,之后返回自上次采样以来的平均使用率。线程安全。
+func (c *Collector) sampleCPU(idle, total uint64) (CPUStats, error) {
+	c.cpuLock <- struct{}{}
+	defer func() { <-c.cpuLock }()
+
+	if c.lastCPU == nil {
+		c.lastCPU = &cpuCache{idle: idle, total: total, sampledAt: time.Now()}
+		return CPUStats{UsagePercent: 0}, nil
+	}
+	prev := c.lastCPU
+	now := time.Now()
+	c.lastCPU = &cpuCache{idle: idle, total: total, sampledAt: now}
+
+	totalDelta := total - prev.total
+	idleDelta := idle - prev.idle
+	usage := 0.0
+	if totalDelta > 0 {
+		usage = 100 * (1 - float64(idleDelta)/float64(totalDelta))
+	}
+	return CPUStats{UsagePercent: usage}, nil
+}

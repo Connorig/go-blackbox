@@ -1,8 +1,9 @@
-﻿package apploader
+package apploader
 
 import (
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 
@@ -23,6 +24,9 @@ type Loader interface {
 	// 全局文件缺失时仅记录错误，不阻塞加载(可选层)。
 	SetGlobalConfigFile(configName string, searchPath ...string) Loader
 	// EnableEnvSearcher 开启环境变量覆盖；非空前缀会生成 PREFIX_SECTION_FIELD 格式的变量名。
+	// 驼峰字段(如 apiBase)同时支持两种环境变量名:
+	//   默认:  PREFIX_SECTION_APIBASE(viper 原约定,ToUpper)
+	//   拆分:  PREFIX_SECTION_API_BASE(驼峰拆分,运维直觉写法,优先级更高)
 	EnableEnvSearcher(envPrefix string) Loader
 	// Watch 监听配置文件变更，重载成功（含业务校验）后同步调用 handler。
 	// 必须在 LoadToStruct 之后调用；仅支持文件源的变更监听。
@@ -40,6 +44,7 @@ type Validator interface {
 type loader struct {
 	vConf            *viper.Viper
 	envSearchEnable  bool
+	envPrefix        string
 	configurationErr error
 	watchTarget      interface{} // watchTarget 是 Watch 重载时反序列化的目标结构体
 	global           *globalConfig // 全局(父级)配置定位,分层加载用
@@ -196,6 +201,7 @@ func (lo *loader) EnableEnvSearcher(envPrefix string) Loader {
 	trimmedPrefix := strings.TrimSpace(envPrefix)
 	if trimmedPrefix != "" {
 		lo.vConf.SetEnvPrefix(trimmedPrefix)
+		lo.envPrefix = trimmedPrefix
 	}
 	lo.envSearchEnable = true
 	return lo
@@ -274,6 +280,8 @@ func (lo *loader) LoadToStruct(config interface{}) error {
 }
 
 // prepareEnv 为目标结构体的叶子字段绑定环境变量，并启用点号到下划线的转换。
+// 绑定后额外应用驼峰拆分约定(applySplitEnvOverrides):驼峰字段同时支持
+// 拆分下划线写法,运维可直觉配置。
 func (lo *loader) prepareEnv(target interface{}) error {
 	lo.vConf.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	lo.vConf.AutomaticEnv()
@@ -285,7 +293,56 @@ func (lo *loader) prepareEnv(target interface{}) error {
 			bindErrors = append(bindErrors, fmt.Errorf("bind environment key %q: %w", key, err))
 		}
 	}
+	lo.applySplitEnvOverrides(keys)
 	return errors.Join(bindErrors...)
+}
+
+// applySplitEnvOverrides 对含驼峰命名的配置键应用"拆分下划线"环境变量约定。
+// 例:key "live.apiBase" 的默认环境变量为 LIVE_LIVE_APIBASE(viper ToUpper);
+// 拆分约定额外识别 LIVE_LIVE_API_BASE(驼峰按词拆分),存在时以 override 层
+// 写入(优先级高于 env 与配置文件)。原有环境变量名不受影响。
+func (lo *loader) applySplitEnvOverrides(keys []string) {
+	if lo == nil || lo.vConf == nil || lo.envPrefix == "" {
+		return
+	}
+	for _, key := range keys {
+		segments := strings.Split(key, ".")
+		leaf := segments[len(segments)-1]
+		splitLeaf := splitCamel(leaf)
+		if splitLeaf == strings.ToLower(leaf) {
+			continue // 无驼峰,跳过
+		}
+		parts := make([]string, 0, len(segments)+1)
+		parts = append(parts, strings.ToUpper(lo.envPrefix))
+		for _, segment := range segments {
+			parts = append(parts, strings.ToUpper(splitCamel(segment)))
+		}
+		envName := strings.Join(parts, "_")
+		if value, ok := os.LookupEnv(envName); ok && value != "" {
+			lo.vConf.Set(key, value) // override 层,优先级最高
+		}
+	}
+}
+
+// splitCamel 将驼峰命名拆为下划线小写:apiBase → api_base;APIBase → api_base;
+// webAddr → web_addr;连续大写视为一个词(APIServer → api_server)。
+func splitCamel(input string) string {
+	if input == "" {
+		return ""
+	}
+	runes := []rune(input)
+	var builder strings.Builder
+	for index, current := range runes {
+		if index > 0 && current >= 'A' && current <= 'Z' {
+			prev := runes[index-1]
+			nextIsLower := index+1 < len(runes) && runes[index+1] >= 'a' && runes[index+1] <= 'z'
+			if prev >= 'a' && prev <= 'z' || nextIsLower {
+				builder.WriteByte('_')
+			}
+		}
+		builder.WriteRune(current)
+	}
+	return strings.ToLower(builder.String())
 }
 
 // validateConfigTarget 校验配置目标为非 nil 结构体指针。
