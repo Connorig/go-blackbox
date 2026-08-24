@@ -444,6 +444,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.83.0 - 2026-08-19
 ## v1.84.0 - 2026-08-19
 ## v1.85.0 - 2026-08-19
+## v1.86.0 - 2026-08-19
+
+### Fixed
+- middleware.go 文件尾多余空行(gofmt 合规修正,无行为变化)
 
 ### Added
 - webiris.Language 中间件:按 Accept-Language 检测请求语言写入上下文(webiris.Lang 读取)

@@ -171,4 +171,3 @@ func Lang(ctx iris.Context) string {
 	}
 	return i18n.DefaultLang
 }
-
