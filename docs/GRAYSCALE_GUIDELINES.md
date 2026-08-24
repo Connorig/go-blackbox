@@ -66,3 +66,26 @@ go cfgClient.Watch(ctx, 10*time.Second, func(content string) {
 - 灰度期间新旧版本都要记录日志(便于对比错误率),建议加 `gray` 字段标记版本
 - 涉及数据库结构变更的灰度,先做兼容性改造(新旧代码可并行读写),再灰度
 - A/B 测试:分流比例 50% + 结果埋点对比,与灰度发版共用同一机制
+
+
+## 七、灰度统计观测
+
+`StatsHandler` 暴露灰度命中统计 JSON,可挂到监控路由/面板:
+
+```go
+// 注册统计接口(建议限流 + 鉴权)
+app.Get("/gray/stats", webiris.Limit(webiris.LimitConfig{RatePerSecond: 5}), strategy.StatsHandler())
+
+// 响应:
+// {code:"B0000", data:{
+//   total: 12580, new_hits: 641, old_hits: 11939,
+//   ratio: 0.051,          // 实际新版本占比
+//   config_ratio: 0.05     // 配置目标占比(对比偏差)
+// }}
+```
+
+观测建议:
+- 灰度期间定期对比 `ratio` 与 `config_ratio`,偏差大说明分流不均(检查 userKey 取值分布)
+- 结合业务日志按 X-Gray-Version 头分组统计错误率,新版本错误率明显偏高时回滚 ratio 为 0
+- 全量发布后统计接口保留,用于 A/B 结果复盘
+

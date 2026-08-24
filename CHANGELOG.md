@@ -451,6 +451,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.90.0 - 2026-08-19
 ## v1.91.0 - 2026-08-19
 ## v1.92.0 - 2026-08-19
+## v1.93.0 - 2026-08-19
+
+### Docs
+- GRAYSCALE_GUIDELINES 新增「灰度统计观测」章节:StatsHandler 用法、实况与目标占比对比、按 X-Gray-Version 错误率评估、回滚建议
 
 ### Added
 - framework/grayscale StatsHandler:灰度命中统计 HTTP 接口
