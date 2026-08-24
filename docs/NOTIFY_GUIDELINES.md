@@ -76,7 +76,38 @@ errs := manager.SendAll(ctx, "user", notify.Content{
 })
 ```
 
-## 五、注意事项
+
+## 五、频控(防短信轰炸)
+
+`RateLimiter` 按 key(channel:target)滑动窗口限次,防止验证码刷接口与短信轰炸:
+
+```go
+import "github.com/Connorig/go-blackbox/framework/notify"
+
+// ① 创建频控:同一手机号 1 分钟内最多 3 条
+limiter := notify.NewRateLimiter(time.Minute, 3)
+
+// ② 发送前检查(推荐与 SendAll 组合)
+if err := limiter.AllowSend(ctx, "sms", "13800138000", content); err != nil {
+    return webiris.Fail(ctx, 429, apperr.CodeTooManyRequests, "发送过于频繁,请稍后再试")
+}
+errs := manager.SendAll(ctx, "sms", content, "sms", "mail")
+```
+
+API:
+
+| API | 说明 |
+| --- | --- |
+| `NewRateLimiter(window, max)` | 窗口内每 key 限 max 次;window/max 非正数 = 关闭频控 |
+| `Allow(key)` | 滑动窗口判断;key 建议 `channel:target` |
+| `AllowSend(ctx, channel, target, content)` | 包装 Allow,拒绝时返回明确错误 |
+| `Clean()` | 清理过期 key(可周期调用;窗口滑动后自动失效) |
+
+注意:
+- 进程内实现:多实例部署时各实例独立计数(总量 = 实例数 × max);需要全局频控请在 Sender 内接入 Redis 计数
+- 验证码场景建议同时叠加图形验证码/行为校验,频控是第二道防线
+
+## 六、注意事项
 
 - SendAll 并发发送:某渠道失败不影响其他渠道;返回聚合错误便于排查
 - 短信/邮件适配器:内容模板优先(content.Template 覆盖渠道默认模板)

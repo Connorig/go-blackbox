@@ -446,6 +446,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.85.0 - 2026-08-19
 ## v1.86.0 - 2026-08-19
 ## v1.87.0 - 2026-08-19
+## v1.88.0 - 2026-08-19
+
+### Docs
+- NOTIFY_GUIDELINES 新增「频控(防短信轰炸)」章节:RateLimiter 用法、与 SendAll 组合、多实例注意点
+- I18N_GUIDELINES 新增「与 Web 集成(请求语言中间件)」章节:webiris.Language/Lang 用法
 
 ### Added
 - framework/notify RateLimiter 通知频控(防短信轰炸/验证码刷接口):

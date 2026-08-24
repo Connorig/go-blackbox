@@ -67,7 +67,36 @@ if err := apperr.New(apperr.CodeParamError, bundle.T(lang, "errors.invalid_param
 
 建议资源中 `errors.*` 前缀统一管理错误文案,与 apperr 错误码一一对应。
 
-## 五、注意事项
+
+## 六、与 Web 集成(请求语言中间件)
+
+`webiris.Language` 中间件按 Accept-Language 自动检测请求语言并写入上下文:
+
+```go
+import "github.com/Connorig/go-blackbox/component/i18n"
+import "github.com/Connorig/go-blackbox/framework/web" // 包名 webiris
+
+bundle := i18n.NewBundle()
+_ = bundle.LoadDir("langs")
+
+// ① 挂载中间件(建议全局)
+app.Use(webiris.Language(bundle))
+
+// ② 业务 handler 内按请求语言翻译
+app.Get("/api/order", func(ctx iris.Context) {
+    message := bundle.T(webiris.Lang(ctx), "order.created", params)
+    webiris.OK(ctx, map[string]interface{}{"message": message})
+})
+```
+
+| API | 说明 |
+| --- | --- |
+| `webiris.Language(bundle)` | 中间件;bundle 负责识别与回退,nil 时恒默认语言 |
+| `webiris.Lang(ctx)` | 读取当前请求语言(未设置返回默认 zh-CN;nil ctx 安全) |
+
+语言检测规则见「请求语言检测」:`Accept-Language: zh-CN,zh;q=0.9` → `zh-CN`;未注册语言跳过取下一个;全不匹配回退默认。
+
+## 六、注意事项
 
 - 语言标识统一小写-大写格式(zh-CN/en-US),文件名与之一致
 - T 的缺失参数**保留占位符不报错**(翻译兜底优先);需要严格校验用 notify.Render
