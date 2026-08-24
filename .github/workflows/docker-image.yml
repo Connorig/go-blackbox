@@ -76,3 +76,33 @@ jobs:
         with:
           generate_release_notes: true
           body_path: /tmp/release-notes.md
+  cross-platform-build:
+    needs: verify-and-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout tagged source
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.21.x"
+          cache: true
+
+      - name: Build all packages
+        shell: bash
+        run: go build ./...
+
+      - name: Vet all packages
+        shell: bash
+        run: go vet ./...
+
+      - name: Compile tests (no run)
+        shell: bash
+        run: go test ./... -run '^$'
+

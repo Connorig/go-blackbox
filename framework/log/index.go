@@ -291,9 +291,18 @@ func serviceName(prefix string) string {
 	return name
 }
 
-// isIgnorableSyncError 判断错误是否来自不支持 fsync 的终端输出。
+// isIgnorableSyncError 判断错误是否来自终端、管道或已关闭句柄等可安全忽略的同步错误。
+// 覆盖:
+//   - EINVAL/ENOTTY:终端不支持 fsync(macOS 与各类 TTY)
+//   - EBADF:句柄已被关闭(容器/运行器在退出清理阶段关闭 stdout 后仍触发 Sync)
+//   - EPIPE:管道对端已关闭
+//
+// 其余错误(如磁盘 IO 失败)应如实上报,保证日志落盘可靠性可观测。
 func isIgnorableSyncError(err error) bool {
-	return errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOTTY)
+	return errors.Is(err, syscall.EINVAL) ||
+		errors.Is(err, syscall.ENOTTY) ||
+		errors.Is(err, syscall.EBADF) ||
+		errors.Is(err, syscall.EPIPE)
 }
 
 // stdlibLogWriter 把标准库 log 输出桥接到 zap Info(component=stdlib),每行一条。

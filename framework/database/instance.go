@@ -106,6 +106,9 @@ func (i *Instance) WithTx(ctx context.Context, fn func(tx *gorm.DB) error) error
 	return db.WithContext(ctx).Transaction(fn)
 }
 
+// errNotInitialized 默认实例未初始化哨兵错误(errors.Is 可识别)。
+var errNotInitialized = errors.New("default relational database is not initialized")
+
 // 实例注册表：name -> Instance，默认实例使用空字符串 key。
 var (
 	instancesMu     sync.RWMutex
@@ -212,9 +215,38 @@ func Get() (*Instance, error) {
 	instancesMu.RLock()
 	defer instancesMu.RUnlock()
 	if defaultInstance == nil {
-		return nil, errors.New("default relational database is not initialized")
+		return nil, errNotInitialized
 	}
 	return defaultInstance, nil
+}
+
+// GetDB 返回默认实例的 GORM 句柄;未初始化或已关闭时返回错误,
+// 避免 DB() 返回 nil 后静默传导到 GORM 触发 SIGSEGV。
+// 推荐在业务请求内实时调用(懒加载),不要在 Web 路由注册阶段持有句柄
+// (此时实例可能尚未初始化,取到 nil 会随请求崩溃)。
+func GetDB() (*gorm.DB, error) {
+	instance, err := Get()
+	if err != nil {
+		return nil, err
+	}
+	db := instance.DB()
+	if db == nil {
+		return nil, errors.New("default relational database is closed")
+	}
+	return db, nil
+}
+
+// GetNamedDB 同 GetDB,针对具名实例;未注册或已关闭返回错误。
+func GetNamedDB(name string) (*gorm.DB, error) {
+	instance, err := GetNamed(name)
+	if err != nil {
+		return nil, err
+	}
+	db := instance.DB()
+	if db == nil {
+		return nil, fmt.Errorf("database instance %q is closed", name)
+	}
+	return db, nil
 }
 
 // GetNamed 返回具名实例；未注册返回错误。

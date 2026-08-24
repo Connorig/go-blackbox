@@ -439,6 +439,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.78.0 - 2026-08-19
 ## v1.79.0 - 2026-08-19
 ## v1.80.0 - 2026-08-19
+## v1.81.0 - 2026-08-19
+
+### Fixed
+- framework/log 关闭阶段 stdout 同步错误处理不完整(其他项目 BUG-002):
+  - isIgnorableSyncError 新增 EBADF(句柄已被关闭,如容器/运行器退出清理阶段)与 EPIPE(管道对端关闭)
+  - 修复前容器退出时可能误报 `sync /dev/stdout: bad file descriptor` 并导致退出码 1
+- framework/database 数据源获取时机陷阱(其他项目 BUG-003):
+  - 新增 GetDB()/GetNamedDB():未初始化或已关闭时返回错误,杜绝 DB() 返回 nil 静默传导到 GORM 触发 SIGSEGV
+  - Get() 错误改为哨兵 errNotInitialized(errors.Is 可识别,文案不变)
+  - DATABASE_STANDARDS 新增「获取数据源的安全时机」章节:路由注册闭包内禁止取 DB、请求内懒加载推荐模式、排查清单
+
+### Added
+- CI 多平台构建:verify-and-release 后新增 cross-platform-build(ubuntu/macos/windows 三平台 go build + vet + 编译测试),平台实现缺口(如 darwin monitor)可被 CI 提前发现
+
+### Tests
+- log 可忽略错误扩展(EBADF/EPIPE)1 组;datasource GetDB 未初始化/已关闭/未知名/哨兵包装/健康实例 5 组
+
 
 ### Fixed
 - 直播项目 Bug 7(环境变量覆盖失效类问题)根因修复:驼峰配置字段的环境变量名不可直觉

@@ -109,3 +109,54 @@ if err := datasource.MustGet().WithContext(ctx).
 - 未登录/老 token(无组织字段) → 空范围,不产生过滤条件(业务自行决定是否拒绝)
 - 自定义列名: scope.ConditionFor("tenant_id", "dept_id")
 - 超管/跨组织场景: 不调用 Scopes 或使用空 DataScope(全量可见)
+
+
+## 六、获取数据源的安全时机(生命周期规范)
+
+> 背景:EnableDatabase 只是**登记配置**,实例在启动流程的装配阶段才真正初始化;
+> 在 Web 路由注册回调里调用 datasource.Get() 可能命中未初始化窗口,取到 nil 句柄
+> 会在首个业务请求时触发 GORM SIGSEGV。
+
+### 6.1 允许的调用时机
+
+| 阶段 | datasource.Get()/GetDB() | 说明 |
+| --- | --- | --- |
+| builder.BeforeSetup 回调 | ✅ 安全 | Web 启动前,实例已装配完成(含迁移) |
+| Web 路由**处理函数内**(请求时) | ✅ 安全 | 请求到达时实例必已就绪;推荐懒加载 |
+| Web 路由**注册闭包内**(EnableWeb 回调) | ⚠️ 禁止 | 闭包在装配前执行,可能未初始化 |
+| AfterSetup 回调 | ✅ 安全 | Web Ready 后 |
+
+### 6.2 推荐模式:请求内懒加载(DBProvider)
+
+```go
+// ① 不要在装配期持有 DB 指针(可能取到 nil)
+// ❌ var db = mustGetDB() // 注册阶段执行 → nil 随请求崩溃
+
+// ② 每个业务请求内实时获取(推荐)
+func (s *OrderService) Get(ctx context.Context, id int64) (*model.Order, error) {
+    db, err := datasource.GetDB() // 未初始化/已关闭返回错误,不 panic
+    if err != nil {
+        return nil, err
+    }
+    var order model.Order
+    if err := db.WithContext(ctx).First(&order, id).Error; err != nil {
+        return nil, err
+    }
+    return &order, nil
+}
+```
+
+### 6.3 API 选择
+
+| API | 返回 | 说明 |
+| --- | --- | --- |
+| `datasource.Get()` | `(*Instance, error)` | 未初始化返回错误(哨兵 `errNotInitialized` 可 errors.Is) |
+| `datasource.GetDB()` | `(*gorm.DB, error)` | **推荐**:已关闭返回错误,杜绝 nil 传导 |
+| `datasource.GetNamedDB(name)` | `(*gorm.DB, error)` | 具名实例版本 |
+| `instance.DB()` | `*gorm.DB`(可能 nil) | 低层 API:closed 时返回 nil,需自行判空 |
+
+### 6.4 排查清单
+
+- 路由注册阶段报 `default relational database is not initialized` → 把获取移到请求处理函数内
+- 请求期 nil panic → 检查是否在装配期缓存了 DB 指针;改用 GetDB() 懒加载
+
