@@ -454,6 +454,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.93.0 - 2026-08-19
 ## v1.94.0 - 2026-08-19
 ## v1.95.0 - 2026-08-19
+## v1.96.0 - 2026-08-19
+
+### Docs
+- SMS_GUIDELINES:短信服务独立指南(阿里云 SendSms 对齐:签名/模板/变量/批量/OutId、与通知中心组合、频控、幂等与安全注意)
+- MAIL_GUIDELINES:邮件服务独立指南(SMTP 配置/授权码/附件/常见服务商参数、与通知中心组合、注意事项)
+- README 模块表:短信/邮件登记独立文档链接
 
 ### Docs
 - I18N_GUIDELINES 新增「语言资源热加载」章节:WatchDir 用法、与配置中心联动、行为说明与注意点

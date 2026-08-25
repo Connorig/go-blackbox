@@ -117,7 +117,8 @@ cmd/gbx      代码生成 CLI:gbx new 一键生成业务项目骨架
 | SSE/WebSocket | `framework/push/sse`、`framework/push/ws` | 实时推送 | — |
 | Cron | `builder.InitCronJob()` + `Register(name, spec, fn)` | 单例防重入 | — |
 | Redis | `builder.EnableCache(redisOptions)` | 分布式锁/防击穿 | — |
-| 邮件 | `mail.NewSender(cfg)` | TLS/附件 | — |
+| 短信 | `sms.NewClient(cfg)` + `client.Send(...)` | 阿里云 SendSms,签名/模板/变量 | [SMS_GUIDELINES](docs/SMS_GUIDELINES.md) |
+| 邮件 | `mail.GetClient(cfg)` + `SendMail(...)` | SMTP SSL/TLS/附件 | [MAIL_GUIDELINES](docs/MAIL_GUIDELINES.md) |
 
 | RBAC 权限 | `rbac.NewEnforcer(provider)` + `enforcer.RequirePermission(...)` | `HasPermission/HasRole` 带缓存,403 A0312 | [RBAC_GUIDELINES](docs/RBAC_GUIDELINES.md) |
 | 可靠任务队列 | `redqueue.NewQueue(client, prefix)` | `Submit(delay)/Consume` 多实例,重试+死信 | [REDQUEUE_GUIDELINES](docs/REDQUEUE_GUIDELINES.md) |
